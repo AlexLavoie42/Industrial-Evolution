@@ -1,6 +1,5 @@
 use crate::*;
 
-
 pub enum Power {
     Mechanical(f32),
     Thermal(f32),
@@ -35,14 +34,27 @@ impl Default for AssemblyBundle {
 }
 
 #[derive(Component)]
-pub struct PulpMill {
-    pub production: Paper
+pub enum AssemblyProduction {
+    Paper
 }
+
+#[derive(Component)]
+pub struct PulpMill;
 
 #[derive(Bundle)]
 pub struct PulpMillBundle {
     pub assembly: AssemblyBundle,
+    pub production: AssemblyProduction,
     pub marker: PulpMill
+}
+impl Default for PulpMillBundle {
+    fn default() -> PulpMillBundle {
+        PulpMillBundle {
+            assembly: AssemblyBundle::default(),
+            production: AssemblyProduction::Paper,
+            marker: PulpMill
+        }
+    }
 }
 
 #[derive(Component, Default)]
