@@ -8,7 +8,9 @@ pub enum Power {
 
 #[derive(Component)]
 pub struct Assembly {
-    pub production: Good
+    pub production: Option<Good>,
+    pub resource: Option<items::Material>,
+    pub work: Option<Power>
 }
 
 #[derive(Bundle)]
@@ -20,7 +22,9 @@ impl Default for AssemblyBundle {
     fn default() -> AssemblyBundle {
         AssemblyBundle {
             marker: Assembly {
-                production: Good::Paper
+                production: None,
+                resource: None,
+                work: None
             },
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -48,7 +52,9 @@ impl Default for PulpMillBundle {
     fn default() -> PulpMillBundle {
         PulpMillBundle {
             assembly: Assembly {
-                production: Good::Paper
+                production: Some(Good::Paper),
+                resource: Some(items::Material::Pulp),
+                work: Some(Power::Mechanical(10.0))
             },
             marker: PulpMill,
             sprite: SpriteBundle {

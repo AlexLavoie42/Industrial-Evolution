@@ -11,7 +11,8 @@ pub struct ItemBundle {
 
 #[derive(Component)]
 pub enum Material {
-    Wood
+    Wood,
+    Pulp
 }
 
 #[derive(Bundle)]
@@ -26,25 +27,53 @@ pub struct Wood;
 
 #[derive(Bundle)]
 pub struct WoodBundle {
-    pub material: MaterialBundle,
+    pub item: Item,
+    pub material: Material,
+    pub sprite: SpriteBundle,
     pub marker: Wood
 }
 impl Default for WoodBundle {
     fn default() -> Self {
         WoodBundle {
             marker: Wood,
-            material: MaterialBundle {
-                item: Item,
-                material: Material::Wood,
-                sprite: SpriteBundle {
-                    sprite: Sprite {
-                        color: Color::WHITE,
-                        custom_size: Some(Vec2::new(15.0, 15.0)),
-                        ..default()
-                    },
+            item: Item,
+            material: Material::Wood,
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::ORANGE_RED,
+                    custom_size: Some(Vec2::new(8.0, 8.0)),
                     ..default()
                 },
-            },
+                ..default()
+            }
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct Pulp;
+
+#[derive(Bundle)]
+pub struct PulpBundle {
+    pub item: Item,
+    pub material: Material,
+    pub sprite: SpriteBundle,
+    pub marker: Pulp
+}
+impl Default for PulpBundle {
+    fn default() -> Self {
+        PulpBundle {
+            marker: Pulp,
+            item: Item,
+            material: Material::Pulp,
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::OLIVE,
+                    custom_size: Some(Vec2::new(8.0, 8.0)),
+                    ..default()
+                },
+                ..default()
+            }
         }
     }
 }
@@ -72,4 +101,21 @@ pub struct PaperBundle {
     pub good: Good,
     pub marker: Paper,
     pub sprite: SpriteBundle
+}
+impl Default for PaperBundle {
+    fn default() -> Self {
+        PaperBundle {
+            marker: Paper,
+            item: Item,
+            good: Good::Paper,
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::WHITE,
+                    custom_size: Some(Vec2::new(8.0, 8.0)),
+                    ..default()
+                },
+                ..default()
+            }
+        }
+    }
 }
