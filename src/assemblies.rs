@@ -7,8 +7,8 @@ pub enum Power {
 }
 
 #[derive(Component)]
-pub enum Assembly {
-    PulpMill
+pub struct Assembly {
+    pub production: Good
 }
 
 #[derive(Bundle)]
@@ -19,7 +19,9 @@ pub struct AssemblyBundle {
 impl Default for AssemblyBundle {
     fn default() -> AssemblyBundle {
         AssemblyBundle {
-            marker: Assembly::PulpMill,
+            marker: Assembly {
+                production: Good::Paper
+            },
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::YELLOW,
@@ -34,25 +36,36 @@ impl Default for AssemblyBundle {
 }
 
 #[derive(Component)]
-pub enum AssemblyProduction {
-    Paper
-}
-
-#[derive(Component)]
 pub struct PulpMill;
 
 #[derive(Bundle)]
 pub struct PulpMillBundle {
-    pub assembly: AssemblyBundle,
-    pub production: AssemblyProduction,
+    pub assembly: Assembly,
+    pub sprite: SpriteBundle,
     pub marker: PulpMill
 }
 impl Default for PulpMillBundle {
     fn default() -> PulpMillBundle {
         PulpMillBundle {
-            assembly: AssemblyBundle::default(),
-            production: AssemblyProduction::Paper,
-            marker: PulpMill
+            assembly: Assembly {
+                production: Good::Paper
+            },
+            marker: PulpMill,
+            sprite: SpriteBundle {
+                ..default()
+            },
+        }
+    }
+}
+
+pub fn test(
+     q_assembly: Query<&Assembly>,
+) {
+    for assembly in q_assembly.iter() {
+        match assembly.production {
+            Good::Paper => {
+
+            }
         }
     }
 }

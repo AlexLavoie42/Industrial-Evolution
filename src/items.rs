@@ -52,12 +52,15 @@ impl Default for WoodBundle {
 
 
 #[derive(Component)]
-pub struct Good;
+pub enum Good {
+    Paper
+}
 
 #[derive(Bundle)]
 pub struct GoodBundle {
     pub item: Item,
     pub good: Good,
+    pub sprite: SpriteBundle
 }
 
 #[derive(Component)]
@@ -65,6 +68,8 @@ pub struct Paper;
 
 #[derive(Bundle)]
 pub struct PaperBundle {
-    pub good: GoodBundle,
+    pub item: Item,
+    pub good: Good,
     pub marker: Paper,
+    pub sprite: SpriteBundle
 }
