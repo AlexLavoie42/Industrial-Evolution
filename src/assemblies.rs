@@ -25,7 +25,7 @@ impl Default for AssemblyBundle {
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::YELLOW,
-                    custom_size: Some(Vec2::new(50.0, 50.0)),
+                    custom_size: Some(Vec2::new(16.0, 16.0)),
                     ..default()
                 },
                 visibility: Visibility::Visible,
@@ -58,26 +58,19 @@ impl Default for PulpMillBundle {
     }
 }
 
-pub fn test(
-     q_assembly: Query<&Assembly>,
-) {
-    for assembly in q_assembly.iter() {
-        match assembly.production {
-            Good::Paper => {
-
-            }
-        }
-    }
-}
-
 #[derive(Component, Default)]
 pub struct AssemblyGhost;
 
 pub fn assembly_ghost_tracking(
-    mut commands: Commands,
     mut q_assembly_ghost: Query<Option<&mut Transform>, With<AssemblyGhost>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    tilemap_q: Query<(
+        &TilemapSize,
+        &TilemapGridSize,
+        &TilemapType,
+        &Transform
+    ), Without<AssemblyGhost>>
 ) {
     if q_assembly_ghost.is_empty() {
         return;
@@ -87,13 +80,11 @@ pub fn assembly_ghost_tracking(
     let (camera, camera_transform) = q_camera.single();
     let window = q_window.single();
 
-    if let Some(cursor_position) = window.cursor_position()
-        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-        .map(|ray| ray.origin.truncate())
+    let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
+    if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
     {
-        let pos_x = (cursor_position.x / GRID_SIZE).round() * GRID_SIZE;
-        let pos_y = (cursor_position.y / GRID_SIZE).round() * GRID_SIZE;
-        transform.translation = vec3(pos_x, pos_y, transform.translation.z)
+        let cursor_position = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
+        transform.translation = vec3(cursor_position.x, cursor_position.y, transform.translation.z)
     }
 }
 
@@ -132,23 +123,27 @@ pub fn show_assembly_ghost(
     mut commands: Commands,
     mut ev_show_ghost: EventReader<ShowAssemblyGhost>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    q_window: Query<&Window, With<PrimaryWindow>>
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    tilemap_q: Query<(
+        &TilemapSize,
+        &TilemapGridSize,
+        &TilemapType,
+        &Transform
+    )>
 ) {
     for _ev in ev_show_ghost.iter() {
         let (camera, camera_transform) = q_camera.single();
         let window = q_window.single();
+        let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
     
-        if let Some(cursor_position) = window.cursor_position()
-            .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-            .map(|ray| ray.origin.truncate())
+        if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
         {
-            let pos_x = (cursor_position.x / GRID_SIZE).round() * GRID_SIZE;
-            let pos_y = (cursor_position.y / GRID_SIZE).round() * GRID_SIZE;
+            let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
 
             commands.spawn((AssemblyBundle {
                 sprite: SpriteBundle {
                     transform: Transform {
-                        translation: Vec3::new(pos_x, pos_y, -1.0),
+                        translation: Vec3::new(pos.x, pos.y, -1.0),
                         ..default()
                     },
                     sprite: Sprite {
@@ -172,23 +167,25 @@ pub fn place_assembly(
     input: Res<Input<MouseButton>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-
+    tilemap_q: Query<(
+        &TilemapSize,
+        &TilemapGridSize,
+        &TilemapType,
+        &Transform
+    )>
 ) {
     if input.just_pressed(MouseButton::Left) {
         let (camera, camera_transform) = q_camera.single();
         let window = q_window.single();
+        let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
 
-        if let Some(world_position) = window.cursor_position()
-            .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-            .map(|ray| ray.origin.truncate())
+        if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
         {
-            let pos_x = (world_position.x / GRID_SIZE).round() * GRID_SIZE;
-            let pos_y = (world_position.y / GRID_SIZE).round() * GRID_SIZE;
-
+            let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
             commands.spawn(AssemblyBundle {
                 sprite: SpriteBundle {
                     transform: Transform {
-                        translation: Vec3::new(pos_x, pos_y, -1.0),
+                        translation: Vec3::new(pos.x, pos.y, -1.0),
                         ..default()
                     },
                     sprite: Sprite {

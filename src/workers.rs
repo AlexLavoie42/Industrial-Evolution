@@ -47,22 +47,26 @@ pub fn place_worker(
     input: Res<Input<MouseButton>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    tilemap_q: Query<(
+        &TilemapSize,
+        &TilemapGridSize,
+        &TilemapType,
+        &Transform
+    )>
 ) {
     if input.just_pressed(MouseButton::Left) {
         let (camera, camera_transform) = q_camera.single();
         let window = q_window.single();
-
-        if let Some(world_position) = window.cursor_position()
-            .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-            .map(|ray| ray.origin.truncate())
+        let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
+    
+        if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
         {
-            let pos_x = (world_position.x / GRID_SIZE).round() * GRID_SIZE;
-            let pos_y = (world_position.y / GRID_SIZE).round() * GRID_SIZE;
+            let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
 
             commands.spawn(WorkerBundle {
                 sprite: SpriteBundle {
                     transform: Transform {
-                        translation: Vec3::new(pos_x, pos_y, -1.0),
+                        translation: Vec3::new(pos.x, pos.y, -1.0),
                         ..default()
                     },
                     ..WorkerBundle::default().sprite

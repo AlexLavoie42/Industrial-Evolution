@@ -27,6 +27,7 @@
     - Given a Path known as a "Job" that they will repeat.
     - Move items between assemblies, provide work.
     - Job complexity is measured in amount of steps weighted by the configured complexity for each step (Move item = Path Length, Provide Work = N).
+    - Increase complexity with each path collision
     - Each worker can handle a certain amount of complexity until they begin to have a % chance of error. Workers can handle more complexity as they become more skilled.
     - Errors can cause relevant Materials, Goods, Assemblies or Equipment to break.
     - Errors can also cause injury which gives penalties.

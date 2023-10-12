@@ -13,7 +13,7 @@ use workers::*;
 mod items;
 use items::*;
 
-pub const GRID_SIZE: f32 = 15.0;
+const GRID_SIZE: TilemapSize = TilemapSize { x: 100, y: 100 };
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
 pub enum PlayerState {
@@ -53,9 +53,59 @@ fn main() {
         .run();
 }
 
+pub fn get_mouse_world_pos(window: &Window, camera: &Camera, camera_transform: &GlobalTransform) -> Option<Vec2> {
+    window.cursor_position()
+            .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor))
+}
+
+pub fn get_mouse_tile(
+    window: &Window,
+    camera: &Camera,
+    camera_transform: &GlobalTransform,
+    tilemap_size: &TilemapSize,
+    grid_size: &TilemapGridSize,
+    map_type: &TilemapType,
+    map_transform: &Transform
+) -> Option<TilePos> {
+    if let Some(cursor_pos) = get_mouse_world_pos(window, camera, camera_transform) {
+        // Once we have a world position we can transform it into a possible tile position.
+        let cursor_in_map_pos: Vec2 = {
+            // Extend the cursor_pos vec3 by 0.0 and 1.0
+            let cursor_pos = Vec4::from((cursor_pos, 0.0, 1.0));
+            let cursor_in_map_pos = map_transform.compute_matrix().inverse() * cursor_pos;
+            Vec2 {
+                x: cursor_in_map_pos.x,
+                y: cursor_in_map_pos.y,
+            }
+        };
+        if let Some(tile_pos) =
+            TilePos::from_world_pos(&cursor_in_map_pos, tilemap_size, grid_size, map_type)
+        {
+            return Some(tile_pos);
+        } else {
+            return None;
+        }
+    } else {
+        return None;
+    }
+}
+
+pub fn get_tile_world_pos(
+    position: &TilePos,
+    map_transform: &Transform,
+    grid_size: &TilemapGridSize,
+    map_type: &TilemapType
+) -> Vec2 {
+    let pos = Vec4::from((position.center_in_world(grid_size, map_type), 0.0, 1.0));
+    let world_pos = map_transform.compute_matrix() * pos;
+    Vec2 {
+        x: world_pos.x,
+        y: world_pos.y,
+    }
+}
+
 #[derive(Component)]
 struct Factory;
-const map_size: TilemapSize = TilemapSize { x: 100, y: 100 };
 
 pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let texture_handle: Handle<Image> = asset_server.load("tiles_map.png");
@@ -63,9 +113,9 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((Camera2dBundle::default(), MainCamera));
 
     let tilemap_entity = commands.spawn_empty().id();
-    let mut tile_storage = TileStorage::empty(map_size);
+    let mut tile_storage = TileStorage::empty(GRID_SIZE);
 
-    helpers::filling::fill_tilemap(TileTextureIndex(8), map_size, TilemapId(tilemap_entity), &mut commands, &mut tile_storage);
+    helpers::filling::fill_tilemap(TileTextureIndex(8), GRID_SIZE, TilemapId(tilemap_entity), &mut commands, &mut tile_storage);
 
     let tile_size: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
     let grid_size: TilemapGridSize = tile_size.into();
@@ -74,11 +124,11 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.entity(tilemap_entity).insert(TilemapBundle {
         grid_size,
         map_type,
-        size: map_size,
+        size: GRID_SIZE,
         storage: tile_storage,
         texture: TilemapTexture::Single(texture_handle),
         tile_size,
-        transform: get_tilemap_center_transform(&map_size, &grid_size, &map_type, -100.0),
+        transform: get_tilemap_center_transform(&GRID_SIZE, &grid_size, &map_type, -100.0),
         ..Default::default()
     });
 
