@@ -26,6 +26,7 @@ pub enum PlayerState {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(TilemapPlugin)
         .add_systems(Startup, factory_setup)
         .add_systems(FixedUpdate, player_movement)
         .add_systems(Update, camera_follow)
@@ -54,18 +55,31 @@ fn main() {
 
 #[derive(Component)]
 struct Factory;
+const map_size: TilemapSize = TilemapSize { x: 100, y: 100 };
 
-pub fn factory_setup(mut commands: Commands) {
+pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let texture_handle: Handle<Image> = asset_server.load("tiles_map.png");
+
     commands.spawn((Camera2dBundle::default(), MainCamera));
 
-    commands.spawn(SpriteBundle {
-        sprite: Sprite {
-            custom_size: Some(Vec2::new(1000.0, 1000.0)),
-            color: Color::GRAY,
-            ..default()
-        },
-        transform: Transform::from_xyz(0.0, 0.0, -999.0),
-        ..default()
+    let tilemap_entity = commands.spawn_empty().id();
+    let mut tile_storage = TileStorage::empty(map_size);
+
+    helpers::filling::fill_tilemap(TileTextureIndex(8), map_size, TilemapId(tilemap_entity), &mut commands, &mut tile_storage);
+
+    let tile_size: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
+    let grid_size: TilemapGridSize = tile_size.into();
+    let map_type: TilemapType = TilemapType::Square;
+
+    commands.entity(tilemap_entity).insert(TilemapBundle {
+        grid_size,
+        map_type,
+        size: map_size,
+        storage: tile_storage,
+        texture: TilemapTexture::Single(texture_handle),
+        tile_size,
+        transform: get_tilemap_center_transform(&map_size, &grid_size, &map_type, -100.0),
+        ..Default::default()
     });
 
     commands.spawn(PlayerBundle {
@@ -76,6 +90,10 @@ pub fn factory_setup(mut commands: Commands) {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(18.0, 25.0)),
                 color: Color::RED,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 0.0),
                 ..default()
             },
             ..default()
