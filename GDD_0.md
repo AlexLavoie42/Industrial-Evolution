@@ -59,3 +59,26 @@
     - Event are weighted based on the size of the market for each item, so events in smaller markets will have a larger impact.
 - External Market events will be random / scripted to start
 - Selling or Buying will create a market event for that item
+
+## Core Gameplay Loop
+The goal of this prototype will be to judge the most basic mechanics and determine if they are fun enough to be played for a long time with little polish. The core game mechanics will only include the bare minimum amount of mechanics & depth to be considered fun.
+
+- Resources
+    - Wood
+    - Pulp
+- Goods
+    - Paper
+- Assemblies
+    - Pulp Mill
+    - Paper Machine
+    - (Market Interaction) Receivables?
+- Worker
+    - Path setting between assemblies
+    - Interact with assemblies
+    - Hold configurable amount of items and move them between assemblies
+- Market
+    - Buy / Sell Resources
+    - Sell Goods
+    - Configurable prices
+    - Configurable market events from player interaction
+    - Configurable random market events
