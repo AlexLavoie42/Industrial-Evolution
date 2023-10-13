@@ -31,3 +31,34 @@ pub fn player_movement(mut query: Query<(&mut Transform, &Movement), With<Player
     }
     transform.translation += movement;
 }
+
+#[derive(Component)]
+pub struct MainCamera;
+
+#[derive(Component)]
+pub struct CameraFollow {
+    pub lerp: f32
+}
+
+impl CameraFollow {
+    pub fn default() -> Self {
+        Self { lerp: 0.1 }
+    }
+}
+
+#[derive(Component)]
+pub struct Movement {
+    pub speed_x: f32,
+    pub speed_y: f32
+}
+
+pub fn camera_follow(
+    mut camera_query: Query<&mut Transform, (With<MainCamera>, Without<CameraFollow>)>,
+    mut follow_query: Query<&Transform, (With<CameraFollow>, Without<MainCamera>)>
+) {
+    let mut cam_transform: Mut<'_, Transform> = camera_query.single_mut();
+    let player_transform: &Transform = follow_query.single_mut();
+
+    cam_transform.translation = cam_transform.translation.lerp(player_transform.translation, 0.1);
+}
+

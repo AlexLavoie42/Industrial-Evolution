@@ -1,7 +1,30 @@
+use bevy::sprite::collide_aabb::{Collision, self};
+
 use crate::*;
 
+pub struct WorkerPlugin;
+
+impl Plugin for WorkerPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .add_systems(Update, 
+                (
+                    (place_worker).run_if(in_state(PlayerState::Workers)),
+                    input_toggle_worker_mode,
+                    activate_job_mode_on_click,
+                    (job_mode_creation).run_if(in_state(PlayerState::Jobs))
+                )
+            )
+            .insert_resource(WorkerJobSelection {
+                selected: None
+            });
+    }
+}
+
 #[derive(Component)]
-pub struct Worker;
+pub struct Worker {
+    pub job: Job
+}
 
 pub enum JobAction {
     Work(Power),
@@ -28,7 +51,12 @@ pub struct WorkerBundle {
 impl Default for WorkerBundle {
     fn default() -> WorkerBundle {
         WorkerBundle {
-            marker: Worker,
+            marker: Worker {
+                job: Job {
+                    path: vec![],
+                    complexity: 0.0
+                }
+            },
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::ORANGE,
@@ -92,4 +120,46 @@ pub fn input_toggle_worker_mode(
             
         }
     }
+}
+
+#[derive(Resource)]
+pub struct WorkerJobSelection {
+    pub selected: Option<Entity>
+}
+
+pub fn activate_job_mode_on_click(
+    q_worker: Query<(Entity, &Transform, &Sprite), With<Worker>>,
+    mouse_pos: Res<MousePos>,
+    mouse_input: Res<Input<MouseButton>>,
+    player_state: Res<State<PlayerState>>,
+    mut worker_selection: ResMut<WorkerJobSelection>,
+    mut next_state: ResMut<NextState<PlayerState>>
+    
+) {
+    if mouse_input.just_pressed(MouseButton::Left) {
+        for (worker, transform, sprite) in q_worker.iter() {
+            let mouse_vec = Vec3 {
+                x: mouse_pos.0.x,
+                y: mouse_pos.0.y,
+                z: 0.0
+            };
+            // TODO: Proper size / proper colliders / tilemap collision?
+            let mouse_collision = collide_aabb::collide(
+                transform.translation,
+                sprite.custom_size.unwrap(),
+                mouse_vec, 
+                Vec2{ x: 1.0, y: 1.0 }
+            );
+            if mouse_collision.is_some() && player_state.get() == &PlayerState::None {
+                worker_selection.selected = Some(worker);
+                next_state.set(PlayerState::Jobs);
+            }
+        }
+    }
+}
+
+pub fn job_mode_creation(
+
+) {
+
 }

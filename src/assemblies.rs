@@ -1,5 +1,31 @@
 use crate::*;
 
+pub struct AssembliesPlugin;
+impl Plugin for AssembliesPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .add_systems(OnEnter(PlayerState::Assemblies),
+                |mut ev_show_ghost: EventWriter<ShowAssemblyGhost>| {
+                    ev_show_ghost.send(ShowAssemblyGhost);
+                }
+            )
+            .add_systems(OnExit(PlayerState::Assemblies),
+                |mut ev_hide_ghost: EventWriter<HideAssemblyGhost>| {
+                    ev_hide_ghost.send(HideAssemblyGhost);
+                }
+            )
+            .add_systems(Update,
+            (
+                (place_assembly, assembly_ghost_tracking).run_if(in_state(PlayerState::Assemblies)),
+                input_toggle_assembly_mode,
+                show_assembly_ghost,
+                hide_assembly_ghost
+            ))
+            .add_event::<HideAssemblyGhost>()
+            .add_event::<ShowAssemblyGhost>();
+    }
+}
+
 pub enum Power {
     Mechanical(f32),
     Thermal(f32),
@@ -117,7 +143,7 @@ pub fn hide_assembly_ghost(
     mut ev_hide_ghost: EventReader<HideAssemblyGhost>,
     q_assembly_ghost: Query<Entity, With<AssemblyGhost>>
 ) {
-    for _ev in ev_hide_ghost.iter() {
+    for _ in ev_hide_ghost.iter() {
         q_assembly_ghost.for_each(|entity| commands.entity(entity).despawn());
     }
 }

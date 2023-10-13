@@ -21,36 +21,68 @@ pub enum PlayerState {
     None,
     Assemblies,
     Workers,
+    Jobs
 }
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(TilemapPlugin)
+        .add_plugins(AssembliesPlugin)
+        .add_plugins(WorkerPlugin)
         .add_systems(Startup, factory_setup)
         .add_systems(FixedUpdate, player_movement)
         .add_systems(Update, camera_follow)
         .add_state::<PlayerState>()
-        .add_systems(OnEnter(PlayerState::Assemblies),
-         |mut ev_show_ghost: EventWriter<ShowAssemblyGhost>| {
-            ev_show_ghost.send(ShowAssemblyGhost);
-        })
-        .add_systems(OnExit(PlayerState::Assemblies),
-         |mut ev_hide_ghost: EventWriter<HideAssemblyGhost>| {
-            ev_hide_ghost.send(HideAssemblyGhost);
-        })
-        .add_systems(Update, 
-            (
-                (place_assembly, assembly_ghost_tracking).run_if(in_state(PlayerState::Assemblies)),
-                place_worker.run_if(in_state(PlayerState::Workers)),
-                (input_toggle_assembly_mode, input_toggle_worker_mode),
-                show_assembly_ghost,
-                hide_assembly_ghost
-            )
-        )
-        .add_event::<HideAssemblyGhost>()
-        .add_event::<ShowAssemblyGhost>()
+        .add_systems(Update, (set_mouse_pos_res, set_mouse_tile_res))
+        .insert_resource(MousePos(Vec2::ZERO))
+        .insert_resource(MouseTile(TilePos::new(0, 0)))
         .run();
+}
+
+#[derive(Resource)]
+pub struct MousePos(Vec2);
+
+#[derive(Resource)]
+pub struct MouseTile(TilePos);
+
+pub fn set_mouse_pos_res(
+    mut mouse_pos: ResMut<MousePos>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+) {
+    let window = q_window.single();
+    let (camera, camera_transform) = q_camera.single();
+    if let Some(pos) = get_mouse_world_pos(&window, &camera, &camera_transform) {
+        mouse_pos.0 = pos;
+    }
+}
+
+pub fn set_mouse_tile_res(
+    mut mouse_tile: ResMut<MouseTile>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    tilemap_q: Query<(
+        &TilemapSize,
+        &TilemapGridSize,
+        &TilemapType,
+        &Transform
+    )>
+) {
+    let window = q_window.single();
+    let (camera, camera_transform) = q_camera.single();
+    let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
+    if let Some(tile_pos) = get_mouse_tile(
+        &window,
+        &camera,
+        &camera_transform,
+        &tilemap_size,
+        &grid_size,
+        &map_type,
+        &map_transform
+    ) {
+        mouse_tile.0 = tile_pos;
+    }
 }
 
 pub fn get_mouse_world_pos(window: &Window, camera: &Camera, camera_transform: &GlobalTransform) -> Option<Vec2> {
@@ -149,34 +181,4 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         }
     });
-}
-
-#[derive(Component)]
-pub struct MainCamera;
-
-#[derive(Component)]
-pub struct CameraFollow {
-    pub lerp: f32
-}
-
-impl CameraFollow {
-    fn default() -> Self {
-        Self { lerp: 0.1 }
-    }
-}
-
-#[derive(Component)]
-pub struct Movement {
-    pub speed_x: f32,
-    pub speed_y: f32
-}
-
-pub fn camera_follow(
-    mut camera_query: Query<&mut Transform, (With<MainCamera>, Without<CameraFollow>)>,
-    mut follow_query: Query<&Transform, (With<CameraFollow>, Without<MainCamera>)>
-) {
-    let mut cam_transform: Mut<'_, Transform> = camera_query.single_mut();
-    let player_transform: &Transform = follow_query.single_mut();
-
-    cam_transform.translation = cam_transform.translation.lerp(player_transform.translation, 0.1);
 }
