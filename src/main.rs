@@ -37,6 +37,7 @@ fn main() {
         .add_systems(Update, (set_mouse_pos_res, set_mouse_tile_res))
         .insert_resource(MousePos(Vec2::ZERO))
         .insert_resource(MouseTile(TilePos::new(0, 0)))
+        .add_event::<MouseCollisionEvent>()
         .run();
 }
 
@@ -136,62 +137,49 @@ pub fn get_tile_world_pos(
     }
 }
 
-pub fn check_click_collision_component<T: Component>(
-    entities: Query<Entity, With<T>>,
-    transforms: Query<&Transform, With<T>>,
-    sprites: Query<&Sprite, With<T>>,
-    mouse_pos: Res<MousePos>,
-    mouse_input: Res<Input<MouseButton>>,
-) -> Option<(Collision, Entity)> {
-    if mouse_input.just_pressed(MouseButton::Left) {
-        for (entity, transform, sprite) in entities.iter().zip(transforms.iter()).zip(sprites.iter()) {
-            let mouse_vec = Vec3 {
-                x: mouse_pos.0.x,
-                y: mouse_pos.0.y,
-                z: 0.0,
-            };
-            // TODO: Proper size / proper colliders / tilemap collision?
-            let mouse_collision = collide_aabb::collide(
-                transform.translation,
-                sprite.custom_size.unwrap(),
-                mouse_vec,
-                Vec2 { x: 1.0, y: 1.0 },
-            );
-            if let Some(collision) = mouse_collision {
-                return Some((collision, entity));
-            }
-        }
-    }
-    None
+#[derive(Event)]
+pub struct MouseCollisionEvent {
+    pub collision: Option<(Collision, Entity)>,
 }
 
-pub fn check_click_collision<T: Component>(
-    entities: Query<Entity, With<T>>,
-    transforms: Query<&Transform, With<T>>,
-    sprites: Query<&Sprite, With<T>>,
+pub trait MouseCollider: Component {
+    fn check_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision>;
+}
+
+impl<T: Component> MouseCollider for T {
+    fn check_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision> {
+        let mouse_vec = Vec3 {
+            x: mouse_pos.0.x,
+            y: mouse_pos.0.y,
+            z: 0.0,
+        };
+        // TODO: Proper size / proper colliders / tilemap collision?
+        let mouse_collision = collide_aabb::collide(
+            transform.translation,
+            sprite.custom_size.unwrap(),
+            mouse_vec,
+            Vec2 { x: 1.0, y: 1.0 },
+        );
+        return mouse_collision;
+    }
+}
+
+pub fn mouse_collision_system<T: MouseCollider>(
+    components: Query<(&T, &Transform, &Sprite, Entity)>,
     mouse_pos: Res<MousePos>,
     mouse_input: Res<Input<MouseButton>>,
-) -> Option<(Collision, Entity)> {
+    mut events: EventWriter<MouseCollisionEvent>,
+) {
     if mouse_input.just_pressed(MouseButton::Left) {
-        for (entity, transform, sprite) in entities.iter().zip(transforms.iter()).zip(sprites.iter()) {
-            let mouse_vec = Vec3 {
-                x: mouse_pos.0.x,
-                y: mouse_pos.0.y,
-                z: 0.0,
-            };
-            // TODO: Proper size / proper colliders / tilemap collision?
-            let mouse_collision = collide_aabb::collide(
-                transform.translation,
-                sprite.custom_size.unwrap(),
-                mouse_vec,
-                Vec2 { x: 1.0, y: 1.0 },
-            );
-            if let Some(collision) = mouse_collision {
-                return Some((collision, entity));
+        for (component, transform, sprite, entity) in components.iter() {
+            if let Some(collision) = component.check_collision(&mouse_pos, transform, sprite) {
+                events.send(MouseCollisionEvent {
+                    collision: Some((collision, entity)),
+                });
+                break;
             }
         }
     }
-    None
 }
 
 #[derive(Component)]
