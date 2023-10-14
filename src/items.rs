@@ -1,3 +1,5 @@
+use bevy::ecs::system::EntityCommands;
+
 use crate::*;
 
 #[derive(Component)]
@@ -83,6 +85,24 @@ impl Default for PulpBundle {
 #[derive(Component)]
 pub enum Good {
     Paper
+}
+pub trait GoodBehavior<'a, 'w, 's> {
+    fn spawn_bundle(
+        &self,
+        commands: &'a mut Commands<'w, 's>
+    ) -> Option<EntityCommands<'w, 's, 'a>>;
+}
+
+impl<'a, 'w, 's> GoodBehavior<'a, 'w, 's> for Good {
+    fn spawn_bundle(
+        &self,
+        commands: &'a mut Commands<'w, 's>
+    ) -> Option<EntityCommands<'w, 's, 'a>> {
+        match self {
+            Good::Paper => Some(commands.spawn(PaperBundle::default())),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Bundle)]

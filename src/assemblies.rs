@@ -21,6 +21,7 @@ impl Plugin for AssembliesPlugin {
                 show_assembly_ghost,
                 hide_assembly_ghost
             ))
+            .add_event::<AssemblyPowerInput>()
             .add_event::<HideAssemblyGhost>()
             .add_event::<ShowAssemblyGhost>();
     }
@@ -249,25 +250,48 @@ pub fn place_assembly(
     }
 }
 
+#[derive(Event)]
+pub struct AssemblyPowerInput {
+    pub assembly: Entity,
+    pub source: Entity,
+    pub power: Power
+}
+
+pub fn add_assembly_power_input(
+    mut ev_power_input: EventReader<AssemblyPowerInput>,
+    mut q_assembly: Query<(&Assembly, &mut AssemblyItems)>,
+) {
+    for ev in ev_power_input.iter() {
+        if let Ok((assembly, mut assembly_items)) = q_assembly.get_mut(ev.assembly) {
+            assembly.work = Some(ev.power);
+        }
+    }
+}
+
 pub fn produce_goods(
     mut commands: Commands,
     mut q_assembly: Query<(&Assembly, &mut AssemblyItems)>,
-    q_materials: Query<&items::Material, With<Item>>
+    q_materials: Query<&items::Material, With<Item>>,
+
 ) {
     for (assembly, mut assembly_items) in q_assembly.iter_mut() {
-        if !assembly_items.materials.is_empty() && assembly_items.max_output < assembly_items.output.len() {
+        if !assembly_items.materials.is_empty() &&
+        assembly_items.max_output < assembly_items.output.len() &&
+        assembly.work.is_some() {
+            // TODO: Check requirements function
             // TODO: Production timer
-            if let (Some(entity), Ok(material_item), Some(assembly_input)) = (assembly_items.materials.pop(), q_materials.get(entity), &assembly.resource) {
-                if assembly_input != material_item {
-                    return;
-                }
-                commands.entity(entity).despawn();
-                match assembly.production {
-                    Some(Good::Paper) => {
-                        let id = commands.spawn( PaperBundle::default()).id();
-                        assembly_items.output.push(id);
-                    },
-                    None => {}
+            if let (Some(entity), Some(assembly_input), _) = (assembly_items.materials.pop(), &assembly.resource, &ev_power_input.iter()) {
+                if let Ok(material_item) = q_materials.get(entity) {
+                    if assembly_input != material_item {
+                        return;
+                    }
+                    commands.entity(entity).despawn();
+                    if let Some(output) = &assembly.production {
+                        let output_entity = output.spawn_bundle(&mut commands);
+                        if let Some(output_entity) = output_entity {
+                            assembly_items.output.push(output_entity.id());
+                        }
+                    }
                 }
             }
         }

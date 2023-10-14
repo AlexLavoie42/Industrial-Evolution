@@ -15,7 +15,7 @@ impl Plugin for WorkerPlugin {
                     (job_mode_creation).run_if(in_state(PlayerState::Jobs))
                 )
             )
-            .insert_resource(WorkerJobSelection {
+            .insert_resource(SelectedWorker {
                 selected: None
             });
     }
@@ -31,7 +31,10 @@ pub struct PowerProduction {
 pub struct Worker;
 
 pub enum JobAction {
-    Work(Power),
+    Work {
+        power: Power,
+        assembly: Entity
+    },
     Idle(f32)
 }
 
@@ -128,7 +131,7 @@ pub fn input_toggle_worker_mode(
 }
 
 #[derive(Resource)]
-pub struct WorkerJobSelection {
+pub struct SelectedWorker {
     pub selected: Option<Entity>
 }
 
@@ -137,7 +140,7 @@ pub fn activate_job_mode_on_click(
     mouse_pos: Res<MousePos>,
     mouse_input: Res<Input<MouseButton>>,
     player_state: Res<State<PlayerState>>,
-    mut worker_selection: ResMut<WorkerJobSelection>,
+    mut worker_selection: ResMut<SelectedWorker>,
     mut next_state: ResMut<NextState<PlayerState>>
     
 ) {
@@ -170,7 +173,24 @@ pub fn job_mode_creation(
 }
 
 pub fn worker_power_assembler(
-    
+    q_jobs: Query<(&Job, Entity, &Transform), With<Worker>>,
+    q_assemblies: Query<(&Assembly, Entity, &Transform), Without<Worker>>,
+    mut ev_assembly_power: EventWriter<AssemblyPowerInput>
 ) {
-
+    for (job, worker_entity, _) in q_jobs.iter() {
+        if let Some(current_job_i) = job.active {
+            let current_job = &job.path[current_job_i];
+            match current_job.action {
+                // TODO: Pathfinding
+                JobAction::Work { power, assembly } => {
+                    ev_assembly_power.send(AssemblyPowerInput {
+                        assembly,
+                        source: worker_entity,
+                        power
+                    });
+                },
+                JobAction::Idle(_) => {}
+            };
+        }
+    }
 }
