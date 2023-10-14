@@ -144,32 +144,40 @@ pub fn activate_job_mode_on_click(
     mut next_state: ResMut<NextState<PlayerState>>
     
 ) {
-    if mouse_input.just_pressed(MouseButton::Left) {
-        for (worker, transform, sprite) in q_worker.iter() {
-            let mouse_vec = Vec3 {
-                x: mouse_pos.0.x,
-                y: mouse_pos.0.y,
-                z: 0.0
-            };
-            // TODO: Proper size / proper colliders / tilemap collision?
-            let mouse_collision = collide_aabb::collide(
-                transform.translation,
-                sprite.custom_size.unwrap(),
-                mouse_vec, 
-                Vec2{ x: 1.0, y: 1.0 }
-            );
-            if mouse_collision.is_some() && player_state.get() == &PlayerState::None {
-                worker_selection.selected = Some(worker);
-                next_state.set(PlayerState::Jobs);
-            }
+    if player_state.get() == &PlayerState::None {
+        if let Some((mouse_collision, worker)) = check_click_collision::<Worker>(q_worker, mouse_pos, mouse_input) {
+            worker_selection.selected = Some(worker);
+            next_state.set(PlayerState::Jobs);
+            println!("Worker {} selected", worker.index());
         }
     }
 }
 
 pub fn job_mode_creation(
-
+    mouse_pos: Res<MousePos>,
+    mouse_input: Res<Input<MouseButton>>,
+    selected_worker: Res<SelectedWorker>,
+    mut q_worker: Query<&mut Job, With<Worker>>,
+    q_assembly: Query<(Entity, &Transform, &Sprite, &Assembly)>,
 ) {
-
+    if mouse_input.just_pressed(MouseButton::Left) {
+        if let Some(worker_entity) = selected_worker.selected {
+            if let Ok(mut job) = q_worker.get_mut(worker_entity) {
+                let job_action = if let Some((_, _, assembly)) = check_click_collision_component::<Assembly>(q_assembly, mouse_pos, mouse_input) {
+                    let power = Power::Mechanical(100.0);
+                    let action = JobAction::Work { power, assembly: assembly_entity };
+                    action
+                } else {
+                    JobAction::Idle(0.0)
+                };
+                let job_point = JobPoint {
+                    point: mouse_pos.0,
+                    action: job_action,
+                };
+                job.path.push(job_point);
+            }
+        }
+    }
 }
 
 pub fn worker_power_assembler(

@@ -21,13 +21,16 @@ impl Plugin for AssembliesPlugin {
                 show_assembly_ghost,
                 hide_assembly_ghost
             ))
+            .add_systems(Update,
+                (produce_goods, add_assembly_power_input)
+            )
             .add_event::<AssemblyPowerInput>()
             .add_event::<HideAssemblyGhost>()
             .add_event::<ShowAssemblyGhost>();
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Clone, Copy)]
 pub enum Power {
     Mechanical(f32),
     Thermal(f32),
@@ -259,10 +262,10 @@ pub struct AssemblyPowerInput {
 
 pub fn add_assembly_power_input(
     mut ev_power_input: EventReader<AssemblyPowerInput>,
-    mut q_assembly: Query<(&Assembly, &mut AssemblyItems)>,
+    mut q_assembly: Query<&mut Assembly>,
 ) {
     for ev in ev_power_input.iter() {
-        if let Ok((assembly, mut assembly_items)) = q_assembly.get_mut(ev.assembly) {
+        if let Ok(mut assembly) = q_assembly.get_mut(ev.assembly) {
             assembly.work = Some(ev.power);
         }
     }
@@ -280,7 +283,7 @@ pub fn produce_goods(
         assembly.work.is_some() {
             // TODO: Check requirements function
             // TODO: Production timer
-            if let (Some(entity), Some(assembly_input), _) = (assembly_items.materials.pop(), &assembly.resource, &ev_power_input.iter()) {
+            if let (Some(entity), Some(assembly_input)) = (assembly_items.materials.pop(), &assembly.resource) {
                 if let Ok(material_item) = q_materials.get(entity) {
                     if assembly_input != material_item {
                         return;
