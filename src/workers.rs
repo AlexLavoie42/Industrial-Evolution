@@ -22,9 +22,13 @@ impl Plugin for WorkerPlugin {
 }
 
 #[derive(Component)]
-pub struct Worker {
-    pub job: Job
+pub struct PowerProduction {
+    pub power: Power,
+    pub output: Option<Entity>
 }
+
+#[derive(Component)]
+pub struct Worker;
 
 pub enum JobAction {
     Work(Power),
@@ -39,6 +43,7 @@ pub struct JobPoint {
 #[derive(Component)]
 pub struct Job {
     pub path: Vec<JobPoint>,
+    pub active: Option<usize>,
     pub complexity: f32
 }
 
@@ -46,16 +51,16 @@ pub struct Job {
 pub struct WorkerBundle {
     pub marker: Worker,
     pub sprite: SpriteBundle,
-    pub movement: Movement
+    pub movement: Movement,
+    pub production: PowerProduction
 }
 impl Default for WorkerBundle {
     fn default() -> WorkerBundle {
         WorkerBundle {
-            marker: Worker {
-                job: Job {
-                    path: vec![],
-                    complexity: 0.0
-                }
+            marker: Worker,
+            production: PowerProduction {
+                power: Power::Mechanical(100.0),
+                output: None
             },
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -160,6 +165,12 @@ pub fn activate_job_mode_on_click(
 
 pub fn job_mode_creation(
 
+) {
+
+}
+
+pub fn worker_power_assembler(
+    
 ) {
 
 }

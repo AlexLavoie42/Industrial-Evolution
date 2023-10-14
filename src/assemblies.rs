@@ -26,6 +26,7 @@ impl Plugin for AssembliesPlugin {
     }
 }
 
+#[derive(Component)]
 pub enum Power {
     Mechanical(f32),
     Thermal(f32),
@@ -39,9 +40,18 @@ pub struct Assembly {
     pub work: Option<Power>
 }
 
+#[derive(Component)]
+pub struct AssemblyItems {
+    pub materials: Vec<Entity>,
+    pub max_materials: usize,
+    pub output: Vec<Entity>,
+    pub max_output: usize
+}
+
 #[derive(Bundle)]
 pub struct AssemblyBundle {
     pub marker: Assembly,
+    pub assembly_items: AssemblyItems,
     pub sprite: SpriteBundle
 }
 impl Default for AssemblyBundle {
@@ -51,6 +61,12 @@ impl Default for AssemblyBundle {
                 production: None,
                 resource: None,
                 work: None
+            },
+            assembly_items: AssemblyItems {
+                materials: Vec::new(),
+                max_materials: 5,
+                output: Vec::new(),
+                max_output: 2
             },
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -229,6 +245,31 @@ pub fn place_assembly(
                 },
                 ..default()
             });
+        }
+    }
+}
+
+pub fn produce_goods(
+    mut commands: Commands,
+    mut q_assembly: Query<(&Assembly, &mut AssemblyItems)>,
+    q_materials: Query<&items::Material, With<Item>>
+) {
+    for (assembly, mut assembly_items) in q_assembly.iter_mut() {
+        if !assembly_items.materials.is_empty() && assembly_items.max_output < assembly_items.output.len() {
+            // TODO: Production timer
+            if let (Some(entity), Ok(material_item), Some(assembly_input)) = (assembly_items.materials.pop(), q_materials.get(entity), &assembly.resource) {
+                if assembly_input != material_item {
+                    return;
+                }
+                commands.entity(entity).despawn();
+                match assembly.production {
+                    Some(Good::Paper) => {
+                        let id = commands.spawn( PaperBundle::default()).id();
+                        assembly_items.output.push(id);
+                    },
+                    None => {}
+                }
+            }
         }
     }
 }

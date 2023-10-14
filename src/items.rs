@@ -9,7 +9,7 @@ pub struct ItemBundle {
     pub sprite: SpriteBundle
 }
 
-#[derive(Component)]
+#[derive(Component, PartialEq)]
 pub enum Material {
     Wood,
     Pulp
