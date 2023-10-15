@@ -41,15 +41,19 @@
     - Mechanical (torque)
         - Used for basic Assemblies
         - Can be produced by Worker with no equipment
+        - Can be automated with engines but difficult & limited (spinning poles)
     - Thermal (temperature)
         - Used for Assemblies that require heat
-        - Requires special equipment for Workers to produce
+        - Produced by assemblies using resources + mechanical power
+        - Must be produced next to assembly
     - Electrical (GJ)
-        - Used to electric Assemblies
-        - Can not be produced by Workers
+        - Used for electric Assemblies
+        - Purchased externally, requires advanced assemblies to transport & use
 
 
 ## Prototype
+
+1 Good per Power stage
 
 - Resources
     - Wood
@@ -101,6 +105,8 @@ The goal of this prototype will be to judge the most basic mechanics and determi
 - Market:
     - Slightly random artificial price increases
     - "Demand" for Goods decreases as you unlock new ones
+
+- Different classes of Items? Could provide unique challenges. e.g. illegal, volatile, etc
 
 
 ## Story / Feelings Ideas
