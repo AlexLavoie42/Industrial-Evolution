@@ -12,15 +12,15 @@ pub struct ItemBundle {
 }
 
 #[derive(Component, PartialEq)]
-pub enum Material {
+pub enum Resource {
     Wood,
     Pulp
 }
 
 #[derive(Bundle)]
-pub struct MaterialBundle {
+pub struct ResourceBundle {
     pub item: Item,
-    pub material: Material,
+    pub resource: Resource,
     pub sprite: SpriteBundle
 }
 
@@ -30,7 +30,7 @@ pub struct Wood;
 #[derive(Bundle)]
 pub struct WoodBundle {
     pub item: Item,
-    pub material: Material,
+    pub resource: Resource,
     pub sprite: SpriteBundle,
     pub marker: Wood
 }
@@ -39,7 +39,7 @@ impl Default for WoodBundle {
         WoodBundle {
             marker: Wood,
             item: Item,
-            material: Material::Wood,
+            resource: Resource::Wood,
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::ORANGE_RED,
@@ -58,7 +58,7 @@ pub struct Pulp;
 #[derive(Bundle)]
 pub struct PulpBundle {
     pub item: Item,
-    pub material: Material,
+    pub resource: Resource,
     pub sprite: SpriteBundle,
     pub marker: Pulp
 }
@@ -67,7 +67,7 @@ impl Default for PulpBundle {
         PulpBundle {
             marker: Pulp,
             item: Item,
-            material: Material::Pulp,
+            resource: Resource::Pulp,
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::OLIVE,

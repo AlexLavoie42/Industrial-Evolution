@@ -41,14 +41,14 @@ pub enum Power {
 #[derive(Component)]
 pub struct Assembly {
     pub production: Option<Good>,
-    pub resource: Option<items::Material>,
+    pub resource: Option<items::Resource>,
     pub work: Option<Power>
 }
 
 #[derive(Component)]
 pub struct AssemblyItems {
-    pub materials: Vec<Entity>,
-    pub max_materials: usize,
+    pub resources: Vec<Entity>,
+    pub max_resources: usize,
     pub output: Vec<Entity>,
     pub max_output: usize
 }
@@ -68,8 +68,8 @@ impl Default for AssemblyBundle {
                 work: None
             },
             assembly_items: AssemblyItems {
-                materials: Vec::new(),
-                max_materials: 5,
+                resources: Vec::new(),
+                max_resources: 5,
                 output: Vec::new(),
                 max_output: 2
             },
@@ -100,7 +100,7 @@ impl Default for PulpMillBundle {
         PulpMillBundle {
             assembly: Assembly {
                 production: Some(Good::Paper),
-                resource: Some(items::Material::Pulp),
+                resource: Some(items::Resource::Pulp),
                 work: Some(Power::Mechanical(10.0))
             },
             marker: PulpMill,
@@ -239,12 +239,11 @@ pub fn place_assembly(
                 sprite: SpriteBundle {
                     transform: Transform {
                         translation: Vec3::new(pos.x, pos.y, -1.0),
-                        ..default()
+                        ..AssemblyBundle::default().sprite.transform
                     },
                     sprite: Sprite {
                         color: Color::YELLOW,
-                        custom_size: Some(Vec2::new(50.0, 50.0)),
-                        ..default()
+                        ..AssemblyBundle::default().sprite.sprite
                     },
                     ..default()
                 },
@@ -275,18 +274,18 @@ pub fn add_assembly_power_input(
 pub fn produce_goods(
     mut commands: Commands,
     mut q_assembly: Query<(&Assembly, &mut AssemblyItems)>,
-    q_materials: Query<&items::Material, With<Item>>,
+    q_resources: Query<&items::Resource, With<Item>>,
 
 ) {
     for (assembly, mut assembly_items) in q_assembly.iter_mut() {
-        if !assembly_items.materials.is_empty() &&
+        if !assembly_items.resources.is_empty() &&
         assembly_items.max_output < assembly_items.output.len() &&
         assembly.work.is_some() {
             // TODO: Check requirements function
             // TODO: Production timer
-            if let (Some(entity), Some(assembly_input)) = (assembly_items.materials.pop(), &assembly.resource) {
-                if let Ok(material_item) = q_materials.get(entity) {
-                    if assembly_input != material_item {
+            if let (Some(entity), Some(assembly_input)) = (assembly_items.resources.pop(), &assembly.resource) {
+                if let Ok(resource_item) = q_resources.get(entity) {
+                    if assembly_input != resource_item {
                         return;
                     }
                     commands.entity(entity).despawn();

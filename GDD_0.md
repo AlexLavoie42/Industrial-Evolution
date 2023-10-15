@@ -7,10 +7,10 @@
 
 - Items
     - Goods
-    - Materials
+    - Resources
     - Equipment (form of Good?)
 - Assemblies
-    - Transform Materials into Goods
+    - Transform Resources into Goods
     - Requires some form of "Work" to operate
     - Reliability, determines how likely the assembly will break when used.
 - Work
@@ -29,7 +29,7 @@
     - Job complexity is measured in amount of steps weighted by the configured complexity for each step (Move item = Path Length, Provide Work = N).
     - Increase complexity with each path collision
     - Each worker can handle a certain amount of complexity until they begin to have a % chance of error. Workers can handle more complexity as they become more skilled.
-    - Errors can cause relevant Materials, Goods, Assemblies or Equipment to break.
+    - Errors can cause relevant Resources, Goods, Assemblies or Equipment to break.
     - Errors can also cause injury which gives penalties.
     - Errors can rarely cause death (increases with Job "danger"? Could be similar but separate from complexity)
     - Lose worker on death & other penalties (Fines, restrictions, loss condition?)
@@ -49,19 +49,7 @@
         - Can not be produced by Workers
 
 
-## Economy
-- Money is the central source of everything in the game.
-- Factory will require upkeep depending on size, assemblies & workers.
-
-- Advanced per Material / Good pricing
-    - Each item can recieve upward & downward market force events
-    - Each event will push the price by a random amount upward or downward respectively
-    - Event are weighted based on the size of the market for each item, so events in smaller markets will have a larger impact.
-- External Market events will be random / scripted to start
-- Selling or Buying will create a market event for that item
-
-## Core Gameplay Loop
-The goal of this prototype will be to judge the most basic mechanics and determine if they are fun enough to be played for a long time with little polish. The core game mechanics will only include the bare minimum amount of mechanics & depth to be considered fun.
+## Prototype
 
 - Resources
     - Wood
@@ -82,3 +70,43 @@ The goal of this prototype will be to judge the most basic mechanics and determi
     - Configurable prices
     - Configurable market events from player interaction
     - Configurable random market events
+
+
+## Economy
+- Money is the central source of everything in the game.
+- Factory will require upkeep depending on size, assemblies & workers.
+
+- Advanced per Resource / Good pricing
+    - Each item can recieve upward & downward market force events
+    - Each event will push the price by a random amount upward or downward respectively
+    - Event are weighted based on the size of the market for each item, so events in smaller markets will have a larger impact.
+- External Market events will be random / scripted to start
+- Selling or Buying will create a market event for that item
+
+
+## Core Gameplay Loop
+The goal of this prototype will be to judge the most basic mechanics and determine if they are fun enough to be played for a long time with little polish. The core game mechanics will only include the bare minimum amount of mechanics & depth to be considered fun.
+
+- Unlock new Assembly
+- Start producing new Good using old Goods and Resources
+- Sell Good for profit
+- Hire Workers and use them to automate new assembly
+- Scale Assembly with automation
+
+## Random Thoughts
+
+- Assembly by-products
+- Multi-step production (Goods cannot be bought (in small quantities manually?), forcing multi-step production)
+- Converging & diverging production lines
+- Market:
+    - Slightly random artificial price increases
+    - "Demand" for Goods decreases as you unlock new ones
+
+
+## Story / Feelings Ideas
+
+- Start poor, daily living expenses that heavily cut into profits. Feeling: Survival, will encourage short term decisions for profit e.g Papers please
+- Beginning to expand, survival is no longer a priority. Need some kind of longer term objective at this point. Feeling: Problem solving, accomplishment. e.g Factorio
+
+- World highlights poverty, and has the player interact with it throughout
+- Interaction with workers while trying to maximize profits for goals

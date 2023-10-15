@@ -11,8 +11,9 @@ impl Plugin for WorkerPlugin {
                 (
                     (place_worker).run_if(in_state(PlayerState::Workers)),
                     input_toggle_worker_mode,
-                    activate_job_mode_on_click,
                     (job_mode_creation).run_if(in_state(PlayerState::Jobs)),
+                    activate_job_mode_on_click,
+                    worker_power_assembler,
                     mouse_collision_system::<Worker>,
                 )
             )
@@ -30,6 +31,12 @@ pub struct PowerProduction {
 
 #[derive(Component)]
 pub struct Worker;
+
+#[derive(Component, PartialEq)]
+pub enum WorkerState {
+    Paused,
+    Working
+}
 
 #[derive(Debug)]
 pub enum JobAction {
@@ -207,6 +214,27 @@ pub fn job_mode_creation(
     }
 }
 
+pub fn worker_do_job(
+    mut q_jobs: Query<(&mut Job, &WorkerState)>,
+) {
+    for (mut job, state) in q_jobs.iter_mut() {
+        if state == &WorkerState::Paused {
+            continue;
+        }
+        if job.path.is_empty() {
+            continue;
+        }
+        if job.active.is_none() {
+            job.active = Some(0);
+        }
+        if let Some(active_i) = job.active {
+            let current_job = &job.path[active_i];
+            // TODO: Timer?
+            
+        }
+    }
+}
+
 pub fn worker_power_assembler(
     q_jobs: Query<(&Job, Entity, &Transform), With<Worker>>,
     q_assemblies: Query<(&Assembly, Entity, &Transform), Without<Worker>>,
@@ -216,7 +244,7 @@ pub fn worker_power_assembler(
         if let Some(current_job_i) = job.active {
             let current_job = &job.path[current_job_i];
             match current_job.action {
-                // TODO: Pathfinding
+                // TODO: Pathfinding & timer
                 JobAction::Work { power, assembly } => {
                     ev_assembly_power.send(AssemblyPowerInput {
                         assembly,

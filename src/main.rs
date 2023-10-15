@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}, ecs::query::ReadOnlyWorldQuery};
+use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}};
 use bevy_ecs_tilemap::prelude::*;
 
 mod player;
@@ -143,11 +143,11 @@ pub struct MouseCollisionEvent {
 }
 
 pub trait MouseCollider: Component {
-    fn check_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision>;
+    fn check_mouse_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision>;
 }
 
 impl<T: Component> MouseCollider for T {
-    fn check_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision> {
+    fn check_mouse_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision> {
         let mouse_vec = Vec3 {
             x: mouse_pos.0.x,
             y: mouse_pos.0.y,
@@ -172,15 +172,12 @@ pub fn mouse_collision_system<T: MouseCollider>(
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
         for (component, transform, sprite, entity) in components.iter() {
-            if let Some(collision) = component.check_collision(&mouse_pos, transform, sprite) {
-                return events.send(MouseCollisionEvent {
+            if let Some(collision) = component.check_mouse_collision(&mouse_pos, transform, sprite) {
+                events.send(MouseCollisionEvent {
                     collision: Some((collision, entity)),
                 });
             }
         }
-        return events.send(MouseCollisionEvent {
-            collision: None
-        });
     }
 }
 
