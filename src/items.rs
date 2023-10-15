@@ -2,8 +2,11 @@ use bevy::ecs::system::EntityCommands;
 
 use crate::*;
 
-#[derive(Component)]
-pub struct Item;
+#[derive(Component, PartialEq)]
+pub enum Item {
+    Good(Good),
+    Resource(Resource)
+}
 
 #[derive(Bundle)]
 pub struct ItemBundle {
@@ -11,10 +14,63 @@ pub struct ItemBundle {
     pub sprite: SpriteBundle
 }
 
+pub trait ItemType<'a, 'w, 's>: Component {
+    fn spawn_bundle(
+        &self,
+        commands: &'a mut Commands<'w, 's>
+    ) -> EntityCommands<'w, 's, 'a>;
+}
+
+pub struct ItemContainer {
+    pub items: Vec<Option<Entity>>,
+    pub max_items: usize,
+}
+
+impl ItemContainer {
+    pub fn new(max_items: usize) -> Self {
+        ItemContainer {
+            items: Vec::new(),
+            max_items,
+        }
+    }
+
+    pub fn add_item(&mut self, item: Option<Entity>) -> Result<(), &'static str> {
+        if self.items.len() >= self.max_items {
+            return Err("Maximum number of items reached");
+        }
+
+        Ok(self.items.push(item))
+    }
+
+    pub fn remove_item(&mut self, index: usize) -> Result<Option<Entity>, &'static str> {
+        if index >= self.items.len() {
+            return Err("Invalid index");
+        }
+
+        Ok(self.items.remove(index))
+    }
+
+    pub fn get_items(&self) -> &[Option<Entity>] {
+        &self.items
+    }
+}
+
 #[derive(Component, PartialEq)]
 pub enum Resource {
     Wood,
     Pulp
+}
+
+impl<'a, 'w, 's> ItemType<'a, 'w, 's> for Resource {
+    fn spawn_bundle(
+        &self,
+        commands: &'a mut Commands<'w, 's>
+    ) -> EntityCommands<'w, 's, 'a> {
+        match self {
+            Resource::Wood => commands.spawn(WoodBundle::default()),
+            Resource::Pulp => commands.spawn(PulpBundle::default())
+        }
+    }
 }
 
 #[derive(Bundle)]
@@ -32,13 +88,13 @@ pub struct WoodBundle {
     pub item: Item,
     pub resource: Resource,
     pub sprite: SpriteBundle,
-    pub marker: Wood
+    pub marker: Wood,
 }
 impl Default for WoodBundle {
     fn default() -> Self {
         WoodBundle {
             marker: Wood,
-            item: Item,
+            item: Item::Resource(Resource::Wood),
             resource: Resource::Wood,
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -66,7 +122,7 @@ impl Default for PulpBundle {
     fn default() -> Self {
         PulpBundle {
             marker: Pulp,
-            item: Item,
+            item: Item::Resource(Resource::Pulp),
             resource: Resource::Pulp,
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -82,25 +138,18 @@ impl Default for PulpBundle {
 
 
 
-#[derive(Component)]
+#[derive(Component, PartialEq)]
 pub enum Good {
     Paper
 }
-pub trait GoodBehavior<'a, 'w, 's> {
-    fn spawn_bundle(
-        &self,
-        commands: &'a mut Commands<'w, 's>
-    ) -> Option<EntityCommands<'w, 's, 'a>>;
-}
 
-impl<'a, 'w, 's> GoodBehavior<'a, 'w, 's> for Good {
+impl<'a, 'w, 's> ItemType<'a, 'w, 's> for Good {
     fn spawn_bundle(
         &self,
         commands: &'a mut Commands<'w, 's>
-    ) -> Option<EntityCommands<'w, 's, 'a>> {
+    ) -> EntityCommands<'w, 's, 'a> {
         match self {
-            Good::Paper => Some(commands.spawn(PaperBundle::default())),
-            _ => None,
+            Good::Paper => commands.spawn(PaperBundle::default())
         }
     }
 }
@@ -126,7 +175,7 @@ impl Default for PaperBundle {
     fn default() -> Self {
         PaperBundle {
             marker: Paper,
-            item: Item,
+            item: Item::Good(Good::Paper),
             good: Good::Paper,
             sprite: SpriteBundle {
                 sprite: Sprite {

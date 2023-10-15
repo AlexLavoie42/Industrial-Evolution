@@ -21,25 +21,6 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'industrial_evolution'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=industrial_evolution",
-                    "--package=industrial_evolution"
-                ],
-                "filter": {
-                    "name": "industrial_evolution",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
         }
     ]
 }

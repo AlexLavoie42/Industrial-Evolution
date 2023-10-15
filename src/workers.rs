@@ -1,5 +1,3 @@
-use bevy::sprite::collide_aabb::{Collision, self};
-
 use crate::*;
 
 pub struct WorkerPlugin;
@@ -14,9 +12,13 @@ impl Plugin for WorkerPlugin {
                     (job_mode_creation).run_if(in_state(PlayerState::Jobs)),
                     activate_job_mode_on_click,
                     worker_power_assembler,
-                    mouse_collision_system::<Worker>,
+                    worker_iterate_job,
                 )
             )
+            .add_systems(Update, 
+                mouse_collision_system::<Worker>
+            )
+            .add_event::<MouseCollisionEvent::<Worker>>()
             .insert_resource(SelectedWorker {
                 selected: None
             });
@@ -31,6 +33,7 @@ pub struct PowerProduction {
 
 #[derive(Component)]
 pub struct Worker;
+impl Clickable for Worker {}
 
 #[derive(Component, PartialEq)]
 pub enum WorkerState {
@@ -119,7 +122,7 @@ pub fn place_worker(
                 sprite: SpriteBundle {
                     transform: Transform {
                         translation: Vec3::new(pos.x, pos.y, -1.0),
-                        ..default()
+                        ..WorkerBundle::default().sprite.transform
                     },
                     ..WorkerBundle::default().sprite
                 },
@@ -153,54 +156,52 @@ pub struct SelectedWorker {
 
 pub fn activate_job_mode_on_click(
     q_worker: Query<Entity, With<Worker>>,
-    mut mouse_collision: EventReader<MouseCollisionEvent>,
+    mut mouse_collision: EventReader<MouseCollisionEvent<Worker>>,
+    input: Res<Input<MouseButton>>,
     player_state: Res<State<PlayerState>>,
     mut worker_selection: ResMut<SelectedWorker>,
     mut next_state: ResMut<NextState<PlayerState>>
     
 ) {
     if player_state.get() == &PlayerState::None {
-        for ev in mouse_collision.iter() {
-            if let Some((_, entity)) = ev.collision {
-                if let Ok(worker_entity) = q_worker.get(entity) {
-                    worker_selection.selected = Some(worker_entity);
-                    next_state.set(PlayerState::Jobs);
-                    println!("Worker {} selected", worker_entity.index());
+        if input.just_pressed(MouseButton::Left) {
+            for ev in mouse_collision.iter() {
+                if let Some((_, entity)) = ev.collision {
+                    if let Ok(worker_entity) = q_worker.get(entity) {
+                        worker_selection.selected = Some(worker_entity);
+                        next_state.set(PlayerState::Jobs);
+                        println!("Worker {} selected", worker_entity.index());
+                    }
                 }
             }
         }
-
     }
 }
 
 pub fn job_mode_creation(
-    mut mouse_collision: EventReader<MouseCollisionEvent>,
+    mut mouse_collision: EventReader<MouseCollisionEvent<Assembly>>,
     mouse_input: Res<Input<MouseButton>>,
     mouse_pos: Res<MousePos>,
     selected_worker: Res<SelectedWorker>,
     mut q_worker: Query<&mut Job, With<Worker>>,
-    q_assembly: Query<(Entity, &Transform, &Sprite, &Assembly)>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
+        let click_ev = mouse_collision.iter().next().clone();
         if let Some(worker_entity) = selected_worker.selected {
             if let Ok(mut job) = q_worker.get_mut(worker_entity) {
-                let mut selected_assembly: Option<Entity> = None;
-                for event in mouse_collision.iter() {
-                    if let Some((_, entity)) = event.collision {
-                        selected_assembly = Some(entity);
+                if let Some(ev) = click_ev {
+                    if let Some((_, entity)) = ev.collision {
+                        let power: Power = Power::Mechanical(100.0);
+                        let action = JobAction::Work {
+                            power,
+                            assembly: entity,
+                        };
+                        let job_point = JobPoint {
+                            point: mouse_pos.0,
+                            action,
+                        };
+                        job.path.push(job_point);
                     }
-                }
-                if let Some(entity) = selected_assembly {
-                    let power = Power::Mechanical(100.0);
-                    let action = JobAction::Work {
-                        power,
-                        assembly: entity,
-                    };
-                    let job_point = JobPoint {
-                        point: mouse_pos.0,
-                        action,
-                    };
-                    job.path.push(job_point);
                 } else {
                     let job_point = JobPoint {
                         point: mouse_pos.0,
@@ -214,7 +215,7 @@ pub fn job_mode_creation(
     }
 }
 
-pub fn worker_do_job(
+pub fn worker_iterate_job(
     mut q_jobs: Query<(&mut Job, &WorkerState)>,
 ) {
     for (mut job, state) in q_jobs.iter_mut() {
@@ -229,8 +230,6 @@ pub fn worker_do_job(
         }
         if let Some(active_i) = job.active {
             let current_job = &job.path[active_i];
-            // TODO: Timer?
-            
         }
     }
 }

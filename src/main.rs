@@ -13,6 +13,9 @@ use workers::*;
 mod items;
 use items::*;
 
+mod utils;
+use utils::*;
+
 const GRID_SIZE: TilemapSize = TilemapSize { x: 100, y: 100 };
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
@@ -34,151 +37,10 @@ fn main() {
         .add_systems(FixedUpdate, player_movement)
         .add_systems(Update, camera_follow)
         .add_state::<PlayerState>()
-        .add_systems(Update, (set_mouse_pos_res, set_mouse_tile_res))
+        .add_systems(PreUpdate, (set_mouse_pos_res, set_mouse_tile_res))
         .insert_resource(MousePos(Vec2::ZERO))
         .insert_resource(MouseTile(TilePos::new(0, 0)))
-        .add_event::<MouseCollisionEvent>()
         .run();
-}
-
-#[derive(Resource)]
-pub struct MousePos(Vec2);
-
-#[derive(Resource)]
-pub struct MouseTile(TilePos);
-
-pub fn set_mouse_pos_res(
-    mut mouse_pos: ResMut<MousePos>,
-    q_window: Query<&Window, With<PrimaryWindow>>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-) {
-    let window = q_window.single();
-    let (camera, camera_transform) = q_camera.single();
-    if let Some(pos) = get_mouse_world_pos(&window, &camera, &camera_transform) {
-        mouse_pos.0 = pos;
-    }
-}
-
-pub fn set_mouse_tile_res(
-    mut mouse_tile: ResMut<MouseTile>,
-    q_window: Query<&Window, With<PrimaryWindow>>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    tilemap_q: Query<(
-        &TilemapSize,
-        &TilemapGridSize,
-        &TilemapType,
-        &Transform
-    )>
-) {
-    let window = q_window.single();
-    let (camera, camera_transform) = q_camera.single();
-    let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
-    if let Some(tile_pos) = get_mouse_tile(
-        &window,
-        &camera,
-        &camera_transform,
-        &tilemap_size,
-        &grid_size,
-        &map_type,
-        &map_transform
-    ) {
-        mouse_tile.0 = tile_pos;
-    }
-}
-
-pub fn get_mouse_world_pos(window: &Window, camera: &Camera, camera_transform: &GlobalTransform) -> Option<Vec2> {
-    window.cursor_position()
-            .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor))
-}
-
-pub fn get_mouse_tile(
-    window: &Window,
-    camera: &Camera,
-    camera_transform: &GlobalTransform,
-    tilemap_size: &TilemapSize,
-    grid_size: &TilemapGridSize,
-    map_type: &TilemapType,
-    map_transform: &Transform
-) -> Option<TilePos> {
-    if let Some(cursor_pos) = get_mouse_world_pos(window, camera, camera_transform) {
-        // Once we have a world position we can transform it into a possible tile position.
-        let cursor_in_map_pos: Vec2 = {
-            // Extend the cursor_pos vec3 by 0.0 and 1.0
-            let cursor_pos = Vec4::from((cursor_pos, 0.0, 1.0));
-            let cursor_in_map_pos = map_transform.compute_matrix().inverse() * cursor_pos;
-            Vec2 {
-                x: cursor_in_map_pos.x,
-                y: cursor_in_map_pos.y,
-            }
-        };
-        if let Some(tile_pos) =
-            TilePos::from_world_pos(&cursor_in_map_pos, tilemap_size, grid_size, map_type)
-        {
-            return Some(tile_pos);
-        } else {
-            return None;
-        }
-    } else {
-        return None;
-    }
-}
-
-pub fn get_tile_world_pos(
-    position: &TilePos,
-    map_transform: &Transform,
-    grid_size: &TilemapGridSize,
-    map_type: &TilemapType
-) -> Vec2 {
-    let pos = Vec4::from((position.center_in_world(grid_size, map_type), 0.0, 1.0));
-    let world_pos = map_transform.compute_matrix() * pos;
-    Vec2 {
-        x: world_pos.x,
-        y: world_pos.y,
-    }
-}
-
-#[derive(Event)]
-pub struct MouseCollisionEvent {
-    pub collision: Option<(Collision, Entity)>,
-}
-
-pub trait MouseCollider: Component {
-    fn check_mouse_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision>;
-}
-
-impl<T: Component> MouseCollider for T {
-    fn check_mouse_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision> {
-        let mouse_vec = Vec3 {
-            x: mouse_pos.0.x,
-            y: mouse_pos.0.y,
-            z: 0.0,
-        };
-        // TODO: Proper size / proper colliders / tilemap collision?
-        let mouse_collision = collide_aabb::collide(
-            transform.translation,
-            sprite.custom_size.unwrap(),
-            mouse_vec,
-            Vec2 { x: 1.0, y: 1.0 },
-        );
-        return mouse_collision;
-    }
-}
-
-pub fn mouse_collision_system<T: MouseCollider>(
-    components: Query<(&T, &Transform, &Sprite, Entity)>,
-    mouse_pos: Res<MousePos>,
-    mouse_input: Res<Input<MouseButton>>,
-    mut events: EventWriter<MouseCollisionEvent>,
-) {
-    if mouse_input.just_pressed(MouseButton::Left) {
-        for (component, transform, sprite, entity) in components.iter() {
-            if let Some(collision) = component.check_mouse_collision(&mouse_pos, transform, sprite) {
-                events.send(MouseCollisionEvent {
-                    collision: Some((collision, entity)),
-                });
-            }
-        }
-    }
 }
 
 #[derive(Component)]
