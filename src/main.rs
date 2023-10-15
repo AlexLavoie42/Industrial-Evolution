@@ -173,12 +173,14 @@ pub fn mouse_collision_system<T: MouseCollider>(
     if mouse_input.just_pressed(MouseButton::Left) {
         for (component, transform, sprite, entity) in components.iter() {
             if let Some(collision) = component.check_collision(&mouse_pos, transform, sprite) {
-                events.send(MouseCollisionEvent {
+                return events.send(MouseCollisionEvent {
                     collision: Some((collision, entity)),
                 });
-                break;
             }
         }
+        return events.send(MouseCollisionEvent {
+            collision: None
+        });
     }
 }
 

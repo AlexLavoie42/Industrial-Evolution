@@ -31,6 +31,7 @@ pub struct PowerProduction {
 #[derive(Component)]
 pub struct Worker;
 
+#[derive(Debug)]
 pub enum JobAction {
     Work {
         power: Power,
@@ -39,12 +40,13 @@ pub enum JobAction {
     Idle(f32)
 }
 
+#[derive(Debug)]
 pub struct JobPoint {
     pub point: Vec2,
     pub action: JobAction
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Job {
     pub path: Vec<JobPoint>,
     pub active: Option<usize>,
@@ -54,6 +56,7 @@ pub struct Job {
 #[derive(Bundle)]
 pub struct WorkerBundle {
     pub marker: Worker,
+    pub job: Job,
     pub sprite: SpriteBundle,
     pub movement: Movement,
     pub production: PowerProduction
@@ -62,6 +65,11 @@ impl Default for WorkerBundle {
     fn default() -> WorkerBundle {
         WorkerBundle {
             marker: Worker,
+            job: Job {
+                path: Vec::new(),
+                active: None,
+                complexity: 0.0
+            },
             production: PowerProduction {
                 power: Power::Mechanical(100.0),
                 output: None
@@ -168,31 +176,32 @@ pub fn job_mode_creation(
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
         if let Some(worker_entity) = selected_worker.selected {
-            for event in mouse_collision.iter() {
-                if let Some((_, entity)) = event.collision {
-                    if let Ok(_) = q_assembly.get(entity) {
-                        let power = Power::Mechanical(100.0);
-                        let action = JobAction::Work {
-                            power,
-                            assembly: entity,
-                        };
-                        let job_point = JobPoint {
-                            point: mouse_pos.0,
-                            action,
-                        };
-                        if let Ok(mut job) = q_worker.get_mut(worker_entity) {
-                            job.path.push(job_point);
-                        }
+            if let Ok(mut job) = q_worker.get_mut(worker_entity) {
+                let mut selected_assembly: Option<Entity> = None;
+                for event in mouse_collision.iter() {
+                    if let Some((_, entity)) = event.collision {
+                        selected_assembly = Some(entity);
                     }
+                }
+                if let Some(entity) = selected_assembly {
+                    let power = Power::Mechanical(100.0);
+                    let action = JobAction::Work {
+                        power,
+                        assembly: entity,
+                    };
+                    let job_point = JobPoint {
+                        point: mouse_pos.0,
+                        action,
+                    };
+                    job.path.push(job_point);
                 } else {
                     let job_point = JobPoint {
                         point: mouse_pos.0,
                         action: JobAction::Idle(0.0),
                     };
-                    if let Ok(mut job) = q_worker.get_mut(worker_entity) {
-                        job.path.push(job_point);
-                    }
+                    job.path.push(job_point);
                 }
+                println!("Job: {:?}", job);
             }
         }
     }
