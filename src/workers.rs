@@ -52,7 +52,7 @@ pub enum JobAction {
 
 #[derive(Debug)]
 pub struct JobPoint {
-    pub point: Vec2,
+    pub point: TilePos,
     pub action: JobAction
 }
 
@@ -60,7 +60,7 @@ pub struct JobPoint {
 pub struct Job {
     pub path: Vec<JobPoint>,
     pub active: Option<usize>,
-    pub complexity: f32
+    pub complexity: f32,
 }
 
 #[derive(Bundle)]
@@ -78,7 +78,7 @@ impl Default for WorkerBundle {
             job: Job {
                 path: Vec::new(),
                 active: None,
-                complexity: 0.0
+                complexity: 0.0,
             },
             production: PowerProduction {
                 power: Power::Mechanical(100.0),
@@ -92,7 +92,7 @@ impl Default for WorkerBundle {
                 },
                 ..default()
             },
-            movement: Movement { speed_x: 1.25, speed_y: 1.25 }
+            movement: Movement { speed_x: 1.25, speed_y: 1.25, input: None },
         }
     }
 }
@@ -181,7 +181,7 @@ pub fn activate_job_mode_on_click(
 pub fn job_mode_creation(
     mut mouse_collision: EventReader<MouseCollisionEvent<Assembly>>,
     mouse_input: Res<Input<MouseButton>>,
-    mouse_pos: Res<MousePos>,
+    mouse_pos: Res<MouseTile>,
     selected_worker: Res<SelectedWorker>,
     mut q_worker: Query<&mut Job, With<Worker>>,
 ) {
@@ -253,6 +253,24 @@ pub fn worker_power_assembler(
                 },
                 JobAction::Idle(_) => {}
             };
+        }
+    }
+}
+
+pub fn worker_path_to_next_job(
+    q_workers: Query<(&Job, Entity, &Transform), With<Worker>>,
+    q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage)>,
+) {
+    let (map_size, grid_size, map_type, tile_storage) = q_tilemap.single();
+    for (job, worker_entity, transform) in q_workers.iter() {
+        for job_point in &job.path {
+            let worker_pos = Vec2 {
+                x: transform.translation.x,
+                y: transform.translation.y,
+            };
+            if let Some(tile_pos) = TilePos::from_world_pos(&worker_pos, map_size, grid_size, map_type) {
+                
+            }
         }
     }
 }

@@ -11,25 +11,34 @@ pub struct PlayerBundle {
     pub camera_follow: CameraFollow
 }
 
-pub fn player_movement(mut query: Query<(&mut Transform, &Movement), With<Player>>, keys: Res<Input<KeyCode>>) {
-    let (mut transform, movement) = query.single_mut();
-    let input: Vec3 = Vec3 {
+pub fn player_movement(mut query: Query<&mut Movement, With<Player>>, keys: Res<Input<KeyCode>>) {
+    let mut movement = query.single_mut();
+    let input = Vec2 {
         x: if keys.pressed(KeyCode::A) { -1.0 } else if keys.pressed(KeyCode::D) { 1.0 } else { 0.0 },
-        y: if keys.pressed(KeyCode::S) { -1.0 } else if keys.pressed(KeyCode::W) { 1.0 } else { 0.0 },
-        z: transform.translation.z
+        y: if keys.pressed(KeyCode::S) { -1.0 } else if keys.pressed(KeyCode::W) { 1.0 } else { 0.0 }
     };
-    let mut movement: Vec3 = Vec3 {
-        x: input.x * movement.speed_x,
-        y: input.y * movement.speed_y,
-        z: transform.translation.z
-    };
-    let abs_x = input.x.abs();
-    let abs_y = input.y.abs();
-    if abs_x == 1.0 && abs_y == 1.0 {
-        movement.x = if movement.x > 0.0 { movement.x.abs().sqrt() } else { -movement.x.abs().sqrt() };
-        movement.y = if movement.y > 0.0 { movement.y.abs().sqrt() } else { -movement.y.abs().sqrt() };
+    movement.input = Some(input);
+}
+
+pub fn move_entities (
+    mut q_movement: Query<(&Movement, &mut Transform)>,
+) {
+    for (Movement { input, speed_x, speed_y }, mut transform) in q_movement.iter_mut() {
+        if let Some(input) = input {
+            let mut movement: Vec3 = Vec3 {
+                x: input.x * speed_x,
+                y: input.y * speed_y,
+                z: transform.translation.z
+            };
+            let abs_x = input.x.abs();
+            let abs_y = input.y.abs();
+            if abs_x == 1.0 && abs_y == 1.0 {
+                movement.x = if movement.x > 0.0 { movement.x.abs().sqrt() } else { -movement.x.abs().sqrt() };
+                movement.y = if movement.y > 0.0 { movement.y.abs().sqrt() } else { -movement.y.abs().sqrt() };
+            }
+            transform.translation += movement;
+        }
     }
-    transform.translation += movement;
 }
 
 #[derive(Component)]
@@ -49,7 +58,9 @@ impl CameraFollow {
 #[derive(Component)]
 pub struct Movement {
     pub speed_x: f32,
-    pub speed_y: f32
+    pub speed_y: f32,
+    
+    pub input: Option<Vec2>
 }
 
 pub fn camera_follow(

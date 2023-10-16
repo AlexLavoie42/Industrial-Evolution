@@ -1,5 +1,6 @@
 use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}};
 use bevy_ecs_tilemap::prelude::*;
+use pathfinding::prelude::astar;
 
 mod player;
 use player::*;
@@ -34,13 +35,46 @@ fn main() {
         .add_plugins(AssembliesPlugin)
         .add_plugins(WorkerPlugin)
         .add_systems(Startup, factory_setup)
-        .add_systems(FixedUpdate, player_movement)
+        .add_systems(FixedUpdate, (player_movement, move_entities))
         .add_systems(Update, camera_follow)
         .add_state::<PlayerState>()
         .add_systems(PreUpdate, (set_mouse_pos_res, set_mouse_tile_res))
         .insert_resource(MousePos(Vec2::ZERO))
         .insert_resource(MouseTile(TilePos::new(0, 0)))
         .run();
+}
+
+#[derive(Component, Debug)]
+pub struct Path (Vec<TilePos>);
+
+#[derive(Component)]
+pub struct TileMapCollision;
+
+#[derive(Component)]
+pub struct SolidEntity;
+
+pub fn set_tilemap_collisions (
+    mut commands: Commands,
+    q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage)>,
+    q_collisions: Query<(Entity, &TilePos), With<TileMapCollision>>,
+    q_solid: Query<&Transform, With<SolidEntity>>,
+) {
+    for (entity, _) in q_collisions.iter() {
+        commands.entity(entity).remove::<TileMapCollision>();
+    }
+    for transform in q_solid.iter() {
+        let world_pos = Vec2 {
+            x: transform.translation.x,
+            y: transform.translation.y
+        };
+        let (map_size, grid_size, map_type, tile_storage) = q_tilemap.single();
+        // TODO: Multi-tile entities
+        if let Some(tile_pos) = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type) {
+            if let Some(tile) = tile_storage.get(&tile_pos) {
+                commands.entity(tile).insert(TileMapCollision);
+            }
+        }
+    }
 }
 
 #[derive(Component)]
@@ -54,7 +88,23 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let tilemap_entity = commands.spawn_empty().id();
     let mut tile_storage = TileStorage::empty(GRID_SIZE);
 
-    helpers::filling::fill_tilemap(TileTextureIndex(8), GRID_SIZE, TilemapId(tilemap_entity), &mut commands, &mut tile_storage);
+    let tilemap_id = TilemapId(tilemap_entity);
+    commands.entity(tilemap_id.0).with_children(|parent| {
+        for x in 0..GRID_SIZE.x {
+            for y in 0..GRID_SIZE.y {
+                let tile_pos = TilePos { x, y };
+                let tile_entity = parent
+                    .spawn(TileBundle {
+                        position: tile_pos,
+                        tilemap_id,
+                        texture_index: TileTextureIndex(8),
+                        ..Default::default()
+                    })
+                    .id();
+                tile_storage.set(&tile_pos, tile_entity);
+            }
+        }
+    });
 
     let tile_size: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
     let grid_size: TilemapGridSize = tile_size.into();
@@ -74,7 +124,7 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(PlayerBundle {
         marker: Player,
         camera_follow: CameraFollow::default(),
-        movement: Movement { speed_x: 2.0, speed_y: 2.0 },
+        movement: Movement { speed_x: 2.0, speed_y: 2.0, input: None },
         sprite: SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(18.0, 25.0)),

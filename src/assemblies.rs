@@ -59,6 +59,7 @@ pub struct AssemblyPower(Option<Power>);
 #[derive(Bundle)]
 pub struct AssemblyBundle {
     pub marker: Assembly,
+    pub solid: SolidEntity,
     pub assembly_items: AssemblyItemContainer,
     pub sprite: SpriteBundle
 }
@@ -66,6 +67,7 @@ impl Default for AssemblyBundle {
     fn default() -> AssemblyBundle {
         AssemblyBundle {
             marker: Assembly,
+            solid: SolidEntity,
             assembly_items: AssemblyItemContainer {
                 input: ItemContainer {
                     items: Vec::new(),
@@ -94,18 +96,14 @@ pub struct PulpMill;
 
 #[derive(Bundle)]
 pub struct PulpMillBundle {
-    pub assembly: Assembly,
-    pub sprite: SpriteBundle,
+    pub assembly: AssemblyBundle,
     pub marker: PulpMill
 }
 impl Default for PulpMillBundle {
     fn default() -> PulpMillBundle {
         PulpMillBundle {
-            assembly: Assembly,
+            assembly: AssemblyBundle::default(),
             marker: PulpMill,
-            sprite: SpriteBundle {
-                ..default()
-            },
         }
     }
 }
