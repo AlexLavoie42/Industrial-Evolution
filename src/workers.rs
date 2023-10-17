@@ -1,3 +1,5 @@
+use bevy_ecs_tilemap::helpers::square_grid::neighbors::Neighbors;
+
 use crate::*;
 
 pub struct WorkerPlugin;
@@ -61,6 +63,14 @@ pub struct Job {
     pub path: Vec<JobPoint>,
     pub active: Option<usize>,
     pub complexity: f32,
+    pub status: JobStatus
+}
+
+#[derive(Component, Debug, PartialEq)]
+pub enum JobStatus {
+    Active,
+    Completed,
+    None
 }
 
 #[derive(Bundle)]
@@ -79,6 +89,7 @@ impl Default for WorkerBundle {
                 path: Vec::new(),
                 active: None,
                 complexity: 0.0,
+                status: JobStatus::None
             },
             production: PowerProduction {
                 power: Power::Mechanical(100.0),
@@ -230,6 +241,9 @@ pub fn worker_iterate_job(
         }
         if let Some(active_i) = job.active {
             let current_job = &job.path[active_i];
+            if job.status == JobStatus::Completed {
+                job.active = Some(active_i + 1);
+            }
         }
     }
 }
@@ -257,19 +271,66 @@ pub fn worker_power_assembler(
     }
 }
 
+#[derive(Component)]
+pub struct MoveToTile {
+    pub target: TilePos,
+    pub path: Option<Vec<TilePos>>
+}
+
+pub fn move_to_tile(
+    q_move: Query<(&MoveToTile, &Movement, Entity, &Transform)>,
+    q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage)>,
+    q_open_tiles: Query<&TilePos, Without<TileMapCollision>>,
+) {
+    let (map_size, grid_size, map_type, tile_storage) = q_tilemap.single();
+    let tiles = q_open_tiles.iter().collect::<Vec<_>>();
+    for (move_to_tile, movement, worker_entity, transform) in q_move.iter() {
+        if let Some(tile_pos) = TilePos::from_world_pos(
+            &Vec2 { x: transform.translation.x, y: transform.translation.y }, 
+            map_size, 
+            grid_size, 
+            map_type
+        ) {
+            if tile_pos != move_to_tile.target {
+                if move_to_tile.path.is_empty() {
+                    let successors   = |pos| {
+                        let neighbors = Neighbors::get_square_neighboring_positions(pos, map_size, true).iter().collect::<Vec<_>>();
+                        neighbors.into_iter()
+                    };
+                    let distance = |pos: &TilePos| {
+                        Vec2::new(pos.x as f32, pos.y as f32).distance(Vec2::new(move_to_tile.target.x as f32, move_to_tile.target.y as f32))
+                    };
+                    if let Some(path) = astar(
+                        &tile_pos, 
+                        successors,
+                        distance,
+                        |pos| {
+                            pos == &move_to_tile.target
+                        }
+                    ) {
+                        
+                    }
+                }
+            }
+        }
+    }
+}
+
 pub fn worker_path_to_next_job(
-    q_workers: Query<(&Job, Entity, &Transform), With<Worker>>,
+    q_workers: Query<(&Job, Entity, &Transform, &mut MoveToTile), With<Worker>>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage)>,
 ) {
     let (map_size, grid_size, map_type, tile_storage) = q_tilemap.single();
-    for (job, worker_entity, transform) in q_workers.iter() {
+    for (job, worker_entity, transform, mut movement) in q_workers.iter_mut() {
         for job_point in &job.path {
             let worker_pos = Vec2 {
                 x: transform.translation.x,
                 y: transform.translation.y,
             };
             if let Some(tile_pos) = TilePos::from_world_pos(&worker_pos, map_size, grid_size, map_type) {
-                
+                if job_point.point != tile_pos {
+                    
+                }
             }
         }
     }
