@@ -1,6 +1,3 @@
-use bevy_ecs_tilemap::helpers::square_grid::neighbors::Neighbors;
-use pathfinding::directed;
-
 use crate::*;
 
 pub struct WorkerPlugin;
@@ -18,7 +15,9 @@ impl Plugin for WorkerPlugin {
                     worker_iterate_job,
                     move_towards_path,
                     set_path_to_tile,
-                    worker_path_to_next_job
+                    iterate_path,
+                    worker_path_to_next_job,
+                    toggle_worker_state
                 )
             )
             .add_systems(Update, 
@@ -66,8 +65,7 @@ pub struct JobPoint {
 pub struct Job {
     pub path: Vec<JobPoint>,
     pub active: Option<usize>,
-    pub complexity: f32,
-    pub status: JobStatus
+    pub complexity: f32
 }
 
 #[derive(Component, Debug, PartialEq)]
@@ -81,6 +79,7 @@ pub enum JobStatus {
 pub struct WorkerBundle {
     pub marker: Worker,
     pub job: Job,
+    pub job_status: JobStatus,
     pub sprite: SpriteBundle,
     pub movement: Movement,
     pub pathfinding: MoveToTile,
@@ -93,9 +92,9 @@ impl Default for WorkerBundle {
             job: Job {
                 path: Vec::new(),
                 active: None,
-                complexity: 0.0,
-                status: JobStatus::None
+                complexity: 0.0
             },
+            job_status: JobStatus::None,
             production: PowerProduction {
                 power: Power::Mechanical(100.0),
                 output: None
@@ -109,7 +108,7 @@ impl Default for WorkerBundle {
                 ..default()
             },
             movement: Movement { speed_x: 1.25, speed_y: 1.25, input: None },
-            pathfinding: MoveToTile { target: None, path: None }
+            pathfinding: MoveToTile { target: None, path: None, path_i: 0 }
         }
     }
 }
@@ -209,7 +208,7 @@ pub fn job_mode_creation(
                 if let Some(ev) = click_ev {
                     if let Some((_, entity)) = ev.collision {
                         let power: Power = Power::Mechanical(100.0);
-                        let action = JobAction::Work {
+                        let action: JobAction = JobAction::Work {
                             power,
                             assembly: entity,
                         };
@@ -233,9 +232,9 @@ pub fn job_mode_creation(
 }
 
 pub fn worker_iterate_job(
-    mut q_jobs: Query<(&mut Job, &WorkerState)>,
+    mut q_jobs: Query<(&mut Job, &JobStatus, &WorkerState)>,
 ) {
-    for (mut job, state) in q_jobs.iter_mut() {
+    for (mut job, job_status,  state) in q_jobs.iter_mut() {
         if state == &WorkerState::Paused {
             continue;
         }
@@ -247,7 +246,7 @@ pub fn worker_iterate_job(
         }
         if let Some(active_i) = job.active {
             let current_job = &job.path[active_i];
-            if job.status == JobStatus::Completed {
+            if job_status == &JobStatus::Completed {
                 job.active = Some(active_i + 1);
             }
         }
@@ -277,71 +276,6 @@ pub fn worker_power_assembler(
     }
 }
 
-#[derive(Component)]
-pub struct MoveToTile {
-    pub target: Option<TilePos>,
-    pub path: Option<Vec<TilePos>>
-}
-
-pub fn move_towards_path(
-    mut q_move: Query<(&MoveToTile, &mut Movement, &Transform)>,
-) {
-    for (move_to_tile, mut movement, transform) in q_move.iter_mut() {
-        if let Some(path) = &move_to_tile.path {
-            if !path.is_empty() {
-                let direction = Vec2::new(path[0].x as f32, path[0].y as f32) - Vec2::new(transform.translation.x, transform.translation.y);
-                movement.input = Some(direction.normalize());
-            }
-        }
-    }
-}
-
-pub fn set_path_to_tile(
-    mut q_move: Query<(&mut MoveToTile, &Transform)>,
-    q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType,)>,
-    q_open_tiles: Query<&TilePos, Without<TileMapCollision>>,
-) {
-    let (map_size, grid_size, map_type ) = q_tilemap.single();
-    let open_tiles = q_open_tiles.iter().collect::<Vec<_>>();
-    for (mut move_to_tile, transform) in q_move.iter_mut() {
-        if let (Some(tile_pos), Some(target)) = (TilePos::from_world_pos(
-            &Vec2 { x: transform.translation.x, y: transform.translation.y }, 
-            map_size, 
-            grid_size, 
-            map_type
-        ), move_to_tile.target) {
-            if tile_pos != target {
-                if move_to_tile.path.is_none() {
-                    move_to_tile.path = Some(Vec::new());
-                }
-                if let Some(move_path) = move_to_tile.path.as_mut() {
-                    if !move_path.is_empty() { continue; };
-                    let successors   = |pos: &TilePos| {
-                        let neighbors = Neighbors::get_square_neighboring_positions(pos, map_size, true)
-                            .iter()
-                            .cloned()
-                            .collect::<Vec<_>>();
-                        neighbors.into_iter().map(|p| (p.clone(), 1)).collect::<Vec<_>>()
-                    };
-                    let distance = |pos: &TilePos| {
-                        Vec2::new(pos.x as f32, pos.y as f32).distance(Vec2::new(target.x as f32, target.y as f32)) as u32
-                    };
-                    if let Some(path) = astar(
-                        &tile_pos, 
-                        successors,
-                        distance,
-                        |pos| {
-                            pos == &target
-                        }
-                    ) {
-                        move_to_tile.path = Some(path.0);
-                    }
-                } 
-            }
-        }
-    }
-}
-
 pub fn worker_path_to_next_job(
     mut q_workers: Query<(&Job, Entity, &Transform, &mut MoveToTile), With<Worker>>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage)>,
@@ -355,7 +289,28 @@ pub fn worker_path_to_next_job(
             };
             if let Some(tile_pos) = TilePos::from_world_pos(&worker_pos, map_size, grid_size, map_type) {
                 if job_point.point != tile_pos {
-                    movement.target = Some(tile_pos);
+                    movement.target = Some(job_point.point);
+                }
+            }
+        }
+    }
+}
+
+pub fn toggle_worker_state(
+    mut q_job_status: Query<&JobStatus>,
+    mut ev_mouse_collision: EventReader<MouseCollisionEvent<Worker>>,
+    input: Res<Input<KeyCode>>
+) {
+    if input.just_pressed(KeyCode::Space) {
+        for ev in ev_mouse_collision.iter() {
+            if let Some((_, entity)) = ev.collision {
+                if let Ok(mut job_status) = q_job_status.get_mut(entity) {
+                    if job_status == &JobStatus::Active {
+                        job_status = &JobStatus::None;
+                    } else {
+                        job_status = &JobStatus::Active;
+                    }
+                    println!("Job status: {:?}", job_status);
                 }
             }
         }

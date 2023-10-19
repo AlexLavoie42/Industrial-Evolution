@@ -14,6 +14,9 @@ use workers::*;
 mod items;
 use items::*;
 
+mod tile_pathfinding;
+use tile_pathfinding::*;
+
 mod utils;
 use utils::*;
 

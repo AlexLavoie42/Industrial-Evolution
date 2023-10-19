@@ -100,6 +100,18 @@ pub fn get_tile_world_pos(
     }
 }
 
+pub fn get_world_pos(
+    pos: Vec2,
+    map_transform: &Transform,
+) -> Vec2 {
+    let pos4 = Vec4::from((pos, 0.0, 1.0));
+    let map_pos = map_transform.compute_matrix().inverse() * pos4;
+    Vec2 {
+        x: map_pos.x,
+        y: map_pos.y,
+    }
+}
+
 #[derive(Event, Debug)]
 pub struct MouseCollisionEvent<T: Component> {
     pub collision: Option<(Collision, Entity)>,

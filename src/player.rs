@@ -1,3 +1,7 @@
+use std::f32::consts::SQRT_2;
+
+use pathfinding::num_traits::{Float, FloatConst};
+
 use crate::*;
 
 #[derive(Component)]
@@ -24,17 +28,19 @@ pub fn move_entities (
     mut q_movement: Query<(&Movement, &mut Transform)>,
 ) {
     for (Movement { input, speed_x, speed_y }, mut transform) in q_movement.iter_mut() {
-        if let Some(input) = input {
+        if let Some(input_vec) = input {
+            let Vec2 { x, y } = input_vec.normalize_or_zero();
             let mut movement: Vec3 = Vec3 {
-                x: input.x * speed_x,
-                y: input.y * speed_y,
-                z: transform.translation.z
+                x: x * speed_x,
+                y: y * speed_y,
+                z: 0.0
             };
-            let abs_x = input.x.abs();
-            let abs_y = input.y.abs();
+            let abs_x = x.abs();
+            let abs_y = y.abs();
             if abs_x == 1.0 && abs_y == 1.0 {
-                movement.x = if movement.x > 0.0 { movement.x.abs().sqrt() } else { -movement.x.abs().sqrt() };
-                movement.y = if movement.y > 0.0 { movement.y.abs().sqrt() } else { -movement.y.abs().sqrt() };
+                let dist = abs_x / SQRT_2;
+                movement.x = dist * movement.x.signum();
+                movement.y = dist * movement.y.signum();
             }
             transform.translation += movement;
         }
