@@ -32,18 +32,16 @@ pub fn iterate_path(
     let (map_size, grid_size, map_type, map_transform) = q_tilemap.single();
     for (mut move_to_tile, transform) in q_move.iter_mut() {
         let world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
-        if let (Some(tile_pos), Some(target)) = (TilePos::from_world_pos(
+        if let (Some(tile_pos), Some(target), Some(path)) = (TilePos::from_world_pos(
             &Vec2 { x: world_pos.x, y: world_pos.y }, 
             map_size, 
             grid_size, 
             map_type
-        ), move_to_tile.target) {
-            if let Some(path) = &move_to_tile.path {
-                if tile_pos == target && path.len() > move_to_tile.path_i + 1 {
-                    move_to_tile.path_i += 1;
-                } else if tile_pos == target {
-                    move_to_tile.path = None;
-                }
+        ), move_to_tile.target, &move_to_tile.path) {
+            if tile_pos == path[move_to_tile.path_i] && path.len() > move_to_tile.path_i + 1 {
+                move_to_tile.path_i += 1;
+            } else if tile_pos == target {
+                move_to_tile.path = None;
             }
         }
     }
