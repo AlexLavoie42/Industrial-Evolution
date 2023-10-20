@@ -32,7 +32,7 @@ impl Plugin for AssembliesPlugin {
     }
 }
 
-#[derive(Component, Clone, Copy, Debug)]
+#[derive(Component, Clone, Copy, Debug, Reflect)]
 pub enum Power {
     Mechanical(f32),
     Thermal(f32),

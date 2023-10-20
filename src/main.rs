@@ -1,6 +1,7 @@
 use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}};
 use bevy_ecs_tilemap::prelude::*;
 use pathfinding::prelude::astar;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod player;
 use player::*;
@@ -34,6 +35,7 @@ pub enum PlayerState {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(TilemapPlugin)
         .add_plugins(AssembliesPlugin)
         .add_plugins(WorkerPlugin)

@@ -2,7 +2,7 @@ use bevy_ecs_tilemap::helpers::square_grid::neighbors::Neighbors;
 
 use crate::*;
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct MoveToTile {
     pub target: Option<TilePos>,
     pub path: Option<Vec<TilePos>>,
@@ -20,7 +20,11 @@ pub fn move_towards_path(
                 let point: Vec2 = get_tile_world_pos(&path[move_to_tile.path_i], map_transform, grid_size, map_type);
                 let direction = Vec2::new(point.x as f32, point.y as f32) - Vec2::new(transform.translation.x, transform.translation.y);
                 movement.input = Some(direction.normalize());
+            } else {
+                movement.input = None;
             }
+        } else {
+            movement.input = None;
         }
     }
 }
@@ -42,6 +46,7 @@ pub fn iterate_path(
                 move_to_tile.path_i += 1;
             } else if tile_pos == target {
                 move_to_tile.path = None;
+                move_to_tile.path_i = 0;
             }
         }
     }

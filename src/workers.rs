@@ -11,7 +11,7 @@ impl Plugin for WorkerPlugin {
                     input_toggle_worker_mode,
                     (job_mode_creation).run_if(in_state(PlayerState::Jobs)),
                     activate_job_mode_on_click,
-                    worker_power_assembler,
+                    worker_do_job,
                     worker_iterate_job,
                     move_towards_path,
                     set_path_to_tile,
@@ -24,6 +24,10 @@ impl Plugin for WorkerPlugin {
                 mouse_collision_system::<Worker>
             )
             .add_event::<MouseCollisionEvent::<Worker>>()
+            .register_type::<Job>()
+            .register_type::<JobStatus>()
+            .register_type::<WorkerState>()
+            .register_type::<MoveToTile>()
             .insert_resource(SelectedWorker {
                 selected: None
             });
@@ -40,13 +44,13 @@ pub struct PowerProduction {
 pub struct Worker;
 impl Clickable for Worker {}
 
-#[derive(Component, PartialEq)]
+#[derive(Component, PartialEq, Debug, Reflect)]
 pub enum WorkerState {
     Paused,
     Working
 }
 
-#[derive(Debug)]
+#[derive(Debug, Reflect)]
 pub enum JobAction {
     Work {
         power: Power,
@@ -55,20 +59,20 @@ pub enum JobAction {
     Idle(f32)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Reflect)]
 pub struct JobPoint {
     pub point: TilePos,
     pub action: JobAction
 }
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Reflect)]
 pub struct Job {
     pub path: Vec<JobPoint>,
     pub active: Option<usize>,
     pub complexity: f32
 }
 
-#[derive(Component, Debug, PartialEq)]
+#[derive(Component, Debug, PartialEq, Reflect)]
 pub enum JobStatus {
     Active,
     Completed,
@@ -78,6 +82,7 @@ pub enum JobStatus {
 #[derive(Bundle)]
 pub struct WorkerBundle {
     pub marker: Worker,
+    pub state: WorkerState,
     pub job: Job,
     pub job_status: JobStatus,
     pub sprite: SpriteBundle,
@@ -89,6 +94,7 @@ impl Default for WorkerBundle {
     fn default() -> WorkerBundle {
         WorkerBundle {
             marker: Worker,
+            state: WorkerState::Paused,
             job: Job {
                 path: Vec::new(),
                 active: None,
@@ -253,36 +259,53 @@ pub fn worker_iterate_job(
     }
 }
 
-pub fn worker_power_assembler(
-    q_jobs: Query<(&Job, Entity, &Transform), With<Worker>>,
-    q_assemblies: Query<(&Assembly, Entity, &Transform), Without<Worker>>,
+pub fn worker_do_job(
+    mut q_jobs: Query<(&Job, Entity, &Transform, &mut JobStatus), With<Worker>>,
+    q_tilemap: Query<(&Transform, &TilemapSize, &TilemapGridSize, &TilemapType)>,
     mut ev_assembly_power: EventWriter<AssemblyPowerInput>
 ) {
-    for (job, worker_entity, _) in q_jobs.iter() {
+    let (map_transform, map_size, grid_size, map_type) = q_tilemap.single();
+    for (job, worker_entity, transform, mut job_status) in q_jobs.iter_mut() {
         if let Some(current_job_i) = job.active {
             let current_job = &job.path[current_job_i];
-            match current_job.action {
-                // TODO: Pathfinding & timer
-                JobAction::Work { power, assembly } => {
-                    ev_assembly_power.send(AssemblyPowerInput {
-                        assembly,
-                        source: worker_entity,
-                        power
-                    });
-                },
-                JobAction::Idle(_) => {}
-            };
+            let world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
+            let tile_pos = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type);
+            if let Some(tile_pos) = tile_pos {
+                if tile_pos == current_job.point {
+                    match current_job.action {
+                        JobAction::Work { power, assembly } => {
+                            // TODO: Timer
+                            ev_assembly_power.send(AssemblyPowerInput {
+                                assembly,
+                                source: worker_entity,
+                                power
+                            });
+                            *job_status = JobStatus::Completed;
+                        },
+                        JobAction::Idle(_) => {
+                            *job_status = JobStatus::Completed;
+                        }
+                    };
+                }
+            }
         }
     }
 }
 
 pub fn worker_path_to_next_job(
-    mut q_workers: Query<(&Job, Entity, &Transform, &mut MoveToTile), With<Worker>>,
+    mut q_workers: Query<(&Job, &WorkerState, Entity, &Transform, &mut MoveToTile), With<Worker>>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage)>,
 ) {
     let (map_size, grid_size, map_type, tile_storage) = q_tilemap.single();
-    for (job, worker_entity, transform, mut movement) in q_workers.iter_mut() {
-        for job_point in &job.path {
+    for (job, job_status, worker_entity, transform, mut movement) in q_workers.iter_mut() {
+        if *job_status == WorkerState::Paused {
+            movement.path = None;
+            movement.path_i = 0;
+            movement.target = None;
+            continue;
+        }
+        if let Some(active_i) = job.active {
+            let job_point = &job.path[active_i];
             let worker_pos = Vec2 {
                 x: transform.translation.x,
                 y: transform.translation.y,
@@ -297,20 +320,19 @@ pub fn worker_path_to_next_job(
 }
 
 pub fn toggle_worker_state(
-    mut q_job_status: Query<&JobStatus>,
+    mut q_job_status: Query<&mut WorkerState>,
     mut ev_mouse_collision: EventReader<MouseCollisionEvent<Worker>>,
     input: Res<Input<KeyCode>>
 ) {
     if input.just_pressed(KeyCode::Space) {
-        for ev in ev_mouse_collision.iter() {
+        if let Some(ev) = ev_mouse_collision.iter().next() {
             if let Some((_, entity)) = ev.collision {
                 if let Ok(mut job_status) = q_job_status.get_mut(entity) {
-                    if job_status == &JobStatus::Active {
-                        job_status = &JobStatus::None;
+                    if *job_status == WorkerState::Working {
+                        *job_status = WorkerState::Paused;
                     } else {
-                        job_status = &JobStatus::Active;
+                        *job_status = WorkerState::Working;
                     }
-                    println!("Job status: {:?}", job_status);
                 }
             }
         }

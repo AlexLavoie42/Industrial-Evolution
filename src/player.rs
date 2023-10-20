@@ -27,7 +27,7 @@ pub fn player_movement(mut query: Query<&mut Movement, With<Player>>, keys: Res<
 pub fn move_entities (
     mut q_movement: Query<(&Movement, &mut Transform)>,
 ) {
-    for (Movement { input, speed_x, speed_y }, mut transform) in q_movement.iter_mut() {
+    for (Movement { mut input, speed_x, speed_y }, mut transform) in q_movement.iter_mut() {
         if let Some(input_vec) = input {
             let Vec2 { x, y } = input_vec.normalize_or_zero();
             let mut movement: Vec3 = Vec3 {
