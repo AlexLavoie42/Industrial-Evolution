@@ -20,7 +20,7 @@ impl Plugin for WorkerPlugin {
                     move_towards_path,
                     set_path_to_tile,
                     iterate_path,
-                    worker_iterate_job,
+                    worker_iterate_jobs,
                     worker_path_to_next_job,
                     toggle_worker_state,
                     worker_pick_up_item,

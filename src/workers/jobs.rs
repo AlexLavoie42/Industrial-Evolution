@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 use crate::*;
 use workers::worker::*;
 
-#[derive(Debug, Reflect, Clone, Copy)]
+#[derive(Debug, Reflect)]
 pub enum JobAction {
     Work {
         power: Power,
@@ -14,14 +16,15 @@ pub enum JobAction {
         item: Entity,
         container: Option<Entity>
     },
-    Idle(f32)
+    Idle
 }
 
-#[derive(Debug, Reflect, Clone, Copy)]
+#[derive(Debug, Reflect)]
 pub struct JobPoint {
     pub point: TilePos,
     pub job_status: JobStatus,
-    pub action: JobAction
+    pub action: JobAction,
+    pub timer: Option<Timer>
 }
 
 #[derive(Component, Debug, Reflect)]
@@ -30,7 +33,7 @@ pub struct Job {
     pub complexity: f32
 }
 
-#[derive(Component, Debug, PartialEq, Reflect, Clone, Copy)]
+#[derive(Component, Debug, PartialEq, Reflect)]
 pub enum JobStatus {
     Active,
     Completed,
@@ -67,6 +70,8 @@ pub fn activate_job_mode_on_click(
 
 pub fn job_mode_creation(
     mut mouse_collision: EventReader<MouseCollisionEvent>,
+    q_assemblies: Query<Entity, With<Assembly>>,
+    q_items: Query<Entity, With<Item>>,
     mouse_input: Res<Input<MouseButton>>,
     mouse_pos: Res<MouseTile>,
     selected_worker: Res<SelectedWorker>,
@@ -79,23 +84,40 @@ pub fn job_mode_creation(
                 println!("ev: {:?}", click_ev);
                 if let Some(ev) = click_ev {
                     if let Some((_, entity)) = ev.collision {
-                        let power: Power = Power::Mechanical(100.0);
-                        let action: JobAction = JobAction::Work {
-                            power,
-                            assembly: entity,
-                        };
-                        let job_point = JobPoint {
-                            point: mouse_pos.0,
-                            job_status: JobStatus::Active,
-                            action,
-                        };
-                        job.path.push(job_point);
+                        if let Ok(assembly) = q_assemblies.get(entity) {
+                            let power: Power = Power::Mechanical(100.0);
+                            let action: JobAction = JobAction::Work {
+                                power,
+                                assembly,
+                            };
+                            let job_point = JobPoint {
+                                point: mouse_pos.0,
+                                job_status: JobStatus::Active,
+                                action,
+                                timer: None
+                            };
+                            job.path.push(job_point);
+                        }
+
+                        if let Ok(item) = q_items.get(entity) {
+                            let action: JobAction = JobAction::Pickup {
+                                item
+                            };
+                            let job_point = JobPoint {
+                                point: mouse_pos.0,
+                                job_status: JobStatus::Active,
+                                action,
+                                timer: None
+                            };
+                            job.path.push(job_point);
+                        }
                     }
                 } else {
                     let job_point = JobPoint {
                         point: mouse_pos.0,
                         job_status: JobStatus::Active,
-                        action: JobAction::Idle(0.0),
+                        action: JobAction::Idle,
+                        timer: Some(Timer::new(Duration::from_secs_f32(1.0), TimerMode::Once))
                     };
                     job.path.push(job_point);
                 }
@@ -105,7 +127,7 @@ pub fn job_mode_creation(
     }
 }
 
-pub fn worker_iterate_job(
+pub fn worker_iterate_jobs(
     mut q_jobs: Query<(&mut Job, &WorkerState)>,
 ) {
     for (mut job,  state) in q_jobs.iter_mut() {
@@ -116,15 +138,15 @@ pub fn worker_iterate_job(
             return path.job_status == JobStatus::Active;
         }).collect();
         if active_jobs.len() == 0 && job.path.len() > 0 {
-            job.path = job.path.iter_mut().map(| job_point| -> JobPoint {
-                job_point.job_status = JobStatus::Active;
-                *job_point
-            }).collect();
+            for job_path in &mut job.path {
+                job_path.job_status = JobStatus::Active;
+            }
         }
     }
 }
 
 pub fn worker_do_job(
+    time: Res<Time>,
     mut q_jobs: Query<(&mut Job, Entity, &Transform), With<Worker>>,
     q_tilemap: Query<(&Transform, &TilemapSize, &TilemapGridSize, &TilemapType)>,
     mut ev_assembly_power: EventWriter<AssemblyPowerInput>,
@@ -144,6 +166,13 @@ pub fn worker_do_job(
         let tile_pos = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type);
         if let Some(tile_pos) = tile_pos {
             if tile_pos == current_job.point {
+                if let Some(timer) = &mut current_job.timer {
+                    timer.tick(time.delta());
+                    if !timer.finished() {
+                        continue;
+                    }
+                    timer.reset();
+                }
                 match current_job.action {
                     JobAction::Work { power, assembly } => {
                         // TODO: Timer
@@ -154,7 +183,7 @@ pub fn worker_do_job(
                         });
                         current_job.job_status = JobStatus::Completed;
                     },
-                    JobAction::Idle(_) => {
+                    JobAction::Idle => {
                         current_job.job_status = JobStatus::Completed;
                     },
                     JobAction::Pickup { item } => {
