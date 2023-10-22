@@ -1,10 +1,10 @@
 use crate::*;
 
 mod jobs;
-use jobs::*;
+pub use jobs::*;
 
 mod worker;
-use worker::*;
+pub use worker::*;
 pub struct WorkerPlugin;
 
 impl Plugin for WorkerPlugin {
