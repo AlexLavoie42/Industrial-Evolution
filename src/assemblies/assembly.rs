@@ -13,7 +13,7 @@ pub struct AssemblyItemContainer {
 #[derive(Component)]
 pub struct AssemblyInput(pub Option<Item>);
 #[derive(Component)]
-pub struct AssemblyOutput(pub Option<Good>);
+pub struct AssemblyOutput(pub Option<GoodItem>);
 #[derive(Component)]
 pub struct AssemblyPower(pub Option<Power>);
 

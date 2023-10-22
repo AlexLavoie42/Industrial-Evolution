@@ -2,6 +2,12 @@ use bevy::ecs::system::EntityCommands;
 
 use crate::*;
 
+mod resources;
+pub use resources::*;
+
+mod goods;
+pub use goods::*;
+
 pub struct ItemPlugin;
 
 impl Plugin for ItemPlugin {
@@ -15,8 +21,8 @@ impl Plugin for ItemPlugin {
 
 #[derive(Component, PartialEq)]
 pub enum Item {
-    Good(Good),
-    Resource(Resource)
+    Good(GoodItem),
+    Resource(ResourceItem)
 }
 
 impl Clickable for Item {}
@@ -74,143 +80,5 @@ impl ItemContainer {
 
     pub fn get_items(&self) -> &[Option<Entity>] {
         &self.items
-    }
-}
-
-#[derive(Component, PartialEq)]
-pub enum Resource {
-    Wood,
-    Pulp
-}
-
-impl ItemType for Resource {}
-
-impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Resource {
-    fn spawn_bundle(
-        &self,
-        commands: &'a mut Commands<'w, 's>
-    ) -> EntityCommands<'w, 's, 'a> {
-        match self {
-            Resource::Wood => commands.spawn(WoodBundle::default()),
-            Resource::Pulp => commands.spawn(PulpBundle::default())
-        }
-    }
-}
-
-#[derive(Bundle)]
-pub struct ResourceBundle {
-    pub item: Item,
-    pub resource: Resource,
-    pub sprite: SpriteBundle
-}
-
-#[derive(Component)]
-pub struct Wood;
-
-#[derive(Bundle)]
-pub struct WoodBundle {
-    pub item: Item,
-    pub resource: Resource,
-    pub sprite: SpriteBundle,
-    pub marker: Wood,
-}
-impl Default for WoodBundle {
-    fn default() -> Self {
-        WoodBundle {
-            marker: Wood,
-            item: Item::Resource(Resource::Wood),
-            resource: Resource::Wood,
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    color: Color::ORANGE_RED,
-                    custom_size: Some(Vec2::new(8.0, 8.0)),
-                    ..default()
-                },
-                ..default()
-            }
-        }
-    }
-}
-
-#[derive(Component)]
-pub struct Pulp;
-
-#[derive(Bundle)]
-pub struct PulpBundle {
-    pub item: Item,
-    pub resource: Resource,
-    pub sprite: SpriteBundle,
-    pub marker: Pulp
-}
-impl Default for PulpBundle {
-    fn default() -> Self {
-        PulpBundle {
-            marker: Pulp,
-            item: Item::Resource(Resource::Pulp),
-            resource: Resource::Pulp,
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    color: Color::OLIVE,
-                    custom_size: Some(Vec2::new(8.0, 8.0)),
-                    ..default()
-                },
-                ..default()
-            }
-        }
-    }
-}
-
-
-
-#[derive(Component, PartialEq)]
-pub enum Good {
-    Paper
-}
-
-impl ItemType for Good {}
-
-impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Good {
-    fn spawn_bundle(
-        &self,
-        commands: &'a mut Commands<'w, 's>
-    ) -> EntityCommands<'w, 's, 'a> {
-        match self {
-            Good::Paper => commands.spawn(PaperBundle::default())
-        }
-    }
-}
-
-#[derive(Bundle)]
-pub struct GoodBundle {
-    pub item: Item,
-    pub good: Good,
-    pub sprite: SpriteBundle
-}
-
-#[derive(Component)]
-pub struct Paper;
-
-#[derive(Bundle)]
-pub struct PaperBundle {
-    pub item: Item,
-    pub good: Good,
-    pub marker: Paper,
-    pub sprite: SpriteBundle
-}
-impl Default for PaperBundle {
-    fn default() -> Self {
-        PaperBundle {
-            marker: Paper,
-            item: Item::Good(Good::Paper),
-            good: Good::Paper,
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    color: Color::WHITE,
-                    custom_size: Some(Vec2::new(8.0, 8.0)),
-                    ..default()
-                },
-                ..default()
-            }
-        }
     }
 }
