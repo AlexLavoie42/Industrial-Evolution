@@ -39,6 +39,7 @@ fn main() {
         .add_plugins(TilemapPlugin)
         .add_plugins(AssembliesPlugin)
         .add_plugins(WorkerPlugin)
+        .add_plugins(ItemPlugin)
         .add_systems(Startup, factory_setup)
         .add_systems(FixedUpdate, (player_movement, move_entities))
         .add_systems(Update, camera_follow)
@@ -142,5 +143,16 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ..default()
         }
+    });
+
+    commands.spawn(WoodBundle {
+        sprite: SpriteBundle {
+            transform: Transform {
+                translation: Vec3::new(25.0, 25.0, 0.0),
+                ..WoodBundle::default().sprite.transform
+            },
+            ..WoodBundle::default().sprite
+        },
+        ..default()
     });
 }

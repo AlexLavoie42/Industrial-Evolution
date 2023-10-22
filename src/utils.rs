@@ -113,9 +113,14 @@ pub fn get_world_pos(
 }
 
 #[derive(Event, Debug)]
-pub struct MouseCollisionEvent<T: Component> {
+pub struct GenericMouseCollisionEvent<T: Component> {
     pub collision: Option<(Collision, Entity)>,
     marker: PhantomData<T>
+}
+
+#[derive(Event, Debug)]
+pub struct MouseCollisionEvent {
+    pub collision: Option<(Collision, Entity)>,
 }
 
 pub trait MouseCollider: Component {
@@ -145,15 +150,21 @@ impl<T: Clickable> MouseCollider for T {
 pub fn mouse_collision_system<T: MouseCollider>(
     components: Query<(&T, &Transform, &Sprite, Entity)>,
     mouse_pos: Res<MousePos>,
-    mut events: EventWriter<MouseCollisionEvent<T>>,
+    mut ev_generic: EventWriter<GenericMouseCollisionEvent<T>>,
+    mut ev_all: EventWriter<MouseCollisionEvent>
 ) {
     for (component, transform, sprite, entity) in components.iter() {
         if let Some(collision) = component.check_mouse_collision(&mouse_pos, transform, sprite) {
             let ev = MouseCollisionEvent {
-                collision: Some((collision, entity)),
-                marker: PhantomData
+                collision: Some((collision, entity))
             };
-            events.send(ev);
+            ev_all.send(ev);
+
+            let ev = GenericMouseCollisionEvent {
+                collision: Some((collision, entity)),
+                marker: PhantomData::<T>
+            };
+            ev_generic.send(ev);
         }
     }
 }

@@ -24,8 +24,10 @@ impl Plugin for AssembliesPlugin {
             .add_systems(Update,
                 (produce_goods, add_assembly_power_input)
             )
-            .add_systems(PreUpdate, mouse_collision_system::<Assembly>)
-            .add_event::<MouseCollisionEvent::<Assembly>>()
+            .add_systems(PreUpdate, (
+                mouse_collision_system::<Assembly>,
+            ))
+            .add_event::<GenericMouseCollisionEvent::<Assembly>>()
             .add_event::<AssemblyPowerInput>()
             .add_event::<HideAssemblyGhost>()
             .add_event::<ShowAssemblyGhost>();
