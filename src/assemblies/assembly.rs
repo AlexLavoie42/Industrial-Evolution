@@ -5,16 +5,6 @@ pub struct Assembly;
 impl Clickable for Assembly {}
 
 #[derive(Component)]
-pub struct AssemblyItemContainer {
-    pub input: ItemContainer,
-    pub output: ItemContainer,
-}
-
-#[derive(Component)]
-pub struct AssemblyInput(pub Option<Item>);
-#[derive(Component)]
-pub struct AssemblyOutput(pub Option<GoodItem>);
-#[derive(Component)]
 pub struct AssemblyPower(pub Option<Power>);
 
 #[derive(Bundle)]
@@ -87,6 +77,38 @@ pub fn place_assembly(
         if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
         {
             let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
+            let input_entity = commands.spawn(AssemblyInputBundle {
+                marker: AssemblyInput(None),
+                sprite: SpriteBundle {
+                    transform: Transform {
+                        translation: Vec3::new(0.0, -8.0, -1.0),
+                        ..Default::default()
+                    },
+                    sprite: Sprite {
+                        color: Color::RED,
+                        custom_size: Some(Vec2::new(16.0, 16.0)),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+            }).id();
+
+            let output_entity: Entity = commands.spawn(AssemblyInputBundle {
+                marker: AssemblyInput(None),
+                sprite: SpriteBundle {
+                    transform: Transform {
+                        translation: Vec3::new(0.0, 8.0 as f32, -1.0),
+                        ..Default::default()
+                    },
+                    sprite: Sprite {
+                        color: Color::GREEN,
+                        custom_size: Some(Vec2::new(16.0, 16.0)),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+            }).id();
+
             commands.spawn(AssemblyBundle {
                 sprite: SpriteBundle {
                     transform: Transform {
@@ -100,39 +122,61 @@ pub fn place_assembly(
                     ..default()
                 },
                 ..default()
-            });
+            }).push_children(&[input_entity, output_entity]);
         }
     }
 }
 
 pub fn produce_goods(
     mut commands: Commands,
-    mut q_assembly: Query<(&AssemblyPower, &AssemblyInput, &mut AssemblyOutput, &mut AssemblyItemContainer)>,
-    q_items: Query<&Item>,
-
+    mut q_assembly: Query<(&AssemblyPower, &mut AssemblyItemContainer, &Children)>,
+    mut q_assembly_input: Query<&AssemblyInput>,
+    mut q_assembly_output: Query<&AssemblyOutput>,
+    q_items: Query<&Item>
 ) {
     for (
         assembly_power,
-        assembly_input,
-        assembly_output,
-        mut assembly_items
+        mut assembly_items,
+        children
     ) in q_assembly.iter_mut() {
         if !assembly_items.input.items.is_empty() &&
         assembly_items.output.max_items < assembly_items.output.items.len() &&
         assembly_power.0.is_some() {
+            let assembly_inputs: Vec<&AssemblyInput> = children.iter().map(|child| {
+                q_assembly_input.get(*child)
+            }).filter(|child| {
+                child.is_ok() && child.unwrap().0.is_some()
+            }).map(|child| {
+                child.unwrap()
+            }).collect();
+            let assembly_input = assembly_inputs.first();
+
+            let assembly_outputs: Vec<&AssemblyOutput> = children.iter().map(|child| {
+                q_assembly_output.get(*child)
+            }).filter(|child| {
+                child.is_ok() && child.unwrap().0.is_some()
+            }).map(|child| {
+                child.unwrap()
+            }).collect();
+            let assembly_output: Option<&&AssemblyOutput> = assembly_outputs.first();
+
             // TODO: Check requirements function
             // TODO: Production timer
-            if let (Some(Some(entity)), Some(assembly_input)) = (assembly_items.output.items.pop(), &assembly_input.0) {
+            if let (Some(Some(entity)), Some(assembly_input)) = (assembly_items.output.items.pop(), assembly_input) {
                 if let Ok(item) = q_items.get(entity) {
-                    if assembly_input != item {
-                        return;
+                    if let Some(input) = &assembly_input.0 {
+                        if input != item {
+                            continue;
+                        }
                     }
-                    if let Some(output) = &assembly_output.0 {
-                        let mut output_entity = output.spawn_bundle(&mut commands);
-                        if let Ok(()) = assembly_items.output.add_item(Some(output_entity.id())) {
-                            commands.entity(entity).despawn();
-                        } else {
-                            output_entity.despawn();
+                    if let Some(assembly_output) = assembly_output {
+                        if let Some(output) = &assembly_output.0 {
+                            let mut output_entity: bevy::ecs::system::EntityCommands<'_, '_, '_> = output.spawn_bundle(&mut commands);
+                            if let Ok(()) = assembly_items.output.add_item(Some(output_entity.id())) {
+                                commands.entity(entity).despawn();
+                            } else {
+                                output_entity.despawn();
+                            }
                         }
                     } else {
                         commands.entity(entity).despawn();

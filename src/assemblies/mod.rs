@@ -12,6 +12,9 @@ pub use ghost::*;
 mod assembly_types;
 pub use assembly_types::*;
 
+mod assembly_items;
+pub use assembly_items::*;
+
 pub struct AssembliesPlugin;
 impl Plugin for AssembliesPlugin {
     fn build(&self, app: &mut App) {
@@ -40,6 +43,8 @@ impl Plugin for AssembliesPlugin {
                 mouse_collision_system::<Assembly>,
             ))
             .add_event::<GenericMouseCollisionEvent::<Assembly>>()
+            .add_event::<GenericMouseCollisionEvent::<AssemblyInput>>()
+            .add_event::<GenericMouseCollisionEvent::<AssemblyOutput>>()
             .add_event::<AssemblyPowerInput>()
             .add_event::<HideAssemblyGhost>()
             .add_event::<ShowAssemblyGhost>();
