@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, fmt::Debug};
 
 use crate::*;
 
@@ -124,13 +124,13 @@ pub struct MouseCollisionEvent {
 }
 
 pub trait MouseCollider: Component {
-    fn check_mouse_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision>;
+    fn check_mouse_collision(&self, mouse_pos: &MousePos, transform: &GlobalTransform, sprite: &Sprite) -> Option<Collision>;
 }
 
 pub trait Clickable: Component {}
 
 impl<T: Clickable> MouseCollider for T {
-    fn check_mouse_collision(&self, mouse_pos: &MousePos, transform: &Transform, sprite: &Sprite) -> Option<Collision> {
+    fn check_mouse_collision(&self, mouse_pos: &MousePos, transform: &GlobalTransform, sprite: &Sprite) -> Option<Collision> {
         let mouse_vec = Vec3 {
             x: mouse_pos.0.x,
             y: mouse_pos.0.y,
@@ -138,7 +138,7 @@ impl<T: Clickable> MouseCollider for T {
         };
         // TODO: Proper size / proper colliders / tilemap collision?
         let mouse_collision = collide_aabb::collide(
-            transform.translation,
+            transform.translation(),
             sprite.custom_size.unwrap(),
             mouse_vec,
             Vec2 { x: 1.0, y: 1.0 },
@@ -147,8 +147,9 @@ impl<T: Clickable> MouseCollider for T {
     }
 }
 
-pub fn mouse_collision_system<T: MouseCollider>(
-    components: Query<(&T, &Transform, &Sprite, Entity)>,
+// Not working for child entities?
+pub fn mouse_collision_system<T: MouseCollider + Debug>(
+    components: Query<(&T, &GlobalTransform, &Sprite, Entity)>,
     mouse_pos: Res<MousePos>,
     mut ev_generic: EventWriter<GenericMouseCollisionEvent<T>>,
     mut ev_all: EventWriter<MouseCollisionEvent>

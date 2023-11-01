@@ -41,12 +41,16 @@ impl Plugin for AssembliesPlugin {
             )
             .add_systems(PreUpdate, (
                 mouse_collision_system::<Assembly>,
+                mouse_collision_system::<AssemblyInput>,
+                mouse_collision_system::<AssemblyOutput>,
             ))
             .add_event::<GenericMouseCollisionEvent::<Assembly>>()
             .add_event::<GenericMouseCollisionEvent::<AssemblyInput>>()
             .add_event::<GenericMouseCollisionEvent::<AssemblyOutput>>()
             .add_event::<AssemblyPowerInput>()
             .add_event::<HideAssemblyGhost>()
-            .add_event::<ShowAssemblyGhost>();
+            .add_event::<ShowAssemblyGhost>()
+            .register_type::<AssemblyItemContainer>()
+        ;
     }
 }

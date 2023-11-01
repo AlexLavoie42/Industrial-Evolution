@@ -1,16 +1,16 @@
 use crate::*;
 
-#[derive(Component)]
+#[derive(Component, Debug, Reflect)]
 pub struct AssemblyItemContainer {
     pub input: ItemContainer,
     pub output: ItemContainer,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct AssemblyInput(pub Option<Item>);
 impl Clickable for AssemblyInput {}
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct AssemblyOutput(pub Option<GoodItem>);
 impl Clickable for AssemblyOutput {}
 

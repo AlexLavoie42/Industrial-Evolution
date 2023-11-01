@@ -77,16 +77,16 @@ pub fn place_assembly(
         if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
         {
             let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
-            let input_entity = commands.spawn(AssemblyInputBundle {
-                marker: AssemblyInput(None),
+            let input_entity = commands.spawn(AssemblyOutputBundle {
+                marker: AssemblyOutput(None),
                 sprite: SpriteBundle {
                     transform: Transform {
-                        translation: Vec3::new(0.0, -8.0, -1.0),
+                        translation: Vec3::new(0.0, 16.0, 1.0),
                         ..Default::default()
                     },
                     sprite: Sprite {
                         color: Color::RED,
-                        custom_size: Some(Vec2::new(16.0, 16.0)),
+                        custom_size: Some(Vec2::new(16.0, 8.0)),
                         ..Default::default()
                     },
                     ..Default::default()
@@ -97,12 +97,12 @@ pub fn place_assembly(
                 marker: AssemblyInput(None),
                 sprite: SpriteBundle {
                     transform: Transform {
-                        translation: Vec3::new(0.0, 8.0 as f32, -1.0),
+                        translation: Vec3::new(0.0, -16.0 as f32, 1.0),
                         ..Default::default()
                     },
                     sprite: Sprite {
                         color: Color::GREEN,
-                        custom_size: Some(Vec2::new(16.0, 16.0)),
+                        custom_size: Some(Vec2::new(16.0, 8.0)),
                         ..Default::default()
                     },
                     ..Default::default()

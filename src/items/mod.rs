@@ -15,11 +15,12 @@ impl Plugin for ItemPlugin {
         app
             .add_systems(PreUpdate, mouse_collision_system::<Item>)
             .add_event::<GenericMouseCollisionEvent<Item>>()
+            .register_type::<ItemContainer>()
         ;
     }
 }
 
-#[derive(Component, PartialEq)]
+#[derive(Component, PartialEq, Debug)]
 pub enum Item {
     Good(GoodItem),
     Resource(ResourceItem)
@@ -42,10 +43,16 @@ pub trait ItemSpawn<'a, 'w, 's>: Component {
     ) -> EntityCommands<'w, 's, 'a>;
 }
 
-#[derive(Component)]
+#[derive(Component, Debug, Reflect)]
 pub struct ItemContainer {
     pub items: Vec<Option<Entity>>,
     pub max_items: usize,
+}
+
+pub struct ItemStackBundle {
+    pub item: Item,
+    pub items: ItemContainer,
+    pub sprite: SpriteBundle
 }
 
 impl ItemContainer {

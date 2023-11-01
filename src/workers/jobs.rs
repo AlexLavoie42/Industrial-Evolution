@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use crate::*;
+use bevy::transform::commands;
 use workers::worker::*;
 
 #[derive(Debug, Reflect)]
@@ -10,11 +11,11 @@ pub enum JobAction {
         assembly: Entity
     },
     Pickup {
-        item: Entity,
+        container: Entity,
     },
     Drop {
-        item: Entity,
-        container: Option<Entity>
+        worker: Entity,
+        input_container: Option<Entity>
     },
     Idle
 }
@@ -71,6 +72,9 @@ pub fn activate_job_mode_on_click(
 pub fn job_mode_creation(
     mut mouse_collision: EventReader<MouseCollisionEvent>,
     q_assemblies: Query<Entity, With<Assembly>>,
+    q_transforms: Query<&Transform>,
+    q_assembly_input: Query<(&AssemblyInput, &Parent)>,
+    q_assembly_output: Query<(&AssemblyOutput, &Parent)>,
     q_items: Query<Entity, With<Item>>,
     mouse_input: Res<Input<MouseButton>>,
     mouse_pos: Res<MouseTile>,
@@ -78,11 +82,10 @@ pub fn job_mode_creation(
     mut q_worker: Query<&mut Job, With<Worker>>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
-        let click_ev = mouse_collision.iter().next().clone();
+        let click_evs: Vec<&MouseCollisionEvent> = mouse_collision.iter().collect();
         if let Some(worker_entity) = selected_worker.selected {
             if let Ok(mut job) = q_worker.get_mut(worker_entity) {
-                println!("ev: {:?}", click_ev);
-                if let Some(ev) = click_ev {
+                if let Some(ev) = click_evs.first() {
                     if let Some((_, entity)) = ev.collision {
                         if let Ok(assembly) = q_assemblies.get(entity) {
                             let power: Power = Power::Mechanical(100.0);
@@ -99,9 +102,34 @@ pub fn job_mode_creation(
                             job.path.push(job_point);
                         }
 
+                        if let Ok((assembly_input, parent)) = q_assembly_input.get(entity) {
+                            let job_point = JobPoint {
+                                point: mouse_pos.0,
+                                job_status: JobStatus::Active,
+                                action: JobAction::Drop {
+                                    input_container: Some(parent.get()),
+                                    worker: worker_entity
+                                },
+                                timer: None
+                            };
+                            job.path.push(job_point);
+                        }
+
+                        if let Ok((assembly_output, parent)) = q_assembly_output.get(entity) {
+                            let job_point = JobPoint {
+                                point: mouse_pos.0,
+                                job_status: JobStatus::Active,
+                                action: JobAction::Pickup {
+                                    container: parent.get()
+                                },
+                                timer: None
+                            };
+                            job.path.push(job_point);
+                        }
+
                         if let Ok(item) = q_items.get(entity) {
                             let action: JobAction = JobAction::Pickup {
-                                item
+                                container: item
                             };
                             let job_point = JobPoint {
                                 point: mouse_pos.0,
@@ -121,7 +149,6 @@ pub fn job_mode_creation(
                     };
                     job.path.push(job_point);
                 }
-                println!("Job: {:?}", job);
             }
         }
     }
@@ -149,6 +176,7 @@ pub fn worker_do_job(
     time: Res<Time>,
     mut q_jobs: Query<(&mut Job, Entity, &Transform), With<Worker>>,
     q_tilemap: Query<(&Transform, &TilemapSize, &TilemapGridSize, &TilemapType)>,
+    mut q_item_containers: Query<&mut ItemContainer>,
     mut ev_assembly_power: EventWriter<AssemblyPowerInput>,
     mut ev_item_pickup: EventWriter<WorkerPickUpItemEvent>,
     mut ev_item_drop: EventWriter<WorkerDropItemEvent>
@@ -186,20 +214,25 @@ pub fn worker_do_job(
                     JobAction::Idle => {
                         current_job.job_status = JobStatus::Completed;
                     },
-                    JobAction::Pickup { item } => {
+                    JobAction::Pickup { container: item } => {
                         ev_item_pickup.send(WorkerPickUpItemEvent {
                             item,
                             worker: worker_entity
                         });
                         current_job.job_status = JobStatus::Completed;
                     },
-                    JobAction::Drop { item, container } => {
-                        ev_item_drop.send(WorkerDropItemEvent {
-                            item,
-                            worker: worker_entity,
-                            container: container
-                        });
-                        current_job.job_status = JobStatus::Completed;
+                    JobAction::Drop { worker: container, input_container } => {
+                        if let Ok(item_container) = q_item_containers.get(container) {
+                            if let Some(Some(item)) = item_container.items.last() {
+                                ev_item_drop.send(WorkerDropItemEvent {
+                                    item: *item,
+                                    worker: worker_entity,
+                                    container: input_container
+                                });
+                                current_job.job_status = JobStatus::Completed;
+                            }
+                        }
+                        // TODO: Worker error state?
                     }
                 };
             }

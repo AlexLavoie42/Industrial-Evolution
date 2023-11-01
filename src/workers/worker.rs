@@ -7,7 +7,7 @@ pub struct PowerProduction {
     pub output: Option<Entity>
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Worker;
 impl Clickable for Worker {}
 
@@ -136,13 +136,27 @@ pub struct WorkerPickUpItemEvent {
 
 pub fn worker_pick_up_item(
     mut commands: Commands,
-    mut q_worker_item_container: Query<&mut ItemContainer, With<Worker>>,
+    mut q_item_transforms: Query<(&mut Transform, &GlobalTransform, &Sprite), (With<Item>, Without<Worker>)>,
+    mut q_worker_item_container: Query<(&mut ItemContainer, &GlobalTransform, &Sprite), (With<Worker>, Without<Item>)>,
     mut ev_pick_up: EventReader<WorkerPickUpItemEvent>
 ) {
     for ev in ev_pick_up.iter() {
-        if let Ok(mut container) = q_worker_item_container.get_mut(ev.worker) {
-            if let Ok(_) = container.add_item(Some(ev.item)) { 
-                commands.entity(ev.worker).add_child(ev.item);
+        if let (
+            Ok((mut container, worker_transform, worker_sprite)),
+            Ok((mut item_transform, item_g_transform, item_sprite))
+        ) = (q_worker_item_container.get_mut(ev.worker), q_item_transforms.get_mut(ev.item)) {
+            // TODO: Proper collision sizes
+            if collide_aabb::collide(
+                worker_transform.translation(), 
+                worker_sprite.custom_size.unwrap(), 
+                item_g_transform.translation(), 
+                item_sprite.custom_size.unwrap()
+            ).is_some() {
+                if let Ok(_) = container.add_item(Some(ev.item)) { 
+                    commands.entity(ev.worker).add_child(ev.item);
+                    item_transform.translation = Vec3::new(16.0, 8.0, item_transform.translation.z);
+                    println!("Picked up item {:?}", container);
+                }
             }
         }
     }
@@ -152,24 +166,49 @@ pub fn worker_pick_up_item(
 pub struct WorkerDropItemEvent {
     pub worker: Entity,
     pub item: Entity,
-    pub container: Option<Entity>
+    pub container: Option<Entity>,
 }
 
 pub fn worker_drop_item(
     mut commands: Commands,
+    mut q_item_transforms: Query<&mut Transform, With<Item>>,
     mut q_item_containers: Query<&mut ItemContainer, Without<Worker>>,
+    mut q_worker_containers: Query<&mut ItemContainer, With<Worker>>,
+    mut q_assembly_item_containers: Query<&mut AssemblyItemContainer>,
     mut ev_drop: EventReader<WorkerDropItemEvent>
 ) {
     for ev in ev_drop.iter() {
-        if let Ok(mut worker_container) = q_item_containers.get_mut(ev.worker) {
-            if let Ok(_) = worker_container.remove_item(Some(ev.item)) { 
-                commands.entity(ev.worker).remove_children([ev.item].as_slice());
-                if let Some(container_entity) = ev.container {
+        if let Ok(mut worker_container) = q_worker_containers.get_mut(ev.worker) {
+                if let (Some(container_entity), Ok(mut item_transform)) = (ev.container, q_item_transforms.get_mut(ev.item)) {
+                    println!("Dropping item {:?} into {:?}", ev.item, container_entity);
                     if let Ok(mut container) = q_item_containers.get_mut(container_entity) {
-                        if let Ok(_) = container.add_item(Some(ev.item)) {}
+                        let add_item_res = container.add_item(Some(ev.item));
+                        if let Ok(_) = add_item_res {
+                            let item_res = worker_container.remove_item(Some(ev.item));
+                            if let Ok(_) = item_res {
+                                commands.entity(ev.worker).remove_children([ev.item].as_slice());
+                                commands.entity(container_entity).push_children(&[ev.item]);
+                                item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
+                                println!("Dropped item {:?} into {:?}", ev.item, container_entity);
+                            }
+                        } else if let Err(err) = add_item_res {
+                            println!("Error adding item to container: {:?}", err);
+                        }
+                    } else if let Ok(mut container) = q_assembly_item_containers.get_mut(container_entity) {
+                        let add_item_res = container.input.add_item(Some(ev.item));
+                        if let Ok(_) = add_item_res {
+                            let item_res = worker_container.remove_item(Some(ev.item));
+                            if let Ok(_) = item_res {
+                                commands.entity(ev.worker).remove_children([ev.item].as_slice());
+                                commands.entity(container_entity).push_children(&[ev.item]);
+                                item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
+                                println!("Dropped item {:?} into {:?}", ev.item, container_entity);
+                            }
+                        } else if let Err(err) = add_item_res {
+                            println!("Error adding item to container: {:?}", err);
+                        }
                     }
                 }
-            }
         }
     }
 }
