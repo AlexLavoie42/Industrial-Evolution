@@ -21,6 +21,9 @@ use tile_pathfinding::*;
 mod utils;
 use utils::*;
 
+mod money;
+use money::*;
+
 const GRID_SIZE: TilemapSize = TilemapSize { x: 100, y: 100 };
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
@@ -40,6 +43,7 @@ fn main() {
         .add_plugins(AssembliesPlugin)
         .add_plugins(WorkerPlugin)
         .add_plugins(ItemPlugin)
+        .add_plugins(MoneyPlugin)
         .add_systems(Startup, factory_setup)
         .add_systems(FixedUpdate, (player_movement, move_entities))
         .add_systems(Update, camera_follow)

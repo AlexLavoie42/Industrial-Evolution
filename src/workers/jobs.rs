@@ -11,7 +11,10 @@ pub enum JobAction {
         assembly: Entity
     },
     Pickup {
-        container: Entity,
+        item: Entity,
+    },
+    ContainerPickup {
+        container: Entity
     },
     Drop {
         worker: Entity,
@@ -119,7 +122,7 @@ pub fn job_mode_creation(
                             let job_point = JobPoint {
                                 point: mouse_pos.0,
                                 job_status: JobStatus::Active,
-                                action: JobAction::Pickup {
+                                action: JobAction::ContainerPickup {
                                     container: parent.get()
                                 },
                                 timer: None
@@ -129,7 +132,7 @@ pub fn job_mode_creation(
 
                         if let Ok(item) = q_items.get(entity) {
                             let action: JobAction = JobAction::Pickup {
-                                container: item
+                                item
                             };
                             let job_point = JobPoint {
                                 point: mouse_pos.0,
@@ -214,13 +217,23 @@ pub fn worker_do_job(
                     JobAction::Idle => {
                         current_job.job_status = JobStatus::Completed;
                     },
-                    JobAction::Pickup { container: item } => {
+                    JobAction::Pickup { item } => {
                         ev_item_pickup.send(WorkerPickUpItemEvent {
                             item,
                             worker: worker_entity
                         });
                         current_job.job_status = JobStatus::Completed;
                     },
+                    JobAction::ContainerPickup { container } => {
+                        if let Ok(mut item_container) = q_item_containers.get_mut(container) {
+                            if let Some(Some(item)) = item_container.items.last() {
+                                ev_item_pickup.send(WorkerPickUpItemEvent {
+                                    item: *item,
+                                    worker: worker_entity
+                                })
+                            }
+                        }
+                    }
                     JobAction::Drop { worker: container, input_container } => {
                         if let Ok(item_container) = q_item_containers.get(container) {
                             if let Some(Some(item)) = item_container.items.last() {
