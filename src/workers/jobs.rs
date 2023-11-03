@@ -230,7 +230,8 @@ pub fn worker_do_job(
                                 ev_item_pickup.send(WorkerPickUpItemEvent {
                                     item: *item,
                                     worker: worker_entity
-                                })
+                                });
+                                current_job.job_status = JobStatus::Completed;
                             }
                         }
                     }

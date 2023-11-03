@@ -15,14 +15,7 @@ pub fn move_towards_path(
 ) {
     let (map_transform, grid_size, map_type) = q_tilemap.single();
     for (move_to_tile, mut movement, transform) in q_move.iter_mut() {
-        if let Some(path) = &move_to_tile.path {
-            if let Some(target) = move_to_tile.target {
-                if let Some(last) = path.last() {
-                    if &target != last {
-                        continue;
-                    }
-                }
-            }
+        if let (Some(path), Some(target)) = (&move_to_tile.path, move_to_tile.target) {
 
             let point: Vec2 = get_tile_world_pos(&path[move_to_tile.path_i], map_transform, grid_size, map_type);
             let direction = Vec2::new(point.x as f32, point.y as f32) - Vec2::new(transform.translation.x, transform.translation.y);
