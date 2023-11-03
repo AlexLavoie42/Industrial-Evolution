@@ -51,6 +51,7 @@ impl Plugin for AssembliesPlugin {
             .add_event::<HideAssemblyGhost>()
             .add_event::<ShowAssemblyGhost>()
             .register_type::<AssemblyItemContainer>()
+            .insert_resource(SelectedAssembly { selected: AssemblyType::default() })
         ;
     }
 }

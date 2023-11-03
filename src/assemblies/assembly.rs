@@ -4,43 +4,13 @@ use crate::*;
 pub struct Assembly;
 impl Clickable for Assembly {}
 
+#[derive(Resource)]
+pub struct SelectedAssembly {
+    pub selected: AssemblyType
+}
+
 #[derive(Component)]
 pub struct AssemblyPower(pub Option<Power>);
-
-#[derive(Bundle)]
-pub struct AssemblyBundle {
-    pub marker: Assembly,
-    pub solid: SolidEntity,
-    pub assembly_items: AssemblyItemContainer,
-    pub sprite: SpriteBundle
-}
-impl Default for AssemblyBundle {
-    fn default() -> AssemblyBundle {
-        AssemblyBundle {
-            marker: Assembly,
-            solid: SolidEntity,
-            assembly_items: AssemblyItemContainer {
-                input: ItemContainer {
-                    items: Vec::new(),
-                    max_items: 5
-                },
-                output: ItemContainer {
-                    items: Vec::new(),
-                    max_items: 3
-                }
-            },
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    color: Color::YELLOW,
-                    custom_size: Some(Vec2::new(16.0, 16.0)),
-                    ..default()
-                },
-                visibility: Visibility::Visible,
-                ..default()
-            }
-        }
-    }
-}
 
 pub fn input_toggle_assembly_mode(
     input: Res<Input<KeyCode>>,
@@ -160,9 +130,8 @@ pub fn produce_goods(
             }).collect();
             let assembly_output: Option<&&AssemblyOutput> = assembly_outputs.first();
 
-            // TODO: Check requirements function
             // TODO: Production timer
-            if let (Some(Some(entity)), Some(assembly_input)) = (assembly_items.output.items.pop(), assembly_input) {
+            if let (Some(Some(entity)), Some(assembly_input)) = (assembly_items.input.items.pop(), assembly_input) {
                 if let Ok(item) = q_items.get(entity) {
                     if let Some(input) = &assembly_input.0 {
                         if input != item {

@@ -35,7 +35,8 @@ impl Default for WorkerBundle {
             state: WorkerState::Paused,
             job: Job {
                 path: Vec::new(),
-                complexity: 0.0
+                complexity: 0.0,
+                current_job: None
             },
             worker_items: ItemContainer { items: Vec::new(), max_items: 2 },
             production: PowerProduction {
@@ -131,7 +132,7 @@ pub fn toggle_worker_state(
 #[derive(Event)]
 pub struct WorkerPickUpItemEvent {
     pub worker: Entity,
-    pub item: Entity
+    pub item: Entity,
 }
 
 pub fn worker_pick_up_item(

@@ -1,10 +1,9 @@
 use std::time::Duration;
 
 use crate::*;
-use bevy::transform::commands;
 use workers::worker::*;
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Reflect, PartialEq)]
 pub enum JobAction {
     Work {
         power: Power,
@@ -23,7 +22,7 @@ pub enum JobAction {
     Idle
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Reflect, PartialEq)]
 pub struct JobPoint {
     pub point: TilePos,
     pub job_status: JobStatus,
@@ -34,7 +33,8 @@ pub struct JobPoint {
 #[derive(Component, Debug, Reflect)]
 pub struct Job {
     pub path: Vec<JobPoint>,
-    pub complexity: f32
+    pub complexity: f32,
+    pub current_job: Option<usize>
 }
 
 #[derive(Component, Debug, PartialEq, Reflect)]
@@ -171,6 +171,10 @@ pub fn worker_iterate_jobs(
             for job_path in &mut job.path {
                 job_path.job_status = JobStatus::Active;
             }
+            job.current_job = Some(0);
+        } else {
+            let current_job_i = job.path.iter().position(|j| { j == active_jobs[0] }).unwrap_or(0);
+            job.current_job = Some(current_job_i);
         }
     }
 }
@@ -186,16 +190,10 @@ pub fn worker_do_job(
 ) {
     let (map_transform, map_size, grid_size, map_type) = q_tilemap.single();
     for (mut job, worker_entity, transform) in q_jobs.iter_mut() {
-        let mut active_jobs: Vec<&mut JobPoint> = job.path.iter_mut().filter(|path| -> bool {
-            return path.job_status == JobStatus::Active;
-        }).collect();
-        if active_jobs.len() == 0 {
-            continue;
-        }
-        let current_job = &mut active_jobs[0];
         let world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
         let tile_pos = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type);
-        if let Some(tile_pos) = tile_pos {
+        if let (Some(tile_pos), Some(current_job_i)) = (tile_pos, job.current_job) {
+            let current_job = &mut job.path[current_job_i];
             if tile_pos == current_job.point {
                 if let Some(timer) = &mut current_job.timer {
                     timer.tick(time.delta());
