@@ -16,20 +16,31 @@ impl Default for AssemblyType {
     }
 }
 
-trait AssemblySpawn<'a, 'w, 's> {
+pub trait AssemblySpawn<'a, 'w, 's> {
     fn spawn_bundle(
         &self,
-        commands: &'a mut Commands<'w, 's>
+        commands: &'a mut Commands<'w, 's>,
+        position: Vec2
     ) -> EntityCommands<'w, 's, 'a>;
 }
 
 impl<'a, 'w, 's> AssemblySpawn<'a, 'w, 's> for AssemblyType {
     fn spawn_bundle(
         &self,
-        commands: &'a mut Commands<'w, 's>
+        commands: &'a mut Commands<'w, 's>,
+        position: Vec2
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
-            AssemblyType::PulpMill => commands.spawn(PulpMillBundle::default())
+            AssemblyType::PulpMill => commands.spawn(PulpMillBundle {
+                sprite: SpriteBundle {
+                    transform: Transform {
+                        translation: Vec3::new(position.x, position.y, 1.0),
+                        ..PulpMillBundle::default().sprite.transform
+                    },
+                    ..PulpMillBundle::default().sprite
+                },
+                ..default()
+            })
         }
     }
 }

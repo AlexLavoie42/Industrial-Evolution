@@ -193,6 +193,9 @@ pub fn worker_do_job(
         let world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
         let tile_pos = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type);
         if let (Some(tile_pos), Some(current_job_i)) = (tile_pos, job.current_job) {
+            if job.path.len() < current_job_i + 1 {
+                continue;
+            }
             let current_job = &mut job.path[current_job_i];
             if tile_pos == current_job.point {
                 if let Some(timer) = &mut current_job.timer {
