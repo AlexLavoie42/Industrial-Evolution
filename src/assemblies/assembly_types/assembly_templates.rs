@@ -20,7 +20,7 @@ impl Default for PulpMillBundle {
             marker: PulpMill,
             assembly: Assembly,
             input: AssemblyInput(Some(Item::Resource(ResourceItem::Wood))),
-            output: AssemblyOutput(Some(GoodItem::Paper)),
+            output: AssemblyOutput(Some(Item::Resource(ResourceItem::Pulp))),
             power: AssemblyPower(Some(Power::Mechanical(0.0))),
             assembly_items: AssemblyItemContainer {
                 input: ItemContainer {

@@ -169,3 +169,15 @@ pub fn mouse_collision_system<T: MouseCollider + Debug>(
         }
     }
 }
+
+#[derive(Component)]
+pub struct DespawnLater;
+
+pub fn despawn_later_system(
+    mut commands: Commands,
+    q_despawn_entities: Query<Entity, With<DespawnLater>>,
+) {
+    for entity in q_despawn_entities.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}

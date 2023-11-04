@@ -8,20 +8,26 @@ pub struct AssemblyItemContainer {
 
 #[derive(Component, Debug)]
 pub struct AssemblyInput(pub Option<Item>);
-impl Clickable for AssemblyInput {}
 
 #[derive(Component, Debug)]
-pub struct AssemblyOutput(pub Option<GoodItem>);
-impl Clickable for AssemblyOutput {}
+pub struct AssemblyInputSelector;
+impl Clickable for AssemblyInputSelector {}
+
+#[derive(Component, Debug)]
+pub struct AssemblyOutput(pub Option<Item>);
+
+#[derive(Component, Debug)]
+pub struct AssemblyOutputSelector;
+impl Clickable for AssemblyOutputSelector {}
 
 #[derive(Bundle)]
-pub struct AssemblyInputBundle {
-    pub marker: AssemblyInput,
+pub struct AssemblyInputSelectorBundle {
+    pub marker: AssemblyInputSelector,
     pub sprite: SpriteBundle
 }
 
 #[derive(Bundle)]
-pub struct AssemblyOutputBundle {
-    pub marker: AssemblyOutput,
+pub struct AssemblyOutputSelectorBundle {
+    pub marker: AssemblyOutputSelector,
     pub sprite: SpriteBundle
 }

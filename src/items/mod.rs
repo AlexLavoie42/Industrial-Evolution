@@ -26,6 +26,22 @@ pub enum Item {
     Resource(ResourceItem)
 }
 
+impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Item {
+    fn spawn_bundle(
+        &self,
+        commands: &'a mut Commands<'w, 's>
+    ) -> EntityCommands<'w, 's, 'a> {
+        match self {
+            Item::Good(good) => {
+                good.spawn_bundle(commands)
+            },
+            Item::Resource(resource) => {
+                resource.spawn_bundle(commands)
+            }
+        }
+    }
+}
+
 impl Clickable for Item {}
 
 #[derive(Bundle)]
@@ -68,11 +84,14 @@ impl ItemContainer {
         let item_i = self.items.iter().position(|&x| x == item);
         if let Some(index) = item_i {
             if index >= self.items.len() {
+                println!("invalid index");
                 return Err("Invalid index");
             }
-
-            return Ok(self.items.remove(index));
+            let value = self.items[index];
+            self.items[index] = None;
+            return Ok(value);
         } else {
+            println!("Item not found");
             return Err("Item not found");
         }
     }
