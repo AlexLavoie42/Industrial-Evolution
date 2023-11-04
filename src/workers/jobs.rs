@@ -41,6 +41,7 @@ pub struct Job {
 pub enum JobStatus {
     Active,
     Completed,
+    Waiting
 }
 
 #[derive(Resource)]
@@ -200,6 +201,9 @@ pub fn worker_do_job(
                     }
                     timer.reset();
                 }
+                if current_job.job_status == JobStatus::Waiting {
+                    continue;
+                }
                 match current_job.action {
                     JobAction::Work { power, assembly } => {
                         // TODO: Timer
@@ -229,6 +233,7 @@ pub fn worker_do_job(
                                     container: Some(container)
                                 });
                             }
+                            current_job.job_status = JobStatus::Waiting;
                         } else if let Ok(assembly_container) = q_assembly_containers.get_mut(container) {
                             if let Some(Some(item)) = assembly_container.output.items.last() {
                                 ev_item_pickup.send(WorkerPickUpItemEvent {
@@ -270,7 +275,7 @@ pub fn worker_path_to_next_job(
             continue;
         }
         let active_jobs: Vec<&JobPoint> = job.path.iter().filter(|path| -> bool {
-            return path.job_status == JobStatus::Active;
+            return path.job_status != JobStatus::Completed;
         }).collect();
         if let Some(job_point) = active_jobs.first() {
             let worker_pos = Vec2 {

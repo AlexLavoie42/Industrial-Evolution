@@ -146,6 +146,10 @@ pub fn worker_pick_up_item(
         ) = (q_worker_item_container.get_mut(ev.worker), q_item_transforms.get_mut(ev.item)) else {
             continue;
         };
+        if container.items.iter().any(|i| *i == Some(ev.item)) {
+            continue;
+        }
+
         let (map_size, grid_size, map_type, map_transform) = q_tilemap.single();
 
         let worker_world_pos = get_world_pos(Vec2 { x: worker_transform.translation().x, y: worker_transform.translation().y }, map_transform);
@@ -195,9 +199,14 @@ pub fn worker_drop_item(
         let Ok((mut worker_container, mut job)) = q_worker_containers.get_mut(ev.worker) else {
             continue;
         };
+        // TODO: Drop item with no container?
         let (Some(container_entity), Ok(mut item_transform)) = (ev.container, q_item_transforms.get_mut(ev.item)) else {
             continue;
         };
+        if worker_container.items.iter().all(|i| *i != Some(ev.item)) {
+            continue;
+        }
+
         println!("Dropping item {:?} into {:?}", ev.item, container_entity);
 
         let mut drop_item = |container: &mut ItemContainer, worker_container: &mut ItemContainer| {
@@ -223,15 +232,23 @@ pub fn worker_drop_item(
         };
 
         if let Ok(mut container) = q_item_containers.get_mut(container_entity) {
+            if container.items.iter().any(|i| *i == Some(ev.item)) {
+                continue;
+            }
+
             let item_res = worker_container.remove_item(Some(ev.item));
             if let Ok(_) = item_res {
                 drop_item(&mut container, &mut worker_container);
             }
         } else if let Ok(mut container) = q_assembly_item_containers.get_mut(container_entity) {
-            let add_item_res = container.input.add_item(Some(ev.item));
-            if let Ok(_) = add_item_res {
+            if container.input.items.iter().any(|i| *i == Some(ev.item)) {
+                continue;
+            }
+            
+            let item_res = worker_container.remove_item(Some(ev.item));
+            if let Ok(_) = item_res {
                 drop_item(&mut container.input, &mut worker_container);
-            } else if let Err(err) = add_item_res {
+            } else if let Err(err) = item_res {
                 println!("Error adding item to container: {:?}", err);
             }
         }
