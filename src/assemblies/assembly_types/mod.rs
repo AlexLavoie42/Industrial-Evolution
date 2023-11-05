@@ -50,7 +50,7 @@ pub struct AssemblyBundle {
     pub marker: Assembly,
     pub power: AssemblyPower,
     pub solid: SolidEntity,
-    pub assembly_items: AssemblyItemContainer,
+    pub assembly_items: ItemIOContainer,
     pub sprite: SpriteBundle
 }
 impl Default for AssemblyBundle {
@@ -59,7 +59,7 @@ impl Default for AssemblyBundle {
             marker: Assembly,
             solid: SolidEntity,
             power: AssemblyPower(Some(Power::Mechanical(0.0))),
-            assembly_items: AssemblyItemContainer {
+            assembly_items: ItemIOContainer {
                 input: ItemContainer {
                     items: Vec::new(),
                     max_items: 5

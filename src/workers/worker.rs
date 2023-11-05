@@ -127,6 +127,7 @@ pub fn toggle_worker_state(
 pub struct WorkerPickUpItemEvent {
     pub worker: Entity,
     pub item: Entity,
+    pub tile_pos: TilePos,
     pub container: Option<Entity>
 }
 
@@ -134,7 +135,7 @@ pub fn worker_pick_up_item(
     mut commands: Commands,
     mut q_item_transforms: Query<(&mut Transform, &GlobalTransform), (With<Item>, Without<Worker>)>,
     mut q_worker_item_container: Query<(&mut ItemContainer, &GlobalTransform, &mut Job), (With<Worker>, Without<Item>)>,
-    mut q_assembly_item_containers: Query<&mut AssemblyItemContainer>,
+    mut q_io_item_containers: Query<&mut ItemIOContainer>,
     mut q_item_containers: Query<&mut ItemContainer, Without<Worker>>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &Transform), (Without<Worker>, Without<Item>)>,
     mut ev_pick_up: EventReader<WorkerPickUpItemEvent>
@@ -154,10 +155,8 @@ pub fn worker_pick_up_item(
 
         let worker_world_pos = get_world_pos(Vec2 { x: worker_transform.translation().x, y: worker_transform.translation().y }, map_transform);
         let Some(worker_tile_pos) = TilePos::from_world_pos(&worker_world_pos, map_size, grid_size, map_type) else { continue; };
-        let item_world_pos = get_world_pos(Vec2 { x: item_g_transform.translation().x, y: item_g_transform.translation().y }, map_transform);
-        let Some(item_tile_pos) = TilePos::from_world_pos(&item_world_pos, map_size, grid_size, map_type) else { continue; };
 
-        if worker_tile_pos != item_tile_pos {
+        if worker_tile_pos != ev.tile_pos {
             continue;
         }
 
@@ -169,7 +168,7 @@ pub fn worker_pick_up_item(
         if let Some(container_entity) = ev.container {
             if let Ok(mut container) = q_item_containers.get_mut(container_entity) {
                 if let Err(err) = container.remove_item(Some(ev.item)) {}
-            } else if let Ok(mut container) = q_assembly_item_containers.get_mut(container_entity) {
+            } else if let Ok(mut container) = q_io_item_containers.get_mut(container_entity) {
                 if let Err(err) = container.output.remove_item(Some(ev.item)) {}
             }
         }
@@ -192,7 +191,7 @@ pub fn worker_drop_item(
     mut q_item_transforms: Query<&mut Transform, With<Item>>,
     mut q_item_containers: Query<&mut ItemContainer, Without<Worker>>,
     mut q_worker_containers: Query<(&mut ItemContainer, &mut Job), With<Worker>>,
-    mut q_assembly_item_containers: Query<&mut AssemblyItemContainer>,
+    mut q_assembly_item_containers: Query<&mut ItemIOContainer>,
     mut ev_drop: EventReader<WorkerDropItemEvent>
 ) {
     for ev in ev_drop.iter() {

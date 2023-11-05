@@ -2,6 +2,7 @@ use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::
 use bevy_ecs_tilemap::prelude::*;
 use pathfinding::prelude::astar;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 mod player;
 use player::*;
@@ -32,22 +33,29 @@ pub enum PlayerState {
     None,
     Assemblies,
     Workers,
-    Jobs
+    Jobs,
+    Recievables,
+    TradeDepot
 }
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(WorldInspectorPlugin::default())
+        .add_plugins(ResourceInspectorPlugin::<Economy>::default())
+        .add_plugins(ResourceInspectorPlugin::<PlayerMoney>::default())
         .add_plugins(TilemapPlugin)
+
         .add_plugins(AssembliesPlugin)
         .add_plugins(WorkerPlugin)
         .add_plugins(ItemPlugin)
         .add_plugins(MoneyPlugin)
+
         .add_systems(Startup, factory_setup)
         .add_systems(FixedUpdate, (player_movement, move_entities))
         .add_systems(Update, camera_follow)
         .add_systems(PostUpdate, despawn_later_system)
+
         .add_state::<PlayerState>()
         .add_systems(PreUpdate, (set_mouse_pos_res, set_mouse_tile_res))
         .insert_resource(MousePos(Vec2::ZERO))
@@ -148,16 +156,5 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ..default()
         }
-    });
-
-    commands.spawn(WoodBundle {
-        sprite: SpriteBundle {
-            transform: Transform {
-                translation: Vec3::new(25.0, 25.0, 0.0),
-                ..WoodBundle::default().sprite.transform
-            },
-            ..WoodBundle::default().sprite
-        },
-        ..default()
     });
 }

@@ -1,3 +1,5 @@
+use bevy::utils::HashMap;
+
 use crate::*;
 
 pub struct MoneyPlugin;
@@ -5,14 +7,19 @@ pub struct MoneyPlugin;
 impl Plugin for MoneyPlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_systems(Update, market_system)
             .insert_resource(PlayerMoney {
                 amount: 10000.0
             })
+            .insert_resource(MarketTimer::default())
+            .insert_resource(Economy::default())
+            .register_type::<PlayerMoney>()
+            .register_type::<Economy>()
         ;
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
 pub struct PlayerMoney {
     pub amount: f32
 }
@@ -33,4 +40,103 @@ impl Money for PlayerMoney {
 pub trait Money {
     fn add_money(&mut self, amount: f32);
     fn try_remove_money(&mut self, amount: f32) -> Result<(), &str>;
+}
+
+#[derive(Reflect)]
+pub struct EconomyPrice {
+    pub current_price: f32,
+    pub base_price: f32,
+    pub supply: f32,
+    pub demand: f32
+}
+
+#[derive(Resource, Reflect)]
+pub struct Economy {
+    pub prices: HashMap<Item, EconomyPrice>
+}
+
+impl Default for Economy {
+    fn default() -> Self {
+        Self {
+            prices: HashMap::from([
+                (Item::Resource(ResourceItem::Wood), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 0.0 }),
+            ])
+        }
+    }
+}
+
+pub trait Purchasable {
+    fn get_price(&self, economy: &Economy) -> Option<f32>;
+    fn buy(&mut self, economy: &mut Economy, amount: i32) -> Result<(), &'static str>;
+    fn sell(&mut self, economy: &mut Economy, amount: i32) -> Result<(), &'static str>;
+}
+
+impl Purchasable for Item {
+    fn get_price(&self, economy: &Economy) -> Option<f32> {
+        economy.prices.get(self).map(|x| { x.current_price })
+    }
+    fn buy(&mut self, economy: &mut Economy, amount: i32) -> Result<(), &'static str> {
+        let Some(price) = economy.prices.get_mut(self) else { return Err("Item not purchasable"); };
+        if (price.supply as i32) < amount {
+            return Err("Not enough supply");
+        }
+        price.supply -= amount as f32;
+        price.demand += amount as f32;
+
+        Ok(())
+    }
+    fn sell(&mut self, economy: &mut Economy, amount: i32) -> Result<(), &'static str> {
+        let Some(price) = economy.prices.get_mut(self) else { return Err("Item not purchasable"); };
+        if (price.demand as i32) < amount {
+            return Err("Not enough demand");
+        }
+
+        price.supply += amount as f32;
+        price.demand -= amount as f32;
+
+        Ok(())
+    }
+}
+
+#[derive(Resource)]
+struct MarketTimer(Timer);
+impl Default for MarketTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(30.0, TimerMode::Repeating))
+    }
+}
+
+const MARKET_FORCE: f32 = 1.0;
+const PRICE_INCREASE_MULT: f32 = 1.1;
+const PRICE_DECREASE_MULT: f32 = 0.9;
+fn market_system(
+    mut economy: ResMut<Economy>,
+    time: Res<Time>,
+    mut market_timer: ResMut<MarketTimer>,
+) {
+    if market_timer.0.tick(time.delta()).just_finished() {
+        for (item, price) in economy.prices.iter_mut() {
+            match item {
+                Item::Good(good) => {
+                    if price.demand < price.supply {
+                        price.demand += MARKET_FORCE;
+                    }
+                },
+                Item::Resource(resource) => {
+                    if price.demand < price.supply {
+                        price.supply += MARKET_FORCE;
+                    }
+                }
+            }
+
+            let price_gap = price.current_price / price.base_price;
+            let supply_gap = price.demand / price.supply;
+
+            if price_gap < supply_gap {
+                price.current_price *= PRICE_INCREASE_MULT;
+            } else if price_gap > supply_gap {
+                price.current_price *= PRICE_DECREASE_MULT;
+            }
+        }
+    }
 }

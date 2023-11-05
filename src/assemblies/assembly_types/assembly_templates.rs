@@ -11,7 +11,7 @@ pub struct PulpMillBundle {
     pub output: AssemblyOutput,
     pub power: AssemblyPower,
     pub solid: SolidEntity,
-    pub assembly_items: AssemblyItemContainer,
+    pub assembly_items: ItemIOContainer,
     pub sprite: SpriteBundle
 }
 impl Default for PulpMillBundle {
@@ -22,7 +22,7 @@ impl Default for PulpMillBundle {
             input: AssemblyInput(Some(Item::Resource(ResourceItem::Wood))),
             output: AssemblyOutput(Some(Item::Resource(ResourceItem::Pulp))),
             power: AssemblyPower(Some(Power::Mechanical(0.0))),
-            assembly_items: AssemblyItemContainer {
+            assembly_items: ItemIOContainer {
                 input: ItemContainer {
                     items: Vec::new(),
                     max_items: 5

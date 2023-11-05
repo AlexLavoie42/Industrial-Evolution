@@ -76,8 +76,8 @@ pub fn activate_job_mode_on_click(
 pub fn job_mode_creation(
     mut mouse_collision: EventReader<MouseCollisionEvent>,
     q_assemblies: Query<Entity, With<Assembly>>,
-    q_assembly_input: Query<(&AssemblyInputSelector, &Parent)>,
-    q_assembly_output: Query<(&AssemblyOutputSelector, &Parent)>,
+    q_assembly_input: Query<(&ContainerInputSelector, &Parent)>,
+    q_assembly_output: Query<(&ContainerOutputSelector, &Parent)>,
     q_items: Query<Entity, With<Item>>,
     mouse_input: Res<Input<MouseButton>>,
     mouse_pos: Res<MouseTile>,
@@ -179,7 +179,7 @@ pub fn worker_do_job(
     mut q_jobs: Query<(&mut Job, Entity, &Transform), With<Worker>>,
     q_tilemap: Query<(&Transform, &TilemapSize, &TilemapGridSize, &TilemapType)>,
     mut q_item_containers: Query<&mut ItemContainer>,
-    mut q_assembly_containers: Query<&mut AssemblyItemContainer>,
+    mut q_assembly_containers: Query<&mut ItemIOContainer>,
     mut ev_assembly_power: EventWriter<AssemblyPowerInput>,
     mut ev_item_pickup: EventWriter<WorkerPickUpItemEvent>,
     mut ev_item_drop: EventWriter<WorkerDropItemEvent>
@@ -221,6 +221,7 @@ pub fn worker_do_job(
                         ev_item_pickup.send(WorkerPickUpItemEvent {
                             item,
                             worker: worker_entity,
+                            tile_pos,
                             container: None
                         });
                     },
@@ -230,15 +231,16 @@ pub fn worker_do_job(
                                 ev_item_pickup.send(WorkerPickUpItemEvent {
                                     item: *item,
                                     worker: worker_entity,
+                                    tile_pos,
                                     container: Some(container)
                                 });
                             }
-                            current_job.job_status = JobStatus::Waiting;
                         } else if let Ok(assembly_container) = q_assembly_containers.get_mut(container) {
                             if let Some(Some(item)) = assembly_container.output.items.last() {
                                 ev_item_pickup.send(WorkerPickUpItemEvent {
                                     item: *item,
                                     worker: worker_entity,
+                                    tile_pos,
                                     container: Some(container)
                                 });
                             }

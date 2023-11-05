@@ -18,7 +18,7 @@ impl Default for WoodBundle {
             resource: ResourceItem::Wood,
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::ORANGE_RED,
+                    color: Color::rgb_u8(83, 53, 10),
                     custom_size: Some(Vec2::new(8.0, 8.0)),
                     ..default()
                 },

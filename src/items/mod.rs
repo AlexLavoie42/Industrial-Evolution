@@ -8,23 +8,44 @@ pub use resources::*;
 mod goods;
 pub use goods::*;
 
+mod container;
+pub use container::*;
+
+mod receivables;
+pub use receivables::*;
+
+mod trade_depot;
+pub use trade_depot::*;
+
 pub struct ItemPlugin;
 
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(PreUpdate, mouse_collision_system::<Item>)
+            .add_systems(Update, purchase_receivables)
+            .add_systems(Update, (
+                place_receivable.run_if(in_state(PlayerState::Recievables)),
+                input_toggle_receivable_mode
+            ))
+            .add_systems(Update, sell_trade_depot_items)
+            .add_systems(Update, (
+                place_trade_depot.run_if(in_state(PlayerState::TradeDepot)),
+                input_toggle_trade_depot_mode
+            ))
             .add_event::<GenericMouseCollisionEvent<Item>>()
             .register_type::<ItemContainer>()
         ;
     }
 }
 
-#[derive(Component, PartialEq, Debug)]
+#[derive(Component, PartialEq, Debug, Reflect, Eq, Hash, Clone, Copy)]
 pub enum Item {
     Good(GoodItem),
     Resource(ResourceItem)
 }
+
+impl ItemType for Item {}
 
 impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Item {
     fn spawn_bundle(
@@ -57,55 +78,4 @@ pub trait ItemSpawn<'a, 'w, 's>: Component {
         &self,
         commands: &'a mut Commands<'w, 's>
     ) -> EntityCommands<'w, 's, 'a>;
-}
-
-#[derive(Component, Debug, Reflect)]
-pub struct ItemContainer {
-    pub items: Vec<Option<Entity>>,
-    pub max_items: usize,
-}
-
-pub struct ItemStackBundle {
-    pub item: Item,
-    pub items: ItemContainer,
-    pub sprite: SpriteBundle
-}
-
-impl ItemContainer {
-    pub fn add_item(&mut self, item: Option<Entity>) -> Result<(), &'static str> {
-        if self.items.len() >= self.max_items {
-            return Err("Maximum number of items reached");
-        }
-        println!("Adding item {:?} to {:?}", item, self);
-        Ok(self.items.push(item))
-    }
-
-    pub fn remove_item(&mut self, item: Option<Entity>) -> Result<Option<Entity>, &'static str> {
-        let item_i = self.items.iter().position(|&x| x == item);
-        if let Some(index) = item_i {
-            println!("Removing item {:?} from {:?}", item, self);
-            if index >= self.items.len() {
-                println!("invalid index");
-                return Err("Invalid index");
-            }
-            let item = Ok(self.items.remove(index));
-            println!("Removed item {:?} from {:?}", item, self);
-            return item;
-        } else {
-            println!("Item not found");
-            return Err("Item not found");
-        }
-    }
-
-    pub fn remove_index(&mut self, index: usize) -> Result<Option<Entity>, &'static str> {
-        if index >= self.items.len() {
-            return Err("Invalid index");
-        }
-
-        Ok(self.items.remove(index))
-    }
-
-    pub fn get_items(&self) -> &[Option<Entity>] {
-        &self.items
-    }
 }

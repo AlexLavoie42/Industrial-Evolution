@@ -181,3 +181,7 @@ pub fn despawn_later_system(
         commands.entity(entity).despawn_recursive();
     }
 }
+
+trait BundleWithTranslate {
+    fn bundle_with_translate(&mut self, translation: Vec3) -> Self;
+}

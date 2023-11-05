@@ -41,16 +41,16 @@ impl Plugin for AssembliesPlugin {
             )
             .add_systems(PreUpdate, (
                 mouse_collision_system::<Assembly>,
-                mouse_collision_system::<AssemblyInputSelector>,
-                mouse_collision_system::<AssemblyOutputSelector>,
+                mouse_collision_system::<ContainerInputSelector>,
+                mouse_collision_system::<ContainerOutputSelector>,
             ))
             .add_event::<GenericMouseCollisionEvent::<Assembly>>()
-            .add_event::<GenericMouseCollisionEvent::<AssemblyInputSelector>>()
-            .add_event::<GenericMouseCollisionEvent::<AssemblyOutputSelector>>()
+            .add_event::<GenericMouseCollisionEvent::<ContainerInputSelector>>()
+            .add_event::<GenericMouseCollisionEvent::<ContainerOutputSelector>>()
             .add_event::<AssemblyPowerInput>()
             .add_event::<HideAssemblyGhost>()
             .add_event::<ShowAssemblyGhost>()
-            .register_type::<AssemblyItemContainer>()
+            .register_type::<ItemIOContainer>()
             .register_type::<AssemblyPower>()
             .insert_resource(SelectedAssembly { selected: AssemblyType::default() })
         ;

@@ -4,7 +4,7 @@ mod good_types;
 use bevy::ecs::system::EntityCommands;
 pub use good_types::*;
 
-#[derive(Component, PartialEq, Debug)]
+#[derive(Component, PartialEq, Debug, Reflect, Eq, Hash, Clone, Copy)]
 pub enum GoodItem {
     Paper
 }

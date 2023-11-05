@@ -17,7 +17,7 @@ pub fn input_toggle_assembly_mode(
     state: Res<State<PlayerState>>,
     mut next_state: ResMut<NextState<PlayerState>>
 ) {
-    if input.just_pressed(KeyCode::R) {
+    if input.just_pressed(KeyCode::E) {
         if state.get() == &PlayerState::Assemblies {
             next_state.set(PlayerState::None);
         } else {
@@ -47,8 +47,8 @@ pub fn place_assembly(
 
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
         let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
-        let input_entity = commands.spawn(AssemblyOutputSelectorBundle {
-            marker: AssemblyOutputSelector,
+        let output_entity = commands.spawn(ContainerOutputSelectorBundle {
+            marker: ContainerOutputSelector,
             sprite: SpriteBundle {
                 transform: Transform {
                     translation: Vec3::new(0.0, 16.0, 1.0),
@@ -63,8 +63,8 @@ pub fn place_assembly(
             },
         }).id();
 
-        let output_entity: Entity = commands.spawn(AssemblyInputSelectorBundle {
-            marker: AssemblyInputSelector,
+        let input_entity: Entity = commands.spawn(ContainerInputSelectorBundle {
+            marker: ContainerInputSelector,
             sprite: SpriteBundle {
                 transform: Transform {
                     translation: Vec3::new(0.0, -16.0 as f32, 1.0),
@@ -84,7 +84,7 @@ pub fn place_assembly(
 
 pub fn produce_goods(
     mut commands: Commands,
-    mut q_assembly: Query<(Entity, &AssemblyPower, &mut AssemblyItemContainer, &AssemblyInput, &AssemblyOutput)>,
+    mut q_assembly: Query<(Entity, &AssemblyPower, &mut ItemIOContainer, &AssemblyInput, &AssemblyOutput)>,
     q_items: Query<&Item>
 ) {
     for (

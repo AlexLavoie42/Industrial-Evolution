@@ -87,6 +87,14 @@
 - External Market events will be random / scripted to start
 - Selling or Buying will create a market event for that item
 
+### Receivables
+- Automatically purchase, ship & store resources
+- Configurable refill limit & shipment size
+- Configurable limit price?
+
+### Trade Depot
+- Automatically sell goods
+- Configurable limit price?
 
 ## Core Gameplay Loop
 The goal of this prototype will be to judge the most basic mechanics and determine if they are fun enough to be played for a long time with little polish. The core game mechanics will only include the bare minimum amount of mechanics & depth to be considered fun.

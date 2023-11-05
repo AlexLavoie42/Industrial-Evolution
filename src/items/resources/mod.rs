@@ -4,7 +4,7 @@ mod resource_types;
 use bevy::ecs::system::EntityCommands;
 pub use resource_types::*;
 
-#[derive(Component, PartialEq, Debug)]
+#[derive(Component, PartialEq, Debug, Reflect, Eq, Hash, Clone, Copy)]
 pub enum ResourceItem {
     Wood,
     Pulp
