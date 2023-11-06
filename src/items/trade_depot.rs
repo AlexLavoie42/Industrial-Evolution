@@ -63,7 +63,7 @@ pub fn sell_trade_depot_items(
             println!("Selling item: {:?}", item_entity);
             money.add_money(price);
 
-            commands.entity(*item_entity).despawn_recursive();
+            commands.entity(*item_entity).insert(DespawnLater);
             return false;
         });
     }

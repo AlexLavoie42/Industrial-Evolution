@@ -224,6 +224,7 @@ pub fn worker_drop_item(
         println!("Dropping item {:?} into {:?}", ev.item, container_entity);
 
         let mut drop_item = |container: &mut ItemContainer, worker_container: &mut ItemContainer| {
+            // TODO: Safe child push (check entity exists)
             commands.entity(ev.worker).remove_children([ev.item].as_slice());
             commands.entity(container_entity).push_children(&[ev.item]);
             item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
