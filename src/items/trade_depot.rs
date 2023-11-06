@@ -104,21 +104,9 @@ pub fn place_trade_depot(
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
         let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
 
-        let input_entity = commands.spawn(ContainerInputSelectorBundle {
-            marker: ContainerInputSelector,
-            sprite: SpriteBundle {
-                transform: Transform {
-                    translation: Vec3::new(0.0, -42.0, 1.0),
-                    ..Default::default()
-                },
-                sprite: Sprite {
-                    color: Color::GREEN,
-                    custom_size: Some(Vec2::new(16.0, 8.0)),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-        }).id();
+        let mut input_bundle = ContainerInputSelectorBundle::default();
+        input_bundle.sprite.transform.translation = Vec3::new(0.0, 42.0, 1.0);
+        let input_entity = commands.spawn(input_bundle).id();
 
         commands.spawn(TradeDepotBundle::from_translation(Vec3 { x: pos.x, y: pos.y, z: 1.0 })).push_children(&[input_entity]);
     }

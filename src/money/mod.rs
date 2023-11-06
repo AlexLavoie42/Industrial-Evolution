@@ -7,7 +7,7 @@ pub struct MoneyPlugin;
 impl Plugin for MoneyPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(Update, market_system)
+            .add_systems(Update, (market_system, market_forces))
             .insert_resource(PlayerMoney {
                 amount: 10000.0
             })
@@ -50,18 +50,24 @@ pub struct EconomyPrice {
     pub demand: f32
 }
 
+#[derive(Reflect, Hash, PartialEq, Eq, Clone, Copy, Debug)]
+pub enum PurchasableItem {
+    Good(GoodItem),
+    Resource(ResourceItem)
+}
+
 #[derive(Resource, Reflect)]
 pub struct Economy {
-    pub prices: HashMap<Item, EconomyPrice>
+    pub prices: HashMap<PurchasableItem, EconomyPrice>
 }
 
 impl Default for Economy {
     fn default() -> Self {
         Self {
             prices: HashMap::from([
-                (Item::Resource(ResourceItem::Wood), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 100.0, demand: 10.0 }),
-                (Item::Resource(ResourceItem::Pulp), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 100.0 }),
-                (Item::Good(GoodItem::Paper), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 1000.0 }),
+                (PurchasableItem::Resource(ResourceItem::Wood), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 10000.0, demand: 10.0 }),
+                (PurchasableItem::Resource(ResourceItem::Pulp), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 1000.0 }),
+                (PurchasableItem::Good(GoodItem::Paper), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 1000.0 }),
             ])
         }
     }
@@ -75,10 +81,22 @@ pub trait Purchasable {
 
 impl Purchasable for Item {
     fn get_price(&self, economy: &Economy) -> Option<f32> {
-        economy.prices.get(self).map(|x| { x.current_price })
+        let purchasable = match self {
+            Item::Good(good) => Some(PurchasableItem::Good(*good)),
+            Item::Resource(resource) => Some(PurchasableItem::Resource(*resource)),
+            Item::Material(material) => None
+        };
+        let Some(purchasable) = purchasable else { return None; };
+        economy.prices.get(&purchasable).map(|x| { x.current_price })
     }
     fn buy(&mut self, economy: &mut Economy, amount: i32) -> Result<(), &'static str> {
-        let Some(price) = economy.prices.get_mut(self) else { return Err("Item not purchasable"); };
+        let purchasable = match self {
+            Item::Good(good) => Some(PurchasableItem::Good(*good)),
+            Item::Resource(resource) => Some(PurchasableItem::Resource(*resource)),
+            Item::Material(material) => None
+        };
+        let Some(purchasable) = purchasable else { return Err("Item not purchasable"); };
+        let Some(price) = economy.prices.get_mut(&purchasable) else { return Err("Item not purchasable"); };
         if (price.supply as i32) < amount {
             return Err("Not enough supply");
         }
@@ -88,7 +106,13 @@ impl Purchasable for Item {
         Ok(())
     }
     fn sell(&mut self, economy: &mut Economy, amount: i32) -> Result<(), &'static str> {
-        let Some(price) = economy.prices.get_mut(self) else { return Err("Item not purchasable"); };
+        let purchasable = match self {
+            Item::Good(good) => Some(PurchasableItem::Good(*good)),
+            Item::Resource(resource) => Some(PurchasableItem::Resource(*resource)),
+            Item::Material(material) => None
+        };
+        let Some(purchasable) = purchasable else { return Err("Item not purchasable"); };
+        let Some(price) = economy.prices.get_mut(&purchasable) else { return Err("Item not purchasable"); };
         if (price.demand as i32) < amount {
             return Err("Not enough demand");
         }
@@ -108,7 +132,7 @@ impl Default for MarketTimer {
     }
 }
 
-const MARKET_FORCE: f32 = 0.2;
+const MARKET_FORCE: f32 = 10.0;
 const PRICE_INCREASE_MULT: f32 = 1.1;
 const PRICE_DECREASE_MULT: f32 = 0.9;
 fn market_system(
@@ -143,13 +167,17 @@ fn market_forces(
             if price.demand == 0.0 {
                 price.demand += MARKET_FORCE;
             }
-
-            if price.demand > price.supply {
-                price.supply += MARKET_FORCE;
-            }
-
-            if price.demand < price.supply {
-                price.demand += MARKET_FORCE;
+            match item {
+                PurchasableItem::Resource(_) => {
+                    if price.demand > price.supply {
+                        price.supply += MARKET_FORCE;
+                    }
+                },
+                PurchasableItem::Good(_) => {
+                    if price.demand < price.supply {
+                        price.demand += MARKET_FORCE;
+                    }
+                }
             }
         }
     }

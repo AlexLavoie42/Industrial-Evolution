@@ -68,8 +68,48 @@ pub struct ContainerInputSelectorBundle {
     pub sprite: SpriteBundle
 }
 
+impl Default for ContainerInputSelectorBundle {
+    fn default() -> Self {
+        ContainerInputSelectorBundle {
+            marker: ContainerInputSelector,
+            sprite: SpriteBundle {
+                transform: Transform {
+                    translation: Vec3::new(0.0, -42.0, 1.0),
+                    ..Default::default()
+                },
+                sprite: Sprite {
+                    color: Color::GREEN,
+                    custom_size: Some(Vec2::new(32.0, 16.0)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        }
+    }
+}
+
 #[derive(Bundle)]
 pub struct ContainerOutputSelectorBundle {
     pub marker: ContainerOutputSelector,
     pub sprite: SpriteBundle
+}
+
+impl Default for ContainerOutputSelectorBundle {
+    fn default() -> Self {
+        ContainerOutputSelectorBundle {
+            marker: ContainerOutputSelector,
+            sprite: SpriteBundle {
+                transform: Transform {
+                    translation: Vec3::new(0.0, 42.0, 1.0),
+                    ..Default::default()
+                },
+                sprite: Sprite {
+                    color: Color::RED,
+                    custom_size: Some(Vec2::new(32.0, 16.0)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        }
+    }
 }

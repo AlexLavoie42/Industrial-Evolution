@@ -5,9 +5,10 @@ use crate::*;
 pub mod assembly_templates;
 use assembly_templates::*;
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
 pub enum AssemblyType {
-    PulpMill
+    PulpMill,
+    PaperPress
 }
 
 impl Default for AssemblyType {
@@ -31,16 +32,16 @@ impl<'a, 'w, 's> AssemblySpawn<'a, 'w, 's> for AssemblyType {
         position: Vec2
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
-            AssemblyType::PulpMill => commands.spawn(PulpMillBundle {
-                sprite: SpriteBundle {
-                    transform: Transform {
-                        translation: Vec3::new(position.x, position.y, 1.0),
-                        ..PulpMillBundle::default().sprite.transform
-                    },
-                    ..PulpMillBundle::default().sprite
-                },
-                ..default()
-            })
+            AssemblyType::PulpMill => {
+                let mut bundle = PulpMillBundle::default();
+                bundle.sprite.transform.translation = Vec3::new(position.x, position.y, 1.0);
+                commands.spawn(bundle)
+            },
+            AssemblyType::PaperPress => {
+                let mut bundle = PaperPressBundle::default();
+                bundle.sprite.transform.translation = Vec3::new(position.x, position.y, 1.0);
+                commands.spawn(bundle)
+            }
         }
     }
 }

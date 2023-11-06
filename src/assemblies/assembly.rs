@@ -4,9 +4,16 @@ use crate::*;
 pub struct Assembly;
 impl Clickable for Assembly {}
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
 pub struct SelectedAssembly {
     pub selected: AssemblyType
+}
+impl Default for SelectedAssembly {
+    fn default() -> Self {
+        SelectedAssembly {
+            selected: AssemblyType::PulpMill
+        }
+    }
 }
 
 #[derive(Component, Reflect, Debug)]
@@ -47,37 +54,14 @@ pub fn place_assembly(
 
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
         let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
-        let output_entity = commands.spawn(ContainerOutputSelectorBundle {
-            marker: ContainerOutputSelector,
-            sprite: SpriteBundle {
-                transform: Transform {
-                    translation: Vec3::new(0.0, 16.0, 1.0),
-                    ..Default::default()
-                },
-                sprite: Sprite {
-                    color: Color::RED,
-                    custom_size: Some(Vec2::new(16.0, 8.0)),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-        }).id();
 
-        let input_entity: Entity = commands.spawn(ContainerInputSelectorBundle {
-            marker: ContainerInputSelector,
-            sprite: SpriteBundle {
-                transform: Transform {
-                    translation: Vec3::new(0.0, -16.0 as f32, 1.0),
-                    ..Default::default()
-                },
-                sprite: Sprite {
-                    color: Color::GREEN,
-                    custom_size: Some(Vec2::new(16.0, 8.0)),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-        }).id();
+        let mut output_bundle = ContainerOutputSelectorBundle::default();
+        output_bundle.sprite.transform.translation = Vec3::new(0.0, 16.0, 1.0);
+        let output_entity = commands.spawn(output_bundle).id();
+
+        let mut input_bundle = ContainerInputSelectorBundle::default();
+        input_bundle.sprite.transform.translation = Vec3::new(0.0, -16.0, 1.0);
+        let input_entity: Entity = commands.spawn(input_bundle).id();
         selected_assembly.selected.spawn_bundle(&mut commands, pos).push_children(&[input_entity, output_entity]);
     }
 }

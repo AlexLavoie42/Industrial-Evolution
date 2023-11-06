@@ -111,21 +111,9 @@ pub fn place_receivable(
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
         let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
 
-        let output_entity = commands.spawn(ContainerOutputSelectorBundle {
-            marker: ContainerOutputSelector,
-            sprite: SpriteBundle {
-                transform: Transform {
-                    translation: Vec3::new(0.0, 42.0, 1.0),
-                    ..Default::default()
-                },
-                sprite: Sprite {
-                    color: Color::RED,
-                    custom_size: Some(Vec2::new(16.0, 8.0)),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-        }).id();
+        let mut output_bundle = ContainerOutputSelectorBundle::default();
+        output_bundle.sprite.transform.translation = Vec3::new(0.0, -42.0, 1.0);
+        let output_entity = commands.spawn(output_bundle).id();
 
         commands.spawn(ItemReceivableBundle::from_translation(Vec3 { x: pos.x, y: pos.y, z: 1.0 })).push_children(&[output_entity]);
     }

@@ -17,6 +17,9 @@ pub use receivables::*;
 mod trade_depot;
 pub use trade_depot::*;
 
+mod materials;
+pub use materials::*;
+
 pub struct ItemPlugin;
 
 impl Plugin for ItemPlugin {
@@ -42,7 +45,8 @@ impl Plugin for ItemPlugin {
 #[derive(Component, PartialEq, Debug, Reflect, Eq, Hash, Clone, Copy)]
 pub enum Item {
     Good(GoodItem),
-    Resource(ResourceItem)
+    Resource(ResourceItem),
+    Material(MaterialItem)
 }
 
 impl ItemType for Item {}
@@ -58,6 +62,9 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Item {
             },
             Item::Resource(resource) => {
                 resource.spawn_bundle(commands)
+            },
+            Item::Material(material) => {
+                material.spawn_bundle(commands)
             }
         }
     }

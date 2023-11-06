@@ -53,6 +53,7 @@ impl Plugin for AssembliesPlugin {
             .register_type::<ItemIOContainer>()
             .register_type::<AssemblyPower>()
             .insert_resource(SelectedAssembly { selected: AssemblyType::default() })
+            .init_resource::<SelectedAssembly>()
         ;
     }
 }

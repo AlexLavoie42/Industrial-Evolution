@@ -44,6 +44,7 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::default())
         .add_plugins(ResourceInspectorPlugin::<Economy>::default())
         .add_plugins(ResourceInspectorPlugin::<PlayerMoney>::default())
+        .add_plugins(ResourceInspectorPlugin::<SelectedAssembly>::default())
         .add_plugins(TilemapPlugin)
 
         .add_plugins(AssembliesPlugin)

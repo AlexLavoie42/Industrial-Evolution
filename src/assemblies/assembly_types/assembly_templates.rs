@@ -39,3 +39,43 @@ impl Default for PulpMillBundle {
         }
     }
 }
+
+#[derive(Component)]
+pub struct PaperPress;
+
+#[derive(Bundle)]
+pub struct PaperPressBundle {
+    pub marker: PaperPress,
+    pub assembly: Assembly,
+    pub input: AssemblyInput,
+    pub output: AssemblyOutput,
+    pub power: AssemblyPower,
+    pub solid: SolidEntity,
+    pub assembly_items: ItemIOContainer,
+    pub sprite: SpriteBundle
+}
+impl Default for PaperPressBundle {
+    fn default() -> PaperPressBundle {
+        PaperPressBundle {
+            marker: PaperPress,
+            assembly: Assembly,
+            input: AssemblyInput(Some(Item::Resource(ResourceItem::Pulp))),
+            output: AssemblyOutput(Some(Item::Material(MaterialItem::WetPaper))),
+            power: AssemblyPower(Some(Power::Mechanical(0.0))),
+            assembly_items: ItemIOContainer {
+                input: ItemContainer {
+                    items: Vec::new(),
+                    max_items: 5
+                },
+                output: ItemContainer {
+                    items: Vec::new(),
+                    max_items: 3
+                }
+            },
+            solid: SolidEntity,
+            sprite: SpriteBundle {
+                ..AssemblyBundle::default().sprite
+            }
+        }
+    }
+}
