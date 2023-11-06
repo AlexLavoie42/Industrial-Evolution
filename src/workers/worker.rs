@@ -36,7 +36,8 @@ impl Default for WorkerBundle {
             job: Job {
                 path: Vec::new(),
                 complexity: 0.0,
-                current_job: None
+                current_job: None,
+                lock: false
             },
             worker_items: ItemContainer { items: Vec::new(), max_items: 2 },
             production: PowerProduction {
@@ -148,6 +149,10 @@ pub fn worker_pick_up_item(
             continue;
         };
         if container.items.iter().any(|i| *i == Some(ev.item)) {
+            if let Some(current_job_i) = job.current_job {
+                let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
+                current_job.job_status = JobStatus::Completed;
+            }
             continue;
         }
 
@@ -157,10 +162,20 @@ pub fn worker_pick_up_item(
         let Some(worker_tile_pos) = TilePos::from_world_pos(&worker_world_pos, map_size, grid_size, map_type) else { continue; };
 
         if worker_tile_pos != ev.tile_pos {
+            if let Some(current_job_i) = job.current_job {
+                let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
+                current_job.job_status = JobStatus::Active;
+            }
             continue;
         }
 
-        let Ok(_) = container.add_item(Some(ev.item)) else { continue; }; 
+        let Ok(_) = container.add_item(Some(ev.item)) else {
+            if let Some(current_job_i) = job.current_job {
+                let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
+                current_job.job_status = JobStatus::Active;
+            }
+            continue;
+        }; 
         commands.entity(ev.worker).add_child(ev.item);
         item_transform.translation = Vec3::new(16.0, 8.0, item_transform.translation.z);
         println!("Picked up item {:?}", container);

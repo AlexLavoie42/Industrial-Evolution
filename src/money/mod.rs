@@ -59,7 +59,9 @@ impl Default for Economy {
     fn default() -> Self {
         Self {
             prices: HashMap::from([
-                (Item::Resource(ResourceItem::Wood), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 0.0 }),
+                (Item::Resource(ResourceItem::Wood), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 100.0, demand: 10.0 }),
+                (Item::Resource(ResourceItem::Pulp), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 100.0 }),
+                (Item::Good(GoodItem::Paper), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 1000.0 }),
             ])
         }
     }
@@ -102,11 +104,11 @@ impl Purchasable for Item {
 struct MarketTimer(Timer);
 impl Default for MarketTimer {
     fn default() -> Self {
-        Self(Timer::from_seconds(30.0, TimerMode::Repeating))
+        Self(Timer::from_seconds(10.0, TimerMode::Repeating))
     }
 }
 
-const MARKET_FORCE: f32 = 1.0;
+const MARKET_FORCE: f32 = 0.2;
 const PRICE_INCREASE_MULT: f32 = 1.1;
 const PRICE_DECREASE_MULT: f32 = 0.9;
 fn market_system(
@@ -116,19 +118,6 @@ fn market_system(
 ) {
     if market_timer.0.tick(time.delta()).just_finished() {
         for (item, price) in economy.prices.iter_mut() {
-            match item {
-                Item::Good(good) => {
-                    if price.demand < price.supply {
-                        price.demand += MARKET_FORCE;
-                    }
-                },
-                Item::Resource(resource) => {
-                    if price.demand < price.supply {
-                        price.supply += MARKET_FORCE;
-                    }
-                }
-            }
-
             let price_gap = price.current_price / price.base_price;
             let supply_gap = price.demand / price.supply;
 
@@ -136,6 +125,31 @@ fn market_system(
                 price.current_price *= PRICE_INCREASE_MULT;
             } else if price_gap > supply_gap {
                 price.current_price *= PRICE_DECREASE_MULT;
+            }
+        }
+    }
+}
+
+fn market_forces(
+    mut economy: ResMut<Economy>,
+    time: Res<Time>,
+    mut market_timer: ResMut<MarketTimer>,
+) {
+    if market_timer.0.just_finished() {
+        for (item, price) in economy.prices.iter_mut() {
+            if price.supply == 0.0 {
+                price.supply += MARKET_FORCE;
+            }
+            if price.demand == 0.0 {
+                price.demand += MARKET_FORCE;
+            }
+
+            if price.demand > price.supply {
+                price.supply += MARKET_FORCE;
+            }
+
+            if price.demand < price.supply {
+                price.demand += MARKET_FORCE;
             }
         }
     }

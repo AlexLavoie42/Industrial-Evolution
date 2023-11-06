@@ -13,7 +13,8 @@ pub enum JobAction {
         item: Entity,
     },
     ContainerPickup {
-        container: Entity
+        container: Entity,
+        pickup_amount: i32,
     },
     Drop {
         worker: Entity,
@@ -34,14 +35,14 @@ pub struct JobPoint {
 pub struct Job {
     pub path: Vec<JobPoint>,
     pub complexity: f32,
-    pub current_job: Option<usize>
+    pub current_job: Option<usize>,
+    pub lock: bool
 }
 
 #[derive(Component, Debug, PartialEq, Reflect)]
 pub enum JobStatus {
     Active,
-    Completed,
-    Waiting
+    Completed
 }
 
 #[derive(Resource)]
@@ -121,7 +122,8 @@ pub fn job_mode_creation(
                             point: mouse_pos.0,
                             job_status: JobStatus::Active,
                             action: JobAction::ContainerPickup {
-                                container: parent.get()
+                                container: parent.get(),
+                                pickup_amount: 1
                             },
                             timer: None
                         };
@@ -153,10 +155,10 @@ pub fn job_mode_creation(
 }
 
 pub fn worker_iterate_jobs(
-    mut q_jobs: Query<(&mut Job, &WorkerState)>,
+    mut q_jobs: Query<(&mut Job, &mut WorkerState)>,
 ) {
     for (mut job,  state) in q_jobs.iter_mut() {
-        if state == &WorkerState::Paused {
+        if *state == WorkerState::Paused {
             continue;
         }
         let active_jobs: Vec<&JobPoint> = job.path.iter().filter(|path| -> bool {
@@ -186,10 +188,16 @@ pub fn worker_do_job(
 ) {
     let (map_transform, map_size, grid_size, map_type) = q_tilemap.single();
     for (mut job, worker_entity, transform) in q_jobs.iter_mut() {
+        // Make sure each job is only run once per frame
+        if job.lock {
+            continue;
+        }
+        job.lock = true;
         let world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
         let tile_pos = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type);
         if let (Some(tile_pos), Some(current_job_i)) = (tile_pos, job.current_job) {
             if job.path.len() < current_job_i + 1 {
+                job.lock = false;
                 continue;
             }
             let current_job = &mut job.path[current_job_i];
@@ -197,11 +205,13 @@ pub fn worker_do_job(
                 if let Some(timer) = &mut current_job.timer {
                     timer.tick(time.delta());
                     if !timer.finished() {
+                        job.lock = false;
                         continue;
                     }
                     timer.reset();
                 }
-                if current_job.job_status == JobStatus::Waiting {
+                if current_job.job_status != JobStatus::Active {
+                    job.lock = false;
                     continue;
                 }
                 match current_job.action {
@@ -225,9 +235,10 @@ pub fn worker_do_job(
                             container: None
                         });
                     },
-                    JobAction::ContainerPickup { container } => {
+                    JobAction::ContainerPickup { container, pickup_amount } => {
                         if let Ok(item_container) = q_item_containers.get_mut(container) {
                             if let Some(Some(item)) = item_container.items.last() {
+                                println!("status {:?}", current_job.job_status);
                                 ev_item_pickup.send(WorkerPickUpItemEvent {
                                     item: *item,
                                     worker: worker_entity,
@@ -261,6 +272,8 @@ pub fn worker_do_job(
                 };
             }
         }
+
+        job.lock = false;
     }
 }
 

@@ -17,20 +17,17 @@ impl ItemContainer {
         if self.items.len() >= self.max_items {
             return Err("Maximum number of items reached");
         }
-        println!("Adding item {:?} to {:?}", item, self);
         Ok(self.items.push(item))
     }
 
     pub fn remove_item(&mut self, item: Option<Entity>) -> Result<Option<Entity>, &'static str> {
         let item_i = self.items.iter().position(|&x| x == item);
         if let Some(index) = item_i {
-            println!("Removing item {:?} from {:?}", item, self);
             if index >= self.items.len() {
                 println!("invalid index");
                 return Err("Invalid index");
             }
             let item = Ok(self.items.remove(index));
-            println!("Removed item {:?} from {:?}", item, self);
             return item;
         } else {
             println!("Item not found");

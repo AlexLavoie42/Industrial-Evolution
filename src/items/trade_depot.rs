@@ -52,8 +52,15 @@ pub fn sell_trade_depot_items(
             let Ok(mut item) = q_items.get_mut(*item_entity) else { return true; };
             
             let Some(price) = item.get_price(&economy) else { return true; };
-            
-            let Ok(_) = item.sell(&mut economy, 1) else { return true; };
+
+            match item.sell(&mut economy, 1) {
+                Ok(_) => {},
+                Err(e) => {
+                    println!("{:?}", e);
+                    return true
+                }
+            }
+            println!("Selling item: {:?}", item_entity);
             money.add_money(price);
 
             commands.entity(*item_entity).despawn_recursive();
