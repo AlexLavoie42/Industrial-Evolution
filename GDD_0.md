@@ -6,9 +6,9 @@
 - Main scene = Factory (prepare for scaling to multiple factories)
 
 - Items
-    - Goods
-    - Resources
-    - Equipment (form of Good?)
+    - Goods - Can be sold but not bought
+    - Resources - Can be bought & sold
+    - Materials - Can't be bought or sold
 - Assemblies
     - Transform Resources into Goods
     - Requires some form of "Work" to operate
@@ -53,17 +53,22 @@
 
 ## Prototype
 
-1 Good per Power stage
+~~1 Good per Power stage~~
+2-3 Goods per power stage, allows testing economy management
 
 - Resources
     - Wood
     - Pulp
+    - Lumber
 - Goods
     - Paper
+    - Furnature
 - Assemblies
     - Pulp Mill
-    - Paper Machine
-    - (Market Interaction) Receivables?
+    - Paper Press
+    - Paper Drier
+    - Lumber Mill
+    - Woodworking shop
 - Worker
     - Path setting between assemblies
     - Interact with assemblies
@@ -84,6 +89,7 @@
     - Each item can recieve upward & downward market force events
     - Each event will push the price by a random amount upward or downward respectively
     - Event are weighted based on the size of the market for each item, so events in smaller markets will have a larger impact.
+    - Larger price gaps (base price - current price) increase the amount of market events in a particular direction
 - External Market events will be random / scripted to start
 - Selling or Buying will create a market event for that item
 
@@ -91,10 +97,24 @@
 - Automatically purchase, ship & store resources
 - Configurable refill limit & shipment size
 - Configurable limit price?
+- Limited placement (Factory walls?)
 
 ### Trade Depot
 - Automatically sell goods
 - Configurable limit price?
+- Limited placement (Factory walls?)
+
+### External Power
+- Automates assembly production for a high upfront cost + upkeep cost
+- Limited placement (Factory walls?)
+- Power can be transported to assemblies
+    - Mechanical = Shaft
+    - Thermal = Steam? Conductive? Limited transportation (Focus on resources e.i. Coal)?
+    - Electricity = Wires
+
+### Conveyors
+- Slowly moves items automatically
+- Items must be manually loaded & removed by player or worker
 
 ## Core Gameplay Loop
 The goal of this prototype will be to judge the most basic mechanics and determine if they are fun enough to be played for a long time with little polish. The core game mechanics will only include the bare minimum amount of mechanics & depth to be considered fun.
@@ -104,6 +124,10 @@ The goal of this prototype will be to judge the most basic mechanics and determi
 - Sell Good for profit
 - Hire Workers and use them to automate new assembly
 - Scale Assembly with automation
+
+Learnings:
+- Easy to fall into trap player having nothing to do while waiting for production.
+    - Make sure the player is always the bottleneck to keep the game engaging
 
 ## Random Thoughts
 
