@@ -13,6 +13,7 @@ impl Plugin for MoneyPlugin {
             })
             .insert_resource(MarketTimer::default())
             .insert_resource(Economy::default())
+            .insert_resource(AssemblyPrices::default())
             .register_type::<PlayerMoney>()
             .register_type::<Economy>()
         ;
@@ -50,6 +51,22 @@ pub struct EconomyPrice {
     pub demand: f32
 }
 
+#[derive(Resource, Reflect)]
+pub struct AssemblyPrices {
+    pub prices: HashMap<AssemblyType, f32>
+}
+
+impl Default for AssemblyPrices {
+    fn default() -> Self {
+        Self {
+            prices: HashMap::from([
+                (AssemblyType::PulpMill, 500.0),
+                (AssemblyType::PaperPress, 1000.0)
+            ])
+        }
+    }
+}
+
 #[derive(Reflect, Hash, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum PurchasableItem {
     Good(GoodItem),
@@ -65,9 +82,9 @@ impl Default for Economy {
     fn default() -> Self {
         Self {
             prices: HashMap::from([
-                (PurchasableItem::Resource(ResourceItem::Wood), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 10000.0, demand: 10.0 }),
-                (PurchasableItem::Resource(ResourceItem::Pulp), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 1000.0 }),
-                (PurchasableItem::Good(GoodItem::Paper), EconomyPrice { current_price: 1.0, base_price: 1.0, supply: 0.0, demand: 1000.0 }),
+                (PurchasableItem::Resource(ResourceItem::Wood), EconomyPrice { current_price: 3.0, base_price: 3.0, supply: 5000.0, demand: 100.0 }),
+                (PurchasableItem::Resource(ResourceItem::Pulp), EconomyPrice { current_price: 5.0, base_price: 5.0, supply: 0.0, demand: 1000.0 }),
+                (PurchasableItem::Good(GoodItem::Paper), EconomyPrice { current_price: 10.0, base_price: 10.0, supply: 10.0, demand: 1000.0 }),
             ])
         }
     }
@@ -132,7 +149,7 @@ impl Default for MarketTimer {
     }
 }
 
-const MARKET_FORCE: f32 = 10.0;
+const MARKET_FORCE: f32 = 1.0;
 const PRICE_INCREASE_MULT: f32 = 1.1;
 const PRICE_DECREASE_MULT: f32 = 0.9;
 fn market_system(

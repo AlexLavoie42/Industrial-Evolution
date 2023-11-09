@@ -12,8 +12,8 @@ pub use ghost::*;
 mod assembly_types;
 pub use assembly_types::*;
 
-mod assembly_items;
-pub use assembly_items::*;
+mod assembly_production;
+pub use assembly_production::*;
 
 pub struct AssembliesPlugin;
 impl Plugin for AssembliesPlugin {
@@ -34,7 +34,8 @@ impl Plugin for AssembliesPlugin {
                 (place_assembly, assembly_ghost_tracking).run_if(in_state(PlayerState::Assemblies)),
                 input_toggle_assembly_mode,
                 show_assembly_ghost,
-                hide_assembly_ghost
+                hide_assembly_ghost,
+                refund_assembly,
             ))
             .add_systems(Update,
                 (produce_goods, add_assembly_power_input)

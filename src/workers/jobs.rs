@@ -220,9 +220,8 @@ pub fn worker_do_job(
                         ev_assembly_power.send(AssemblyPowerInput {
                             assembly,
                             source: worker_entity,
-                            power
+                            power,
                         });
-                        current_job.job_status = JobStatus::Completed;
                     },
                     JobAction::Idle => {
                         current_job.job_status = JobStatus::Completed;

@@ -142,6 +142,7 @@ pub fn worker_pick_up_item(
     mut ev_pick_up: EventReader<WorkerPickUpItemEvent>
 ) {
     for ev in ev_pick_up.iter() {
+        // TODO: Lock each container to avoid a race condition with multiple workers
         let (
             Ok((mut container, worker_transform, mut job)),
             Ok((mut item_transform, item_g_transform))
