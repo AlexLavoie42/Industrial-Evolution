@@ -42,6 +42,12 @@ impl Default for AssemblyBundle {
     }
 }
 
+impl GetSpriteBundle for AssemblyBundle {
+    fn get_sprite_bundle(&self) -> SpriteBundle {
+        self.sprite.clone()
+    }
+}
+
 pub trait AssemblySpawn<'a, 'w, 's> {
     fn spawn_bundle(
         &self,

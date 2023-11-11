@@ -13,7 +13,11 @@ pub struct ItemReceivableBundle {
     pub container: ItemContainer,
     pub sprite: SpriteBundle
 }
-
+impl GetSpriteBundle for ItemReceivableBundle {
+    fn get_sprite_bundle(&self) -> SpriteBundle {
+        self.sprite.clone()
+    }
+}
 impl ItemReceivableBundle {
     pub fn from_translation(translation: Vec3) -> Self {
         let mut bundle = ItemReceivableBundle::default();

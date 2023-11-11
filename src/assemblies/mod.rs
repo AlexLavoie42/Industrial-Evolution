@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::*;
 
 mod assembly;
@@ -5,9 +7,6 @@ pub use assembly::*;
 
 mod power;
 pub use power::*;
-
-mod ghost;
-pub use ghost::*;
 
 mod assembly_types;
 pub use assembly_types::*;
@@ -20,21 +19,23 @@ impl Plugin for AssembliesPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(OnEnter(PlayerState::Assemblies),
-                |mut ev_show_ghost: EventWriter<ShowAssemblyGhost>| {
-                    ev_show_ghost.send(ShowAssemblyGhost);
+                |mut ev_show_ghost: EventWriter<ShowHoverGhost<AssemblyBundle>>| {
+                    ev_show_ghost.send(ShowHoverGhost::<AssemblyBundle> {
+                        bundle: PhantomData::<AssemblyBundle>
+                    });
                 }
             )
             .add_systems(OnExit(PlayerState::Assemblies),
-                |mut ev_hide_ghost: EventWriter<HideAssemblyGhost>| {
-                    ev_hide_ghost.send(HideAssemblyGhost);
+                |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
+                    ev_hide_ghost.send(HideHoverGhost);
                 }
             )
+            .add_systems(Update, show_hover_ghost::<AssemblyBundle>)
+            .add_event::<ShowHoverGhost::<AssemblyBundle>>()
             .add_systems(Update,
             (
-                (place_assembly, assembly_ghost_tracking).run_if(in_state(PlayerState::Assemblies)),
+                (place_assembly).run_if(in_state(PlayerState::Assemblies)),
                 input_toggle_assembly_mode,
-                show_assembly_ghost,
-                hide_assembly_ghost,
                 refund_assembly,
             ))
             .add_systems(Update,
@@ -49,8 +50,6 @@ impl Plugin for AssembliesPlugin {
             .add_event::<GenericMouseCollisionEvent::<ContainerInputSelector>>()
             .add_event::<GenericMouseCollisionEvent::<ContainerOutputSelector>>()
             .add_event::<AssemblyPowerInput>()
-            .add_event::<HideAssemblyGhost>()
-            .add_event::<ShowAssemblyGhost>()
             .register_type::<ItemIOContainer>()
             .register_type::<AssemblyPower>()
             .insert_resource(SelectedAssembly { selected: AssemblyType::default() })

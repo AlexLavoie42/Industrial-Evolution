@@ -9,7 +9,11 @@ pub struct TradeDepotBundle {
     pub sprite: SpriteBundle,
     pub items: ItemContainer
 }
-
+impl GetSpriteBundle for TradeDepotBundle {
+    fn get_sprite_bundle(&self) -> SpriteBundle {
+        self.sprite.clone()
+    }
+}
 impl TradeDepotBundle {
     pub fn from_translation(translation: Vec3) -> Self {
         let mut bundle = TradeDepotBundle::default();

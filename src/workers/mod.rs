@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::*;
 
 mod jobs;
@@ -13,6 +15,20 @@ pub struct WorkerPlugin;
 impl Plugin for WorkerPlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_systems(OnEnter(PlayerState::Workers),
+                |mut ev_show_ghost: EventWriter<ShowHoverGhost<WorkerBundle>>| {
+                    ev_show_ghost.send(ShowHoverGhost::<WorkerBundle> {
+                        bundle: PhantomData::<WorkerBundle>
+                    });
+                }
+            )
+            .add_systems(OnExit(PlayerState::Workers),
+                |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
+                    ev_hide_ghost.send(HideHoverGhost);
+                }
+            )
+            .add_systems(Update, show_hover_ghost::<WorkerBundle>)
+            .add_event::<ShowHoverGhost::<WorkerBundle>>()
             .add_systems(Update, 
                 (
                     (place_worker).run_if(in_state(PlayerState::Workers)),

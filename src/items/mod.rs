@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use bevy::ecs::system::EntityCommands;
 
 use crate::*;
@@ -25,6 +27,35 @@ pub struct ItemPlugin;
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App) {
         app
+        
+            .add_systems(OnEnter(PlayerState::Recievables),
+                |mut ev_show_ghost: EventWriter<ShowHoverGhost<ItemReceivableBundle>>| {
+                    ev_show_ghost.send(ShowHoverGhost::<ItemReceivableBundle> {
+                        bundle: PhantomData::<ItemReceivableBundle>
+                    });
+                }
+            )
+            .add_systems(OnExit(PlayerState::Recievables),
+                |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
+                    ev_hide_ghost.send(HideHoverGhost);
+                }
+            )
+            .add_systems(Update, show_hover_ghost::<ItemReceivableBundle>)
+            .add_event::<ShowHoverGhost::<ItemReceivableBundle>>()
+            .add_systems(OnEnter(PlayerState::TradeDepot),
+                |mut ev_show_ghost: EventWriter<ShowHoverGhost<TradeDepotBundle>>| {
+                    ev_show_ghost.send(ShowHoverGhost::<TradeDepotBundle> {
+                        bundle: PhantomData::<TradeDepotBundle>
+                    });
+                }
+            )
+            .add_systems(OnExit(PlayerState::TradeDepot),
+                |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
+                    ev_hide_ghost.send(HideHoverGhost);
+                }
+            )
+            .add_event::<ShowHoverGhost::<TradeDepotBundle>>()
+            .add_systems(Update, show_hover_ghost::<TradeDepotBundle>)
             .add_systems(PreUpdate, mouse_collision_system::<Item>)
             .add_systems(Update, purchase_receivables)
             .add_systems(Update, (

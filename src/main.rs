@@ -25,6 +25,9 @@ use utils::*;
 mod money;
 use money::*;
 
+mod ghost;
+use ghost::*;
+
 const GRID_SIZE: TilemapSize = TilemapSize { x: 100, y: 100 };
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
@@ -56,6 +59,9 @@ fn main() {
         .add_systems(FixedUpdate, (player_movement, move_entities))
         .add_systems(Update, camera_follow)
         .add_systems(PostUpdate, despawn_later_system)
+
+        .add_systems(Update, (hide_hover_ghost, hover_ghost_tracking))
+        .add_event::<HideHoverGhost>()
 
         .add_state::<PlayerState>()
         .add_systems(PreUpdate, (set_mouse_pos_res, set_mouse_tile_res))

@@ -30,6 +30,11 @@ pub struct WorkerBundle {
     pub pathfinding: MoveToTile,
     pub production: PowerProduction
 }
+impl GetSpriteBundle for WorkerBundle {
+    fn get_sprite_bundle(&self) -> SpriteBundle {
+        self.sprite.clone()
+    }
+}
 impl Default for WorkerBundle {
     fn default() -> WorkerBundle {
         WorkerBundle {

@@ -60,6 +60,8 @@
     - Wood
     - Pulp
     - Lumber
+    - Copper ore
+    - Copper
 - Goods
     - Paper
     - Furnature
@@ -128,6 +130,11 @@ The goal of this prototype will be to judge the most basic mechanics and determi
 Learnings:
 - Easy to fall into trap player having nothing to do while waiting for production.
     - Make sure the player is always the bottleneck to keep the game engaging
+    - Worker should be very expensive to encourage manual labour from the player
+    - Manual production should be engaging
+        - Minigames?
+        - Interacting with workers (complexity?)
+- UI is important for prototype. Without it playtesting is frustrating & difficult
 
 ## Random Thoughts
 
