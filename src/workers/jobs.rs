@@ -23,6 +23,9 @@ pub enum JobAction {
     Idle
 }
 
+#[derive(Component, Debug, Reflect)]
+pub struct JobWaiting(pub bool);
+
 #[derive(Debug, Reflect, PartialEq)]
 pub struct JobPoint {
     pub point: TilePos,
@@ -216,7 +219,6 @@ pub fn worker_do_job(
                 }
                 match current_job.action {
                     JobAction::Work { power, assembly } => {
-                        // TODO: Timer
                         ev_assembly_power.send(AssemblyPowerInput {
                             assembly,
                             source: worker_entity,
@@ -236,6 +238,7 @@ pub fn worker_do_job(
                     },
                     JobAction::ContainerPickup { container, pickup_amount } => {
                         if let Ok(item_container) = q_item_containers.get_mut(container) {
+                            // TODO: Grab any available item or configurable?
                             if let Some(Some(item)) = item_container.items.last() {
                                 println!("status {:?}", current_job.job_status);
                                 ev_item_pickup.send(WorkerPickUpItemEvent {

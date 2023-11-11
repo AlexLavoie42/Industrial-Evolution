@@ -17,6 +17,7 @@ pub struct AssemblyPowerInput {
 pub fn add_assembly_power_input(
     mut ev_power_input: EventReader<AssemblyPowerInput>,
     mut q_assembly_power: Query<&mut AssemblyPower>,
+    mut q_job_error: Query<&mut JobError>
 ) {
     for ev in ev_power_input.iter() {
         if let Ok(mut assembly) = q_assembly_power.get_mut(ev.assembly) {
@@ -30,6 +31,7 @@ pub fn add_assembly_power_input(
                         }
                         assembly.current_power = Power::Electrical(existing + input_amount);
                         assembly.powering_entities.push(ev.source);
+                        continue;
                     }
                 },
                 Power::Thermal(input_amount) => {
@@ -41,6 +43,7 @@ pub fn add_assembly_power_input(
                         }
                         assembly.current_power = Power::Thermal(existing + input_amount);
                         assembly.powering_entities.push(ev.source);
+                        continue;
                     }
                 },
                 Power::Mechanical(input_amount) => {
@@ -52,8 +55,13 @@ pub fn add_assembly_power_input(
                         }
                         assembly.current_power = Power::Mechanical(existing + input_amount);
                         assembly.powering_entities.push(ev.source);
+                        continue;
                     }
                 },
+            }
+
+            if let Ok(mut job_error) = q_job_error.get_mut(ev.source) {
+                job_error.set_error("Wrong power type");
             }
         }
     }

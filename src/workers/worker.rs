@@ -23,6 +23,8 @@ pub struct WorkerBundle {
     pub state: WorkerState,
     pub worker_items: ItemContainer,
     pub job: Job,
+    pub job_error: JobError,
+    pub job_waiting: JobWaiting,
     pub sprite: SpriteBundle,
     pub movement: Movement,
     pub pathfinding: MoveToTile,
@@ -39,6 +41,8 @@ impl Default for WorkerBundle {
                 current_job: None,
                 lock: false
             },
+            job_error: JobError::new(),
+            job_waiting: JobWaiting(false),
             worker_items: ItemContainer { items: Vec::new(), max_items: 2 },
             production: PowerProduction {
                 power: Power::Mechanical(100.0),
@@ -81,7 +85,7 @@ pub fn place_worker(
         commands.spawn(WorkerBundle {
             sprite: SpriteBundle {
                 transform: Transform {
-                    translation: Vec3::new(pos.x, pos.y, -1.0),
+                    translation: Vec3::new(pos.x, pos.y, 5.0),
                     ..WorkerBundle::default().sprite.transform
                 },
                 ..WorkerBundle::default().sprite
@@ -135,24 +139,25 @@ pub struct WorkerPickUpItemEvent {
 pub fn worker_pick_up_item(
     mut commands: Commands,
     mut q_item_transforms: Query<(&mut Transform, &GlobalTransform), (With<Item>, Without<Worker>)>,
-    mut q_worker_item_container: Query<(&mut ItemContainer, &GlobalTransform, &mut Job), (With<Worker>, Without<Item>)>,
+    mut q_worker_item_container: Query<(&mut ItemContainer, &GlobalTransform, &mut Job, &mut JobError), (With<Worker>, Without<Item>)>,
     mut q_io_item_containers: Query<&mut ItemIOContainer>,
     mut q_item_containers: Query<&mut ItemContainer, Without<Worker>>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &Transform), (Without<Worker>, Without<Item>)>,
     mut ev_pick_up: EventReader<WorkerPickUpItemEvent>
 ) {
     for ev in ev_pick_up.iter() {
-        // TODO: Lock each container to avoid a race condition with multiple workers
-        let (
-            Ok((mut container, worker_transform, mut job)),
-            Ok((mut item_transform, item_g_transform))
-        ) = (q_worker_item_container.get_mut(ev.worker), q_item_transforms.get_mut(ev.item)) else {
+        // TODO: Lock each item to avoid a race condition with multiple workers
+        let Ok((mut container, worker_transform, mut job, mut job_error))
+            = q_worker_item_container.get_mut(ev.worker) else { continue };
+        let Ok((mut item_transform, item_g_transform)) = q_item_transforms.get_mut(ev.item) else {
+            job_error.set_error("Item not found");
             continue;
         };
         if container.items.iter().any(|i| *i == Some(ev.item)) {
             if let Some(current_job_i) = job.current_job {
                 let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
                 current_job.job_status = JobStatus::Completed;
+                job_error.clear_error();
             }
             continue;
         }
@@ -191,6 +196,7 @@ pub fn worker_pick_up_item(
         if let Some(current_job_i) = job.current_job {
             let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
             current_job.job_status = JobStatus::Completed;
+            job_error.clear_error();
         }
     }
 }
@@ -206,19 +212,22 @@ pub fn worker_drop_item(
     mut commands: Commands,
     mut q_item_transforms: Query<&mut Transform, With<Item>>,
     mut q_item_containers: Query<&mut ItemContainer, Without<Worker>>,
-    mut q_worker_containers: Query<(&mut ItemContainer, &mut Job), With<Worker>>,
+    mut q_worker_containers: Query<(&mut ItemContainer, &mut Job, &mut JobError), With<Worker>>,
     mut q_assembly_item_containers: Query<&mut ItemIOContainer>,
     mut ev_drop: EventReader<WorkerDropItemEvent>
 ) {
     for ev in ev_drop.iter() {
-        let Ok((mut worker_container, mut job)) = q_worker_containers.get_mut(ev.worker) else {
+        let Ok((mut worker_container, mut job, mut job_error)) = q_worker_containers.get_mut(ev.worker) else {
             continue;
         };
         // TODO: Drop item with no container?
         let (Some(container_entity), Ok(mut item_transform)) = (ev.container, q_item_transforms.get_mut(ev.item)) else {
+            job_error.set_error("Item or Container not found");
             continue;
         };
         if worker_container.items.iter().all(|i| *i != Some(ev.item)) {
+            // TODO: Auto skip?
+            job_error.set_error("Item not found in worker");
             continue;
         }
 
@@ -232,16 +241,18 @@ pub fn worker_drop_item(
             println!("Dropping item {:?} into {:?}", ev.item, container_entity);
             
             if let Err(err) = container.add_item(Some(ev.item)) {
-                println!("Error adding item to container: {:?}", err);
+                // TODO: Waiting?
+                job_error.set_error(format!("Error adding item to container: {err}").as_str());
                 commands.entity(container_entity).remove_children([ev.item].as_slice());
                 commands.entity(ev.worker).push_children(&[ev.item]);
                 if let Err(err) = worker_container.add_item(Some(ev.item)) {
-                    println!("Error adding item back to worker: {:?}", err);
+                    job_error.set_error(format!("Error picking item back up: {err}").as_str());
                 }
             } else {
                 if let Some(current_job_i) = job.current_job {
                     if let Some(current_job) = job.path.get_mut(current_job_i) {
                         current_job.job_status = JobStatus::Completed;
+                        job_error.clear_error();
                     }
                 }
             }
@@ -249,6 +260,8 @@ pub fn worker_drop_item(
 
         if let Ok(mut container) = q_item_containers.get_mut(container_entity) {
             if container.items.iter().any(|i| *i == Some(ev.item)) {
+                // TODO: Auto skip?
+                job_error.set_error("Item already in container");
                 continue;
             }
 
@@ -258,6 +271,8 @@ pub fn worker_drop_item(
             }
         } else if let Ok(mut container) = q_assembly_item_containers.get_mut(container_entity) {
             if container.input.items.iter().any(|i| *i == Some(ev.item)) {
+                // TODO: Auto skip?
+                job_error.set_error("Item already in assembly");
                 continue;
             }
             
@@ -265,7 +280,8 @@ pub fn worker_drop_item(
             if let Ok(_) = item_res {
                 drop_item(&mut container.input, &mut worker_container);
             } else if let Err(err) = item_res {
-                println!("Error adding item to container: {:?}", err);
+                // TODO: Waiting?
+                job_error.set_error(err);
             }
         }
     }

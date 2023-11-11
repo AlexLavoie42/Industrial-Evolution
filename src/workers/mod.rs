@@ -5,6 +5,9 @@ pub use jobs::*;
 
 mod worker;
 pub use worker::*;
+
+mod error;
+pub use error::*;
 pub struct WorkerPlugin;
 
 impl Plugin for WorkerPlugin {
@@ -24,7 +27,8 @@ impl Plugin for WorkerPlugin {
                     worker_path_to_next_job,
                     toggle_worker_state,
                     worker_pick_up_item,
-                    worker_drop_item
+                    worker_drop_item,
+                    job_error_marker
                 )
             )
             .add_systems(PreUpdate, 
@@ -38,6 +42,7 @@ impl Plugin for WorkerPlugin {
             .register_type::<JobStatus>()
             .register_type::<WorkerState>()
             .register_type::<MoveToTile>()
+            .register_type::<JobError>()
             .insert_resource(SelectedWorker {
                 selected: None
             });
