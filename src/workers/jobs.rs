@@ -79,7 +79,7 @@ pub fn activate_job_mode_on_click(
 
 pub fn job_mode_creation(
     mut mouse_collision: EventReader<MouseCollisionEvent>,
-    q_assemblies: Query<Entity, With<Assembly>>,
+    q_assemblies: Query<(Entity, &Transform, &EntityTileSize), With<Assembly>>,
     q_assembly_input: Query<(&ContainerInputSelector, &Parent)>,
     q_assembly_output: Query<(&ContainerOutputSelector, &Parent)>,
     q_items: Query<Entity, With<Item>>,
@@ -87,26 +87,32 @@ pub fn job_mode_creation(
     mouse_pos: Res<MouseTile>,
     selected_worker: Res<SelectedWorker>,
     mut q_worker: Query<&mut Job, With<Worker>>,
+    q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &Transform, &TilemapType)>
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
+        let (tilemap_size, grid_size, map_transform, map_type) = q_tilemap.get_single().unwrap();
         let click_evs: Vec<&MouseCollisionEvent> = mouse_collision.iter().collect();
         let Some(worker_entity) = selected_worker.selected else { return; };
         let Ok(mut job) = q_worker.get_mut(worker_entity) else { return; };
         if let Some(ev) = click_evs.first() {
                 if let Some((_, entity)) = ev.collision {
-                    if let Ok(assembly) = q_assemblies.get(entity) {
-                        let power: Power = Power::Mechanical(100.0);
-                        let action: JobAction = JobAction::Work {
-                            power,
-                            assembly,
-                        };
-                        let job_point = JobPoint {
-                            point: mouse_pos.0,
-                            job_status: JobStatus::Active,
-                            action,
-                            timer: None
-                        };
-                        job.path.push(job_point);
+                    if let Ok((assembly, transform, tile_size)) = q_assemblies.get(entity) {
+                        let assembly_world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
+                        let assembly_pos = get_corner_tile_pos(assembly_world_pos, tile_size.0);
+                        if let Some(assembly_tile_pos) = TilePos::from_world_pos(&assembly_pos, tilemap_size, grid_size, map_type) {
+                            let power: Power = Power::Mechanical(100.0);
+                            let action: JobAction = JobAction::Work {
+                                power,
+                                assembly,
+                            };
+                            let job_point = JobPoint {
+                                point: assembly_tile_pos,
+                                job_status: JobStatus::Active,
+                                action,
+                                timer: None
+                            };
+                            job.path.push(job_point);
+                        }
                     }
                     if let Ok((assembly_input, parent)) = q_assembly_input.get(entity) {
                         let job_point = JobPoint {
@@ -204,7 +210,7 @@ pub fn worker_do_job(
                 continue;
             }
             let current_job = &mut job.path[current_job_i];
-            if tile_pos == current_job.point {
+            if is_near_tile(tile_pos, current_job.point, map_size) {
                 if let Some(timer) = &mut current_job.timer {
                     timer.tick(time.delta());
                     if !timer.finished() {
@@ -300,15 +306,23 @@ pub fn worker_path_to_next_job(
                 y: transform.translation.y,
             };
             let worker_world_pos = get_world_pos(worker_pos, map_transform);
-            if let Some(tile_pos) = TilePos::from_world_pos(&worker_world_pos, map_size, grid_size, map_type) {
-                if job_point.point != tile_pos {
-                    movement.target = Some(job_point.point);
-                } else {
+            let worker_tile_pos = TilePos::from_world_pos(&worker_world_pos, map_size, grid_size, map_type);
+            if let Some(worker_tile_pos) = worker_tile_pos {
+                if is_near_tile(worker_tile_pos, job_point.point, map_size) {
                     movement.target = None;
-                    movement.path = None;
                     movement.path_i = 0;
+                    movement.path = None;
+                    continue;
                 }
             }
+            if let Some(path) = &movement.path {
+                if let Some(path_target) = path.last() {
+                    if movement.target == Some(job_point.point) && is_near_tile(job_point.point, *path_target, map_size) { continue; }
+                }
+            }
+            movement.target = Some(job_point.point);
+            movement.path_i = 0;
+            movement.path = None;
         }
     }
 }

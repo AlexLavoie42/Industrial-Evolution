@@ -70,22 +70,32 @@ impl Default for WorkerBundle {
     }
 }
 
+// TODO: Dynamic prices? Skill?
+pub const WORKER_PRICE: f32 = 50.0;
+pub const WORKER_UPKEEP: f32 = 5.0;
+
 pub fn place_worker(
     mut commands: Commands,
     input: Res<Input<MouseButton>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    tilemap_q: Query<(
+    q_tilemap: Query<(
         &TilemapSize,
         &TilemapGridSize,
         &TilemapType,
         &Transform
-    )>
+    )>,
+    mut money: ResMut<PlayerMoney>,
 ) {
     if input.just_pressed(MouseButton::Left) {
+        let Ok(_) = money.try_remove_money(WORKER_PRICE) else { 
+            println!("Can't afford worker"); 
+            return
+        };
+
         let (camera, camera_transform) = q_camera.single();
         let window = q_window.single();
-        let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
+        let (tilemap_size, grid_size, map_type, map_transform) = q_tilemap.single();
     
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
         let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
@@ -174,8 +184,7 @@ pub fn worker_pick_up_item(
 
         let worker_world_pos = get_world_pos(Vec2 { x: worker_transform.translation().x, y: worker_transform.translation().y }, map_transform);
         let Some(worker_tile_pos) = TilePos::from_world_pos(&worker_world_pos, map_size, grid_size, map_type) else { continue; };
-
-        if worker_tile_pos != ev.tile_pos {
+        if !is_near_tile(worker_tile_pos, ev.tile_pos, map_size) {
             if let Some(current_job_i) = job.current_job {
                 let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
                 current_job.job_status = JobStatus::Active;

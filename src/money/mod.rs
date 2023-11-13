@@ -2,18 +2,23 @@ use bevy::utils::HashMap;
 
 use crate::*;
 
+mod upkeep;
+pub use upkeep::*;
+
 pub struct MoneyPlugin;
 
 impl Plugin for MoneyPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(Update, (market_system, market_forces))
+            .add_systems(Update, (market_system, market_forces, upkeep_system))
             .insert_resource(PlayerMoney {
                 amount: 10000.0
             })
             .insert_resource(MarketTimer::default())
             .insert_resource(Economy::default())
             .insert_resource(AssemblyPrices::default())
+            .insert_resource(UpkeepTimer::default())
+            .insert_resource(UpkeepTracker::new())
             .register_type::<PlayerMoney>()
             .register_type::<Economy>()
         ;

@@ -135,6 +135,10 @@ Learnings:
         - Minigames?
         - Interacting with workers (complexity?)
 - UI is important for prototype. Without it playtesting is frustrating & difficult
+- Start the game without automation as a tutorial
+- Introduce automation to the player once step at a time
+- Slowing monetary progression
+    - Balancing dynamic economy will be really hard
 
 ## Random Thoughts
 

@@ -119,6 +119,14 @@ pub fn get_corner_tile_pos(
     return pos + Vec2::new((((size.x as f32) / 2.0) - 0.5) * TILE_SIZE.x, (((size.y as f32) / 2.0) - 0.5) * TILE_SIZE.y);
 }
 
+pub fn is_near_tile(
+    point: TilePos,
+    target: TilePos,
+    map_size: &TilemapSize
+) -> bool {
+    return point == target || Neighbors::get_square_neighboring_positions(&point, map_size, true).iter().any(|p| { target == *p });
+}
+
 #[derive(Event, Debug)]
 pub struct GenericMouseCollisionEvent<T: Component> {
     pub collision: Option<(Collision, Entity)>,

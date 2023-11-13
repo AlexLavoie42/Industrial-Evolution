@@ -91,7 +91,7 @@ pub fn set_path_to_tile(
                         successors,
                         distance,
                         |pos| {
-                            pos == &target
+                            return is_near_tile(*pos, target, map_size);
                         }
                     ) {
                         move_to_tile.path = Some(path.0);
