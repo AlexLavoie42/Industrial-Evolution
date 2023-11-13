@@ -70,7 +70,8 @@ pub fn place_assembly(
         &TilemapGridSize,
         &TilemapType,
         &Transform
-    )>
+    )>,
+    q_collision_tiles: Query<&TilePos, With<TileMapCollision>>,
 ) {
     if input.just_pressed(MouseButton::Left) {
         let price = assembly_prices.prices.get(&selected_assembly.selected);
@@ -87,7 +88,10 @@ pub fn place_assembly(
 
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
         let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
-
+        if q_collision_tiles.iter().any(|p| *p == tile_pos) {
+            println!("Can't place assembly here");
+            return;
+        }
         let mut output_bundle = ContainerOutputSelectorBundle::default();
         output_bundle.sprite.transform.translation = Vec3::new(0.0, 16.0, 1.0);
         let output_entity = commands.spawn(output_bundle).id();

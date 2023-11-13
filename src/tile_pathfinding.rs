@@ -16,7 +16,10 @@ pub fn move_towards_path(
     let (map_transform, grid_size, map_type) = q_tilemap.single();
     for (move_to_tile, mut movement, transform) in q_move.iter_mut() {
         if let (Some(path), Some(target)) = (&move_to_tile.path, move_to_tile.target) {
-
+            if move_to_tile.path_i >= path.len() {
+                movement.input = None;
+                continue;
+            }
             let point: Vec2 = get_tile_world_pos(&path[move_to_tile.path_i], map_transform, grid_size, map_type);
             let direction = Vec2::new(point.x as f32, point.y as f32) - Vec2::new(transform.translation.x, transform.translation.y);
             movement.input = Some(direction.normalize());
@@ -39,7 +42,7 @@ pub fn iterate_path(
             grid_size, 
             map_type
         ), move_to_tile.target, &move_to_tile.path) {
-            if tile_pos == path[move_to_tile.path_i] && path.len() > move_to_tile.path_i + 1 {
+            if Some(&tile_pos) == path.get(move_to_tile.path_i) && path.len() > move_to_tile.path_i + 1 {
                 move_to_tile.path_i += 1;
             } else if tile_pos == target {
                 move_to_tile.path = None;
@@ -52,10 +55,10 @@ pub fn iterate_path(
 pub fn set_path_to_tile(
     mut q_move: Query<(&mut MoveToTile, &Transform)>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &Transform)>,
-    q_open_tiles: Query<&TilePos, Without<TileMapCollision>>,
+    q_collision_tiles: Query<&TilePos, With<TileMapCollision>>,
 ) {    
     let (map_size, grid_size, map_type , map_transform) = q_tilemap.single();
-    let open_tiles = q_open_tiles.iter().collect::<Vec<_>>();
+    let collision_tiles = q_collision_tiles.iter().collect::<Vec<_>>();
     for (mut move_to_tile, transform) in q_move.iter_mut() {
         let world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
         if let (Some(tile_pos), Some(target)) = (TilePos::from_world_pos(
@@ -74,6 +77,9 @@ pub fn set_path_to_tile(
                         let neighbors = Neighbors::get_square_neighboring_positions(pos, map_size, true)
                             .iter()
                             .cloned()
+                            .filter(|p| {
+                                !collision_tiles.iter().any(|c| c.x == p.x && c.y == p.y)
+                            })
                             .collect::<Vec<_>>();
                         neighbors.into_iter().map(|p| (p.clone(), 1)).collect::<Vec<_>>()
                     };

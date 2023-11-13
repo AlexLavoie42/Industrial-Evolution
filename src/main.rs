@@ -1,5 +1,7 @@
+use std::cmp::{min, max};
+
 use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}};
-use bevy_ecs_tilemap::prelude::*;
+use bevy_ecs_tilemap::{prelude::*, helpers::{hex_grid::neighbors, square_grid::neighbors::Neighbors}};
 use pathfinding::prelude::astar;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -29,6 +31,7 @@ mod ghost;
 use ghost::*;
 
 const GRID_SIZE: TilemapSize = TilemapSize { x: 100, y: 100 };
+const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
 pub enum PlayerState {
@@ -60,6 +63,8 @@ fn main() {
         .add_systems(Update, camera_follow)
         .add_systems(PostUpdate, despawn_later_system)
 
+        .add_systems(PostUpdate, (set_tilemap_collisions, debug_collision))
+
         .add_systems(Update, (hide_hover_ghost, hover_ghost_tracking))
         .add_event::<HideHoverGhost>()
 
@@ -79,27 +84,77 @@ pub struct TileMapCollision;
 #[derive(Component)]
 pub struct SolidEntity;
 
+#[derive(Component, Clone, Copy)]
+pub struct EntityTileSize (IVec2);
+
 pub fn set_tilemap_collisions (
     mut commands: Commands,
-    q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage)>,
+    q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage, &Transform)>,
     q_collisions: Query<(Entity, &TilePos), With<TileMapCollision>>,
-    q_solid: Query<&Transform, With<SolidEntity>>,
+    q_solid: Query<(&Transform, Option<&EntityTileSize>), With<SolidEntity>>,
 ) {
     for (entity, _) in q_collisions.iter() {
         commands.entity(entity).remove::<TileMapCollision>();
     }
-    for transform in q_solid.iter() {
-        let world_pos = Vec2 {
-            x: transform.translation.x,
-            y: transform.translation.y
-        };
-        let (map_size, grid_size, map_type, tile_storage) = q_tilemap.single();
-        // TODO: Multi-tile entities
-        if let Some(tile_pos) = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type) {
-            if let Some(tile) = tile_storage.get(&tile_pos) {
+    for (transform, tile_size) in q_solid.iter() {
+        let default_size = &EntityTileSize(IVec2::new(1, 1));
+        let tile_size = tile_size.unwrap_or(default_size);
+        let (map_size, grid_size, map_type, tile_storage, map_transform) = q_tilemap.single();
+
+        let world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform)
+            - Vec2::new((((tile_size.0.x as f32) / 2.0) - 0.5) * TILE_SIZE.x, (((tile_size.0.y as f32) / 2.0) - 0.5) * TILE_SIZE.y);
+
+        // TODO: Rotation
+        let Some(tile_pos) = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type) else { continue };
+        let Some(tile) = tile_storage.get(&tile_pos) else { continue };
+        commands.entity(tile).insert(TileMapCollision);
+        let x = tile_size.0.x - 1;
+        let y = tile_size.0.y - 1;
+
+        // Right
+        let mut neighbors: Neighbors<TilePos> = Neighbors::get_square_neighboring_positions(&tile_pos, map_size, true);
+        for _ in 0..x {
+            let Some(next_tile) = neighbors.east else { continue; };
+            if let Some(tile) = tile_storage.get(&next_tile) {
                 commands.entity(tile).insert(TileMapCollision);
             }
+            neighbors = Neighbors::get_square_neighboring_positions(&next_tile, map_size, true);
         }
+
+        // Up
+        let mut neighbors: Neighbors<TilePos> = Neighbors::get_square_neighboring_positions(&tile_pos, map_size, true);
+        for _ in 0..y {
+            let Some(next_tile) = neighbors.north else { continue; };
+            if let Some(tile) = tile_storage.get(&next_tile) {
+                commands.entity(tile).insert(TileMapCollision);
+            }
+            neighbors = Neighbors::get_square_neighboring_positions(&next_tile, map_size, true);
+        }
+
+        // Diagonal
+        let mut neighbors: Neighbors<TilePos> = Neighbors::get_square_neighboring_positions(&tile_pos, map_size, true);
+        for i in 0..max(x, y) {
+            let next = if x <= i {
+                neighbors.north
+            } else if y <= i {
+                neighbors.east
+            } else {
+                neighbors.north_east
+            };
+            let Some(next_tile) = next else { continue; };
+            if let Some(tile) = tile_storage.get(&next_tile) {
+                commands.entity(tile).insert(TileMapCollision);
+            }
+            neighbors = Neighbors::get_square_neighboring_positions(&next_tile, map_size, true);
+        }
+    }
+}
+
+fn debug_collision(
+    mut q_collisions: Query<(&mut TileColor, &TileMapCollision)>,
+) {
+    for (mut color, _) in q_collisions.iter_mut() {
+        color.0 = Color::RED;
     }
 }
 
@@ -132,8 +187,7 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         }
     });
 
-    let tile_size: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
-    let grid_size: TilemapGridSize = tile_size.into();
+    let grid_size: TilemapGridSize = TILE_SIZE.into();
     let map_type: TilemapType = TilemapType::Square;
 
     commands.entity(tilemap_entity).insert(TilemapBundle {
@@ -142,7 +196,7 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         size: GRID_SIZE,
         storage: tile_storage,
         texture: TilemapTexture::Single(texture_handle),
-        tile_size,
+        tile_size: TILE_SIZE,
         transform: get_tilemap_center_transform(&GRID_SIZE, &grid_size, &map_type, -100.0),
         ..Default::default()
     });

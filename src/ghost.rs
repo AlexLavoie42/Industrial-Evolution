@@ -9,7 +9,7 @@ pub struct Ghost;
 pub struct HoverGhost;
 
 pub fn hover_ghost_tracking(
-    mut q_assembly_ghost: Query<Option<&mut Transform>, With<HoverGhost>>,
+    mut q_assembly_ghost: Query<(&mut Transform, Option<&mut EntityTileSize>), With<HoverGhost>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     tilemap_q: Query<(
@@ -23,14 +23,17 @@ pub fn hover_ghost_tracking(
         return;
     }
 
-    let Ok(Some(mut transform)) = q_assembly_ghost.get_single_mut() else { return; };
+    let Ok((mut transform, tile_size)) = q_assembly_ghost.get_single_mut() else { return; };
     let (camera, camera_transform) = q_camera.single();
     let window = q_window.single();
 
     let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
     if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
     {
-        let cursor_position = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
+        let mut cursor_position = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
+        if let Some(tile_size) = tile_size {
+            cursor_position = get_corner_tile_pos(cursor_position, tile_size.0);
+        }
         transform.translation = vec3(cursor_position.x, cursor_position.y, transform.translation.z)
     }
 }
@@ -50,15 +53,16 @@ pub fn hide_hover_ghost(
 }
 
 #[derive(Event)]
-pub struct ShowHoverGhost<T: GetSpriteBundle + Default> {
+pub struct ShowHoverGhost<T: GetGhostBundle + Default> {
     pub bundle: PhantomData<T>
 }
 
-pub trait GetSpriteBundle: Bundle {
+pub trait GetGhostBundle: Bundle {
     fn get_sprite_bundle(&self) -> SpriteBundle;
+    fn get_tile_size(&self) -> Option<EntityTileSize>;
 }
 
-pub fn show_hover_ghost<T: GetSpriteBundle + Default>(
+pub fn show_hover_ghost<T: GetGhostBundle + Default>(
     mut commands: Commands,
     mut ev_show_ghost: EventReader<ShowHoverGhost<T>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
@@ -77,15 +81,18 @@ pub fn show_hover_ghost<T: GetSpriteBundle + Default>(
     
         if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
         {
-            let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
+            let mut pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
             let mut sprite_bundle = T::default().get_sprite_bundle();
+            let tile_size = T::default().get_tile_size();
+            if let Some(tile_size) = tile_size {
+                pos = get_corner_tile_pos(pos, tile_size.0);
+            }
             sprite_bundle.transform.translation = vec3(pos.x, pos.y, sprite_bundle.transform.translation.z);
             sprite_bundle.sprite.color.set_a(0.5);
-            commands.spawn((sprite_bundle, HoverGhost::default()));
-        } else {
-            commands.spawn((AssemblyBundle {
-                ..default()
-            }, Ghost));
+            let mut ghost = commands.spawn((sprite_bundle, HoverGhost::default()));
+            if let Some(tile_size) = tile_size {
+                ghost.insert(tile_size);
+            }
         }
     } 
 }

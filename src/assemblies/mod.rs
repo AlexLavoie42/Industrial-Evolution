@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 
 use crate::*;
 
@@ -14,24 +13,27 @@ pub use assembly_types::*;
 mod assembly_production;
 pub use assembly_production::*;
 
+use self::assembly_types::assembly_templates::*;
+
 pub struct AssembliesPlugin;
 impl Plugin for AssembliesPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(OnEnter(PlayerState::Assemblies),
-                |mut ev_show_ghost: EventWriter<ShowHoverGhost<AssemblyBundle>>| {
-                    ev_show_ghost.send(ShowHoverGhost::<AssemblyBundle> {
-                        bundle: PhantomData::<AssemblyBundle>
-                    });
-                }
-            )
+            .add_systems(OnEnter(PlayerState::Assemblies), selected_assembly_hover)
             .add_systems(OnExit(PlayerState::Assemblies),
                 |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
                     ev_hide_ghost.send(HideHoverGhost);
                 }
             )
+            // TODO: Macro
             .add_systems(Update, show_hover_ghost::<AssemblyBundle>)
+            .add_systems(Update, show_hover_ghost::<PulpMillBundle>)
+            .add_systems(Update, show_hover_ghost::<PaperPressBundle>)
+            .add_systems(Update, show_hover_ghost::<PaperDrierBundle>)
             .add_event::<ShowHoverGhost::<AssemblyBundle>>()
+            .add_event::<ShowHoverGhost::<PulpMillBundle>>()
+            .add_event::<ShowHoverGhost::<PaperPressBundle>>()
+            .add_event::<ShowHoverGhost::<PaperDrierBundle>>()
             .add_systems(Update,
             (
                 (place_assembly).run_if(in_state(PlayerState::Assemblies)),

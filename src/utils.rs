@@ -112,6 +112,13 @@ pub fn get_world_pos(
     }
 }
 
+pub fn get_corner_tile_pos(
+    pos: Vec2,
+    size: IVec2
+) -> Vec2 {
+    return pos + Vec2::new((((size.x as f32) / 2.0) - 0.5) * TILE_SIZE.x, (((size.y as f32) / 2.0) - 0.5) * TILE_SIZE.y);
+}
+
 #[derive(Event, Debug)]
 pub struct GenericMouseCollisionEvent<T: Component> {
     pub collision: Option<(Collision, Entity)>,

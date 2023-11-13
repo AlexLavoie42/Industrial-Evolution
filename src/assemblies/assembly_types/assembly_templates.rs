@@ -1,17 +1,53 @@
 use crate::*;
+macro_rules! make_assembly_bundle {
+    ($assembly_name:ident) => {
+        #[derive(Bundle)]
+        pub struct $assembly_name {
+            pub assembly_type: AssemblyType,
+            pub assembly: Assembly,
+            pub solid: SolidEntity,
+            pub tile_size: EntityTileSize,
+            pub assembly_items: ItemIOContainer,
+            pub sprite: SpriteBundle
+        }
+        impl GetGhostBundle for $assembly_name {
+            fn get_sprite_bundle(&self) -> SpriteBundle {
+                self.sprite.clone()
+            }
+            fn get_tile_size(&self) -> Option<EntityTileSize> {
+                return Some(self.tile_size);
+            }
+        }
+    };
 
-#[derive(Bundle)]
-pub struct PulpMillBundle {
-    pub assembly_type: AssemblyType,
-    pub assembly: Assembly,
-    pub input: AssemblyInput,
-    pub output: AssemblyOutput,
-    pub timer: AssemblyTimer,
-    pub power: AssemblyPower,
-    pub solid: SolidEntity,
-    pub assembly_items: ItemIOContainer,
-    pub sprite: SpriteBundle
+    ($assembly_name:ident, $($extra_field:ident: $extra_type:ty),*) => {
+        #[derive(Bundle)]
+        pub struct $assembly_name {
+            pub assembly_type: AssemblyType,
+            pub assembly: Assembly,
+            pub solid: SolidEntity,
+            pub tile_size: EntityTileSize,
+            pub assembly_items: ItemIOContainer,
+            pub sprite: SpriteBundle,
+            $(pub $extra_field: $extra_type,)*
+        }
+        impl GetGhostBundle for $assembly_name {
+            fn get_sprite_bundle(&self) -> SpriteBundle {
+                self.sprite.clone()
+            }
+            fn get_tile_size(&self) -> Option<EntityTileSize> {
+                return Some(self.tile_size);
+            }
+        }
+    }
 }
+
+make_assembly_bundle!(PulpMillBundle,
+    power: AssemblyPower,
+    input: AssemblyInput,
+    output: AssemblyOutput,
+    timer: AssemblyTimer
+);
 impl Default for PulpMillBundle {
     fn default() -> PulpMillBundle {
         PulpMillBundle {
@@ -37,6 +73,7 @@ impl Default for PulpMillBundle {
                 }
             },
             solid: SolidEntity,
+            tile_size: EntityTileSize(IVec2::new(4, 4)),
             sprite: SpriteBundle {
                 ..AssemblyBundle::default().sprite
             }
@@ -44,18 +81,12 @@ impl Default for PulpMillBundle {
     }
 }
 
-#[derive(Bundle)]
-pub struct PaperPressBundle {
-    pub assembly_type: AssemblyType,
-    pub assembly: Assembly,
-    pub input: AssemblyInput,
-    pub output: AssemblyOutput,
-    pub timer: AssemblyTimer,
-    pub power: AssemblyPower,
-    pub solid: SolidEntity,
-    pub assembly_items: ItemIOContainer,
-    pub sprite: SpriteBundle
-}
+make_assembly_bundle!(PaperPressBundle, 
+    power: AssemblyPower,
+    input: AssemblyInput,
+    output: AssemblyOutput,
+    timer: AssemblyTimer
+);
 impl Default for PaperPressBundle {
     fn default() -> PaperPressBundle {
         PaperPressBundle {
@@ -81,6 +112,7 @@ impl Default for PaperPressBundle {
                 }
             },
             solid: SolidEntity,
+            tile_size: EntityTileSize(IVec2::new(2, 2)),
             sprite: SpriteBundle {
                 ..AssemblyBundle::default().sprite
             }
@@ -88,18 +120,11 @@ impl Default for PaperPressBundle {
     }
 }
 
-#[derive(Bundle)]
-pub struct PaperDrierBundle {
-    pub assembly_type: AssemblyType,
-    pub assembly: Assembly,
-    pub input: AssemblyInput,
-    pub output: AssemblyOutput,
-    pub timer: AssemblyTimer,
-    pub solid: SolidEntity,
-    pub assembly_items: ItemIOContainer,
-    pub sprite: SpriteBundle
-}
-
+make_assembly_bundle!(PaperDrierBundle,
+    input: AssemblyInput,
+    output: AssemblyOutput,
+    timer: AssemblyTimer
+);
 impl Default for PaperDrierBundle {
     fn default() -> Self {
         PaperDrierBundle {
@@ -119,6 +144,7 @@ impl Default for PaperDrierBundle {
                 }
             },
             solid: SolidEntity,
+            tile_size: EntityTileSize(IVec2::new(2, 2)),
             sprite: SpriteBundle {
                 ..AssemblyBundle::default().sprite
             }

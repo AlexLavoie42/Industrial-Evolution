@@ -20,4 +20,5 @@ bevy-inspector-egui = "0.20.0"
 bevy_ecs_tilemap = "0.11.0"
 bevy_input_mapper = "0.0.3"
 kayak_ui = { git = "https://github.com/StarArawn/kayak_ui.git", branch = "main" }
+paste = "1.0.14"
 pathfinding = "4.3.2"

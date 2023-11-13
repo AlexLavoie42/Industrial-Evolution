@@ -30,9 +30,12 @@ pub struct WorkerBundle {
     pub pathfinding: MoveToTile,
     pub production: PowerProduction
 }
-impl GetSpriteBundle for WorkerBundle {
+impl GetGhostBundle for WorkerBundle {
     fn get_sprite_bundle(&self) -> SpriteBundle {
         self.sprite.clone()
+    }
+    fn get_tile_size(&self) -> Option<EntityTileSize> {
+        None
     }
 }
 impl Default for WorkerBundle {

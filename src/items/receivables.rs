@@ -1,3 +1,5 @@
+use bevy::sprite::Anchor;
+
 use crate::*;
 
 #[derive(Component, Debug, Reflect)]
@@ -11,11 +13,16 @@ pub struct ItemReceivable {
 pub struct ItemReceivableBundle {
     pub item: ItemReceivable,
     pub container: ItemContainer,
-    pub sprite: SpriteBundle
+    pub sprite: SpriteBundle,
+    pub solid: SolidEntity,
+    pub tile_size: EntityTileSize
 }
-impl GetSpriteBundle for ItemReceivableBundle {
+impl GetGhostBundle for ItemReceivableBundle {
     fn get_sprite_bundle(&self) -> SpriteBundle {
         self.sprite.clone()
+    }
+    fn get_tile_size(&self) -> Option<EntityTileSize> {
+        Some(self.tile_size)
     }
 }
 impl ItemReceivableBundle {
@@ -40,12 +47,14 @@ impl Default for ItemReceivableBundle {
             },
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::ORANGE,
-                    custom_size: Some(Vec2::new(25.0, 50.0)),
+                    color: Color::YELLOW,
+                    custom_size: Some(Vec2::new(32.0, 64.0)),
                     ..default()
                 },
                 ..default()
-            }
+            },
+            solid: SolidEntity,
+            tile_size: EntityTileSize(IVec2 { x: 2, y: 4 })
         }
     }
 }
@@ -113,7 +122,9 @@ pub fn place_receivable(
         let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
 
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
-        let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
+
+        let size = ItemReceivableBundle::default().tile_size.0;
+        let pos = get_corner_tile_pos(get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type), size);
 
         let mut output_bundle = ContainerOutputSelectorBundle::default();
         output_bundle.sprite.transform.translation = Vec3::new(0.0, -42.0, 1.0);
