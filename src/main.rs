@@ -106,46 +106,15 @@ pub fn set_tilemap_collisions (
 
         // TODO: Rotation
         let Some(tile_pos) = TilePos::from_world_pos(&world_pos, map_size, grid_size, map_type) else { continue };
-        let Some(tile) = tile_storage.get(&tile_pos) else { continue };
-        commands.entity(tile).insert(TileMapCollision);
-        let x = tile_size.0.x - 1;
-        let y = tile_size.0.y - 1;
+        let x = tile_size.0.x;
+        let y = tile_size.0.y;
 
-        // Right
-        let mut neighbors: Neighbors<TilePos> = Neighbors::get_square_neighboring_positions(&tile_pos, map_size, true);
-        for _ in 0..x {
-            let Some(next_tile) = neighbors.east else { continue; };
-            if let Some(tile) = tile_storage.get(&next_tile) {
+        for x in 0..x as u32 {
+            for y in 0..y as u32 {
+                let tile_pos = TilePos { x: tile_pos.x + x, y: tile_pos.y + y };
+                let Some(tile) = tile_storage.get(&tile_pos) else { continue };
                 commands.entity(tile).insert(TileMapCollision);
             }
-            neighbors = Neighbors::get_square_neighboring_positions(&next_tile, map_size, true);
-        }
-
-        // Up
-        let mut neighbors: Neighbors<TilePos> = Neighbors::get_square_neighboring_positions(&tile_pos, map_size, true);
-        for _ in 0..y {
-            let Some(next_tile) = neighbors.north else { continue; };
-            if let Some(tile) = tile_storage.get(&next_tile) {
-                commands.entity(tile).insert(TileMapCollision);
-            }
-            neighbors = Neighbors::get_square_neighboring_positions(&next_tile, map_size, true);
-        }
-
-        // Diagonal
-        let mut neighbors: Neighbors<TilePos> = Neighbors::get_square_neighboring_positions(&tile_pos, map_size, true);
-        for i in 0..max(x, y) {
-            let next = if x <= i {
-                neighbors.north
-            } else if y <= i {
-                neighbors.east
-            } else {
-                neighbors.north_east
-            };
-            let Some(next_tile) = next else { continue; };
-            if let Some(tile) = tile_storage.get(&next_tile) {
-                commands.entity(tile).insert(TileMapCollision);
-            }
-            neighbors = Neighbors::get_square_neighboring_positions(&next_tile, map_size, true);
         }
     }
 }
