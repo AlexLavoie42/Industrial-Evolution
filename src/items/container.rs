@@ -79,7 +79,7 @@ impl Default for ContainerInputSelectorBundle {
                 },
                 sprite: Sprite {
                     color: Color::GREEN,
-                    custom_size: Some(Vec2::new(32.0, 16.0)),
+                    custom_size: Some(Vec2::new(48.0, 32.0)),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -105,7 +105,7 @@ impl Default for ContainerOutputSelectorBundle {
                 },
                 sprite: Sprite {
                     color: Color::RED,
-                    custom_size: Some(Vec2::new(32.0, 16.0)),
+                    custom_size: Some(Vec2::new(48.0, 32.0)),
                     ..Default::default()
                 },
                 ..Default::default()

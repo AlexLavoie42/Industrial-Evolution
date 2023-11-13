@@ -75,6 +75,10 @@ impl Default for PulpMillBundle {
             solid: SolidEntity,
             tile_size: EntityTileSize(IVec2::new(4, 4)),
             sprite: SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(64.0, 64.0)),
+                    ..AssemblyBundle::default().sprite.sprite
+                },
                 ..AssemblyBundle::default().sprite
             }
         }
@@ -114,6 +118,10 @@ impl Default for PaperPressBundle {
             solid: SolidEntity,
             tile_size: EntityTileSize(IVec2::new(2, 2)),
             sprite: SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(32.0, 32.0)),
+                    ..AssemblyBundle::default().sprite.sprite
+                },
                 ..AssemblyBundle::default().sprite
             }
         }
@@ -146,6 +154,10 @@ impl Default for PaperDrierBundle {
             solid: SolidEntity,
             tile_size: EntityTileSize(IVec2::new(2, 2)),
             sprite: SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(32.0, 32.0)),
+                    ..AssemblyBundle::default().sprite.sprite
+                },
                 ..AssemblyBundle::default().sprite
             }
         }

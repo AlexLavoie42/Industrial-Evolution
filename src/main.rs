@@ -1,6 +1,6 @@
-use std::cmp::{min, max};
+use std::{cmp::{min, max}, time::Duration};
 
-use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}};
+use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}, time::common_conditions::{on_fixed_timer, on_timer}};
 use bevy_ecs_tilemap::{prelude::*, helpers::{hex_grid::neighbors, square_grid::neighbors::Neighbors}};
 use pathfinding::prelude::astar;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -59,11 +59,11 @@ fn main() {
         .add_plugins(MoneyPlugin)
 
         .add_systems(Startup, factory_setup)
-        .add_systems(FixedUpdate, (player_movement, move_entities))
+        .add_systems(FixedUpdate, (player_movement, move_entities, player_pickup_item, player_drop_item))
         .add_systems(Update, camera_follow)
         .add_systems(PostUpdate, despawn_later_system)
 
-        .add_systems(PostUpdate, (set_tilemap_collisions, debug_collision))
+        .add_systems(PostUpdate, (set_tilemap_collisions, debug_collision).run_if(on_timer(Duration::from_secs_f32(0.1))))
 
         .add_systems(Update, (hide_hover_ghost, hover_ghost_tracking))
         .add_event::<HideHoverGhost>()
@@ -87,6 +87,7 @@ pub struct SolidEntity;
 #[derive(Component, Clone, Copy)]
 pub struct EntityTileSize (IVec2);
 
+// TODO: Change detection?
 pub fn set_tilemap_collisions (
     mut commands: Commands,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &TileStorage, &Transform)>,
@@ -120,10 +121,10 @@ pub fn set_tilemap_collisions (
 }
 
 fn debug_collision(
-    mut q_collisions: Query<(&mut TileColor, &TileMapCollision)>,
+    mut q_collisions: Query<(&mut TileColor, Option<&TileMapCollision>)>,
 ) {
-    for (mut color, _) in q_collisions.iter_mut() {
-        color.0 = Color::RED;
+    for (mut color, collision) in q_collisions.iter_mut() {
+        color.0 = if collision.is_some() {Color::RED} else {Color::WHITE};
     }
 }
 
@@ -185,6 +186,10 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..default()
             },
             ..default()
+        },
+        container: ItemContainer { 
+            items: Vec::new(),
+            max_items: 2
         }
     });
 }

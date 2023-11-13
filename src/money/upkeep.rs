@@ -1,7 +1,7 @@
 use crate::*;
 
 const FACTORY_COST: f32 = 100.0;
-const DAY_TIMER: f32 = 5.0 ;
+const DAY_TIMER: f32 = 5.0 * 60.0;
 
 #[derive(Resource)]
 pub struct UpkeepTimer(Timer);

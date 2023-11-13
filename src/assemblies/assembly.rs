@@ -4,7 +4,7 @@ use crate::*;
 pub struct Assembly;
 impl Clickable for Assembly {}
 
-#[derive(Resource, Reflect)]
+#[derive(Resource, Reflect, Clone, Copy)]
 pub struct SelectedAssembly {
     pub selected: AssemblyType
 }
@@ -42,18 +42,19 @@ pub fn input_toggle_assembly_mode(
 pub fn refund_assembly(
     mut commands: Commands,
     mut ev_assembly_mouse: EventReader<GenericMouseCollisionEvent<Assembly>>,
-    mut q_assembly: Query<(Entity, &AssemblyType)>,
+    q_assembly: Query<&AssemblyType>,
     input: Res<Input<KeyCode>>,
     mut money: ResMut<PlayerMoney>,
     assembly_prices: Res<AssemblyPrices>
 ) {
-    if input.just_pressed(KeyCode::Delete) && ev_assembly_mouse.iter().last().is_some() {
-        for (assembly, assembly_type) in q_assembly.iter_mut() {
-            if let Some(price) = assembly_prices.prices.get(assembly_type) {
-                money.add_money(*price);
-            }
-            commands.entity(assembly).despawn_recursive();
+    if input.just_pressed(KeyCode::Delete) {
+        let Some(ev) = ev_assembly_mouse.iter().next() else { return };
+        let Some((_, assembly)) = ev.collision else { return };
+        let Ok(assembly_type) = q_assembly.get(assembly) else { return };
+        if let Some(price) = assembly_prices.prices.get(assembly_type) {
+            money.add_money(*price);
         }
+        commands.entity(assembly).despawn_recursive();
     }
 }
 
@@ -87,17 +88,18 @@ pub fn place_assembly(
         let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
 
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
-        let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
+        let size = selected_assembly.selected.get_tile_size().0;
+        let pos = get_corner_tile_pos(get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type), size);
         if q_collision_tiles.iter().any(|p| *p == tile_pos) {
             println!("Can't place assembly here");
             return;
         }
         let mut output_bundle = ContainerOutputSelectorBundle::default();
-        output_bundle.sprite.transform.translation = Vec3::new(0.0, 16.0, 1.0);
+        output_bundle.sprite.transform.translation = Vec3::new(0.0, 64.0, 1.0);
         let output_entity = commands.spawn(output_bundle).id();
 
         let mut input_bundle = ContainerInputSelectorBundle::default();
-        input_bundle.sprite.transform.translation = Vec3::new(0.0, -16.0, 1.0);
+        input_bundle.sprite.transform.translation = Vec3::new(0.0, -64.0, 1.0);
         let input_entity: Entity = commands.spawn(input_bundle).id();
         selected_assembly.selected.spawn_bundle(&mut commands, pos).push_children(&[input_entity, output_entity]);
     }

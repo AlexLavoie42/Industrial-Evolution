@@ -52,7 +52,7 @@ pub trait AssemblySpawn<'a, 'w, 's> {
 
 macro_rules! make_assembly_types {
     ($(($assembly_name:ident, $bundle:ident)),*) => {
-        #[derive(Component, Debug, Resource, Reflect, Hash, PartialEq, Eq)]
+        #[derive(Component, Debug, Resource, Reflect, Hash, PartialEq, Eq, Clone, Copy)]
         pub enum AssemblyType {
             $($assembly_name),*
         }
@@ -74,6 +74,16 @@ macro_rules! make_assembly_types {
                         bundle.sprite.transform.translation = Vec3::new(position.x, position.y, 1.0);
                         commands.spawn(bundle)
                     }),*
+                }
+            }
+        }
+
+        impl AssemblyType {
+            pub fn get_tile_size(self) -> EntityTileSize {
+                match self {
+                    $(AssemblyType::$assembly_name => {
+                        $bundle::default().tile_size
+                    })*,
                 }
             }
         }

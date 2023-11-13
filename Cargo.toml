@@ -15,7 +15,6 @@ opt-level = 3
 
 [dependencies]
 bevy = { version = "0.11.3", features = [] }
-bevy-async-task = "1.2.0"
 bevy-inspector-egui = "0.20.0"
 bevy_ecs_tilemap = "0.11.0"
 bevy_input_mapper = "0.0.3"

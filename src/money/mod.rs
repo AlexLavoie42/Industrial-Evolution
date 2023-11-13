@@ -12,7 +12,7 @@ impl Plugin for MoneyPlugin {
         app
             .add_systems(Update, (market_system, market_forces, upkeep_system))
             .insert_resource(PlayerMoney {
-                amount: 10000.0
+                amount: 2500.0
             })
             .insert_resource(MarketTimer::default())
             .insert_resource(Economy::default())
