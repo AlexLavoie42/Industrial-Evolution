@@ -48,7 +48,7 @@ pub fn move_entities (
         }
     }
 }
-const PLAYER_REACH: f32 = 1.0 * TILE_SIZE.x;
+const PLAYER_REACH: f32 = 4.0 * TILE_SIZE.x;
 
 pub fn player_pickup_item(
     mut commands: Commands,
@@ -57,40 +57,46 @@ pub fn player_pickup_item(
     mut q_io_containers: Query<&mut ItemIOContainer>,
     mut q_player: Query<(Entity, &Transform, &mut ItemContainer), (With<Player>, Without<Item>)>,
     input: Res<Input<KeyCode>>,
+    mouse_pos: Res<MousePos>,
 ) {
     if input.just_pressed(KeyCode::F) {
         let Ok((player, player_transform, mut container)) = q_player.get_single_mut() else { return };
-        for (entity, gtransform, mut transform) in q_items.iter_mut() {
-            let distance = Vec3::distance(gtransform.translation(), player_transform.translation);
-            if distance > PLAYER_REACH {
-                continue;
-            }
-            let mut io_containers = q_io_containers.iter_mut();
-            let item_container = q_containers.iter_mut().find(|c| c.items.contains(&Some(entity)));
-            let io_container = io_containers.find(|c| c.output.items.contains(&Some(entity)));
+        let Some((entity, _, mut transform)) = q_items.iter_mut()
+            .filter(|i| {
+                let distance = Vec3::distance(i.1.translation(), player_transform.translation);
+                distance <= PLAYER_REACH
+            })
+            .min_by(|a, b| {
+                let a_distance = Vec3::distance(a.1.translation(), vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
+                let b_distance: f32 = Vec3::distance(b.1.translation(), vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
+                a_distance.partial_cmp(&b_distance).unwrap()
+            }) else { return };
 
-            let is_input = io_containers.any(|c| c.input.items.contains(&Some(entity)));
-            if is_input {
-                // TODO: Selectable inputs when hover select is setup?
-                continue;
-            }
+        let is_input = q_io_containers.iter_mut().any(|c| c.input.items.contains(&Some(entity)));
+        if is_input {
+            // TODO: Selectable inputs when hover select is setup?
+            println!("Can't pick up input item");
+            return;
+        }
 
-            if let Some(mut item_container) = item_container {
-                if let Err(err) = item_container.remove_item(Some(entity)) {
-                    println!("Error removing item: {err}");
-                }
-            } else if let Some(mut io_container) = io_container {
-                if let Err(err) = io_container.output.remove_item(Some(entity)) {
-                    println!("Error removing item: {err}");
-                }
-            }
+        let item_container = q_containers.iter_mut().find(|c| c.items.contains(&Some(entity)));
+        let io_container = q_io_containers.iter_mut().find(|c| c.output.items.contains(&Some(entity)));
 
-            if let Ok(_) = container.add_item(Some(entity)) {
-                transform.translation.x = 16.0;
-                transform.translation.y = 8.0;
-                commands.entity(player).push_children(&[entity]);
-                return;
+        if let Some(mut item_container) = item_container {
+            if let Err(err) = item_container.remove_item(Some(entity)) {
+                println!("Error removing item: {err}");
             }
+        } else if let Some(mut io_container) = io_container {
+            if let Err(err) = io_container.output.remove_item(Some(entity)) {
+                println!("Error removing item: {err}");
+            }
+        }
+
+        if let Ok(_) = container.add_item(Some(entity)) {
+            transform.translation.x = 16.0;
+            transform.translation.y = 8.0;
+            commands.entity(player).push_children(&[entity]);
+            return;
         }
     }
 }
@@ -103,6 +109,7 @@ pub fn player_drop_item(
     mut q_containers: Query<(Entity, &Transform, &mut ItemContainer), Without<Player>>,
     mut q_io_containers: Query<(Entity, &Transform, &mut ItemIOContainer), Without<Player>>,
     mut item_transforms: Query<&mut Transform, (With<Item>, Without<Player>, Without<ItemContainer>, Without<ItemIOContainer>)>,
+    mouse_pos: Res<MousePos>,
 ) {
     if input.just_pressed(KeyCode::G) {
         let Ok((player, player_transform, mut player_container, children)) = q_player.get_single_mut() else { return };
@@ -116,8 +123,8 @@ pub fn player_drop_item(
                 distance <= PLAYER_REACH
             })
             .min_by(|a, b| {
-                let a_distance = Vec3::distance(a.1.translation, player_transform.translation);
-                let b_distance = Vec3::distance(b.1.translation, player_transform.translation);
+                let a_distance = Vec3::distance(a.1.translation, vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
+                let b_distance = Vec3::distance(b.1.translation, vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
                 a_distance.partial_cmp(&b_distance).unwrap()
             });
         let closest_io_container = q_io_containers.iter_mut()
@@ -126,8 +133,8 @@ pub fn player_drop_item(
                 distance <= PLAYER_REACH
             })
             .min_by(|a, b| {
-                let a_distance = Vec3::distance(a.1.translation, player_transform.translation);
-                let b_distance = Vec3::distance(b.1.translation, player_transform.translation);
+                let a_distance = Vec3::distance(a.1.translation, vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
+                let b_distance = Vec3::distance(b.1.translation, vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
                 a_distance.partial_cmp(&b_distance).unwrap()
             });
 
