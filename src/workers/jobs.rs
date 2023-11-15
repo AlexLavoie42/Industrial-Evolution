@@ -29,6 +29,7 @@ pub struct JobWaiting(pub bool);
 #[derive(Debug, Reflect, PartialEq)]
 pub struct JobPoint {
     pub point: TilePos,
+    pub point_size: IVec2,
     pub job_status: JobStatus,
     pub action: JobAction,
     pub timer: Option<Timer>
@@ -108,6 +109,7 @@ pub fn job_mode_creation(
                             let job_point = JobPoint {
                                 point: assembly_tile_pos,
                                 job_status: JobStatus::Active,
+                                point_size: tile_size.0,
                                 action,
                                 timer: None
                             };
@@ -115,8 +117,10 @@ pub fn job_mode_creation(
                         }
                     }
                     if let Ok((assembly_input, parent)) = q_assembly_input.get(entity) {
+                        let tile_size = q_assemblies.get(parent.get()).map(|x| x.2.0).unwrap_or(IVec2::ONE);
                         let job_point = JobPoint {
                             point: mouse_pos.0,
+                            point_size: tile_size,
                             job_status: JobStatus::Active,
                             action: JobAction::Drop {
                                 input_container: Some(parent.get()),
@@ -127,8 +131,10 @@ pub fn job_mode_creation(
                         job.path.push(job_point);
                     }
                     if let Ok((assembly_output, parent)) = q_assembly_output.get(entity) {
+                        let tile_size = q_assemblies.get(parent.get()).map(|x| x.2.0).unwrap_or(IVec2::ONE);
                         let job_point = JobPoint {
                             point: mouse_pos.0,
+                            point_size: tile_size,
                             job_status: JobStatus::Active,
                             action: JobAction::ContainerPickup {
                                 container: parent.get(),
@@ -144,6 +150,7 @@ pub fn job_mode_creation(
                         };
                         let job_point = JobPoint {
                             point: mouse_pos.0,
+                            point_size: IVec2::ONE,
                             job_status: JobStatus::Active,
                             action,
                             timer: None
@@ -154,6 +161,7 @@ pub fn job_mode_creation(
         } else {
             let job_point = JobPoint {
                 point: mouse_pos.0,
+                point_size: IVec2::ONE,
                 job_status: JobStatus::Active,
                 action: JobAction::Idle,
                 timer: Some(Timer::new(Duration::from_secs_f32(1.0), TimerMode::Once))
@@ -210,7 +218,7 @@ pub fn worker_do_job(
                 continue;
             }
             let current_job = &mut job.path[current_job_i];
-            if is_near_tile(tile_pos, current_job.point, map_size) {
+            if is_near_tile_group(tile_pos, current_job.point,  current_job.point_size, map_size) {
                 if let Some(timer) = &mut current_job.timer {
                     timer.tick(time.delta());
                     if !timer.finished() {

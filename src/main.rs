@@ -60,7 +60,7 @@ fn main() {
 
         .add_systems(Startup, factory_setup)
         .add_systems(FixedUpdate, (player_movement, move_entities, player_pickup_item, player_drop_item))
-        .add_systems(Update, camera_follow)
+        .add_systems(Update, (camera_follow, camera_scroll_zoom))
         .add_systems(PostUpdate, despawn_later_system)
 
         .add_systems(PostUpdate, (set_tilemap_collisions, debug_collision).run_if(on_timer(Duration::from_secs_f32(0.1))))

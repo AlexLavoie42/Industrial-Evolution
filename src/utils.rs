@@ -127,6 +127,31 @@ pub fn is_near_tile(
     return point == target || Neighbors::get_square_neighboring_positions(&point, map_size, true).iter().any(|p| { target == *p });
 }
 
+pub fn is_near_tile_group(
+    point: TilePos,
+    target: TilePos,
+    target_size: IVec2,
+    map_size: &TilemapSize
+) -> bool {
+    for x in 0..target_size.x {
+        if is_near_tile(TilePos { x: point.x + x as u32, y: point.y }, target, map_size) {
+            return true;
+        }
+        if is_near_tile(TilePos { x: point.x + x as u32, y: point.y + target_size.y as u32 }, target, map_size) {
+            return true;
+        }
+    }
+    for y in 0..target_size.y {
+        if is_near_tile(TilePos { x: point.x, y: point.y + y as u32 }, target, map_size) {
+            return true;
+        }
+        if is_near_tile(TilePos { x: point.x + target_size.x as u32, y: point.y + y as u32 }, target, map_size) {
+            return true;
+        }
+    }
+    return false;
+}
+
 #[derive(Event, Debug)]
 pub struct GenericMouseCollisionEvent<T: Component> {
     pub collision: Option<(Collision, Entity)>,

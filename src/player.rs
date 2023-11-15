@@ -1,5 +1,6 @@
 use std::f32::consts::SQRT_2;
 
+use bevy::input::mouse::{MouseWheel, MouseButtonInput};
 use pathfinding::num_traits::{Float, FloatConst};
 
 use crate::*;
@@ -192,3 +193,20 @@ pub fn camera_follow(
     cam_transform.translation = cam_transform.translation.lerp(player_transform.translation, 0.1);
 }
 
+const MAX_CAMERA_ZOOM: f32 = 1.5;
+const MIN_CAMERA_ZOOM: f32 = 0.25;
+
+pub fn camera_scroll_zoom(
+    mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>,
+    mut ev_scroll: EventReader<MouseWheel>,
+) {
+    let mut cam = camera_query.single_mut();
+    for ev in ev_scroll.iter() {
+        if ev.y < 0.0 && cam.scale < MAX_CAMERA_ZOOM {
+            cam.scale += 0.1;
+        }
+        if ev.y > 0.0 && cam.scale > MIN_CAMERA_ZOOM {
+            cam.scale -= 0.1;
+        }
+    }
+}
