@@ -50,10 +50,11 @@ pub fn move_entities (
 }
 const PLAYER_REACH: f32 = 1.0 * TILE_SIZE.x;
 
-// TODO: Check for item container
 pub fn player_pickup_item(
     mut commands: Commands,
     mut q_items: Query<(Entity, &GlobalTransform, &mut Transform), (With<Item>, Without<Player>)>,
+    mut q_containers: Query<&mut ItemContainer, Without<Player>>,
+    mut q_io_containers: Query<&mut ItemIOContainer>,
     mut q_player: Query<(Entity, &Transform, &mut ItemContainer), (With<Player>, Without<Item>)>,
     input: Res<Input<KeyCode>>,
 ) {
@@ -63,6 +64,25 @@ pub fn player_pickup_item(
             let distance = Vec3::distance(gtransform.translation(), player_transform.translation);
             if distance > PLAYER_REACH {
                 continue;
+            }
+            let mut io_containers = q_io_containers.iter_mut();
+            let item_container = q_containers.iter_mut().find(|c| c.items.contains(&Some(entity)));
+            let io_container = io_containers.find(|c| c.output.items.contains(&Some(entity)));
+
+            let is_input = io_containers.any(|c| c.input.items.contains(&Some(entity)));
+            if is_input {
+                // TODO: Selectable inputs when hover select is setup?
+                continue;
+            }
+
+            if let Some(mut item_container) = item_container {
+                if let Err(err) = item_container.remove_item(Some(entity)) {
+                    println!("Error removing item: {err}");
+                }
+            } else if let Some(mut io_container) = io_container {
+                if let Err(err) = io_container.output.remove_item(Some(entity)) {
+                    println!("Error removing item: {err}");
+                }
             }
 
             if let Ok(_) = container.add_item(Some(entity)) {
@@ -90,63 +110,70 @@ pub fn player_drop_item(
             return;
         }
 
-        for (container_entity, container_transform, mut container) in q_containers.iter_mut() {
-            let distance = Vec3::distance(container_transform.translation, player_transform.translation);
-            if distance > PLAYER_REACH {
-                continue;
-            }
+        let closest_container = q_containers.iter_mut()
+            .filter(|c| {
+                let distance = Vec3::distance(c.1.translation, player_transform.translation);
+                distance <= PLAYER_REACH
+            })
+            .min_by(|a, b| {
+                let a_distance = Vec3::distance(a.1.translation, player_transform.translation);
+                let b_distance = Vec3::distance(b.1.translation, player_transform.translation);
+                a_distance.partial_cmp(&b_distance).unwrap()
+            });
+        let closest_io_container = q_io_containers.iter_mut()
+            .filter(|c| {
+                let distance = Vec3::distance(c.1.translation, player_transform.translation);
+                distance <= PLAYER_REACH
+            })
+            .min_by(|a, b| {
+                let a_distance = Vec3::distance(a.1.translation, player_transform.translation);
+                let b_distance = Vec3::distance(b.1.translation, player_transform.translation);
+                a_distance.partial_cmp(&b_distance).unwrap()
+            });
 
-            for child in children.iter() {
-                if let Ok(_) = container.add_item(Some(*child)) {
-                    match player_container.remove_item(Some(*child)) {
-                        Ok(_) => {
-                            commands.entity(player).remove_children(&[*child]);
-                            commands.entity(container_entity).push_children(&[*child]);
-                            if let Ok(mut transform) = item_transforms.get_mut(*child) {
-                                transform.translation = Vec3::new(0.0, 0.0, transform.translation.z);
-                            }
-                            return;
-                        },
-                        Err(_) => {
-                            if let Err(err) = container.remove_item(Some(*child)) {
-                                println!("Error picking item back up: {err}");
-                            }
+        if let Some((container_entity, _, mut container)) = closest_container {
+            let Some(child) = children.first() else { return; };
+            if let Ok(_) = container.add_item(Some(*child)) {
+                match player_container.remove_item(Some(*child)) {
+                    Ok(_) => {
+                        commands.entity(player).remove_children(&[*child]);
+                        commands.entity(container_entity).push_children(&[*child]);
+                        if let Ok(mut transform) = item_transforms.get_mut(*child) {
+                            transform.translation = Vec3::new(0.0, 0.0, transform.translation.z);
+                        }
+                        return;
+                    },
+                    Err(_) => {
+                        if let Err(err) = container.remove_item(Some(*child)) {
+                            println!("Error picking item back up: {err}");
                         }
                     }
                 }
             }
-        }
-
-        for (container_entity, container_transform, mut container) in q_io_containers.iter_mut() {
-            let distance = Vec3::distance(container_transform.translation, player_transform.translation);
-            if distance > PLAYER_REACH {
-                continue;
-            }
-
-            for child in children.iter() {
-                if let Ok(_) = container.input.add_item(Some(*child)) {
-                    match player_container.remove_item(Some(*child)) {
-                        Ok(_) => {
-                            commands.entity(player).remove_children(&[*child]);
-                            commands.entity(container_entity).push_children(&[*child]);
-                            if let Ok(mut transform) = item_transforms.get_mut(*child) {
-                                transform.translation = Vec3::new(0.0, 0.0, transform.translation.z);
-                            }
-                            return;
-                        },
-                        Err(_) => {
-                            if let Err(err) = container.input.remove_item(Some(*child)) {
-                                println!("Error removing item: {err}");
-                            }
+        } else if let Some((container_entity, _, mut container)) = closest_io_container {
+            let Some(child) = children.first() else { return; };
+            if let Ok(_) = container.input.add_item(Some(*child)) {
+                match player_container.remove_item(Some(*child)) {
+                    Ok(_) => {
+                        commands.entity(player).remove_children(&[*child]);
+                        commands.entity(container_entity).push_children(&[*child]);
+                        if let Ok(mut transform) = item_transforms.get_mut(*child) {
+                            transform.translation = Vec3::new(0.0, 0.0, transform.translation.z);
+                        }
+                        return;
+                    },
+                    Err(_) => {
+                        if let Err(err) = container.input.remove_item(Some(*child)) {
+                            println!("Error picking item back up: {err}");
                         }
                     }
                 }
             }
-        }
-
-        for child in children.iter() {
+        } else {
+            let Some(child) = children.first() else { return; };
             match player_container.remove_item(Some(*child)) {
                 Ok(_) => {
+                    println!("dropping item {:?}", *child);
                     commands.entity(player).remove_children(&[*child]);
                     if let Ok(mut transform) = item_transforms.get_mut(*child) {
                         transform.translation = Vec3::new(player_transform.translation.x, player_transform.translation.y, transform.translation.z);

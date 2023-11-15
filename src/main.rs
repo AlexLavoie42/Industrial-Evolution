@@ -59,7 +59,8 @@ fn main() {
         .add_plugins(MoneyPlugin)
 
         .add_systems(Startup, factory_setup)
-        .add_systems(FixedUpdate, (player_movement, move_entities, player_pickup_item, player_drop_item))
+        .add_systems(FixedUpdate, (player_movement, move_entities))
+        .add_systems(Update, (player_pickup_item, player_drop_item))
         .add_systems(Update, (camera_follow, camera_scroll_zoom))
         .add_systems(PostUpdate, despawn_later_system)
 
