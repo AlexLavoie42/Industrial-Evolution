@@ -8,6 +8,9 @@ pub use jobs::*;
 mod worker;
 pub use worker::*;
 
+mod job_ui;
+pub use job_ui::*;
+
 mod error;
 pub use error::*;
 pub struct WorkerPlugin;
@@ -44,9 +47,11 @@ impl Plugin for WorkerPlugin {
                     toggle_worker_state,
                     worker_pick_up_item,
                     worker_drop_item,
-                    job_error_marker
+                    job_error_marker,
+                    (spawn_job_path_markers, job_path_lines).run_if(in_state(PlayerState::Jobs)),
                 )
             )
+            .add_systems(OnExit(PlayerState::Jobs), despawn_job_path_markers)
             .add_systems(PreUpdate, 
                 mouse_collision_system::<Worker>,
             )

@@ -6,6 +6,11 @@ use pathfinding::prelude::astar;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
+use kayak_ui::{
+    prelude::{widgets::*, *},
+    CameraUIKayak,
+};
+
 mod player;
 use player::*;
 
@@ -30,6 +35,9 @@ use money::*;
 mod ghost;
 use ghost::*;
 
+mod hud;
+use hud::*;
+
 const GRID_SIZE: TilemapSize = TilemapSize { x: 100, y: 100 };
 const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
 
@@ -48,17 +56,15 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(WorldInspectorPlugin::default())
-        .add_plugins(ResourceInspectorPlugin::<Economy>::default())
-        .add_plugins(ResourceInspectorPlugin::<PlayerMoney>::default())
-        .add_plugins(ResourceInspectorPlugin::<SelectedAssembly>::default())
         .add_plugins(TilemapPlugin)
+        .add_plugins((KayakContextPlugin, KayakWidgets))
 
         .add_plugins(AssembliesPlugin)
         .add_plugins(WorkerPlugin)
         .add_plugins(ItemPlugin)
         .add_plugins(MoneyPlugin)
 
-        .add_systems(Startup, factory_setup)
+        .add_systems(Startup, (factory_setup, apply_deferred, hud_setup).chain())
         .add_systems(FixedUpdate, (player_movement, move_entities))
         .add_systems(Update, (player_pickup_item, player_drop_item, player_power_assembly))
         .add_systems(Update, (camera_follow, camera_scroll_zoom))
@@ -135,7 +141,7 @@ struct Factory;
 pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let texture_handle: Handle<Image> = asset_server.load("tiles_map.png");
 
-    commands.spawn((Camera2dBundle::default(), MainCamera));
+    commands.spawn((Camera2dBundle::default(), MainCamera, CameraUIKayak));
 
     let tilemap_entity = commands.spawn_empty().id();
     let mut tile_storage = TileStorage::empty(GRID_SIZE);

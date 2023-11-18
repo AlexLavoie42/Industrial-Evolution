@@ -55,7 +55,10 @@ impl Default for PulpMillBundle {
             assembly: Assembly,
             input: AssemblyInput(Some(Item::Resource(ResourceItem::Wood))),
             output: AssemblyOutput(Some(Item::Resource(ResourceItem::Pulp))),
-            timer: AssemblyTimer(Timer::from_seconds(15.0, TimerMode::Repeating)),
+            timer: AssemblyTimer {
+                timer: Timer::from_seconds(15.0, TimerMode::Repeating),
+                item: None
+            },
             power: AssemblyPower {
                 current_power: Power::Mechanical(0.0),
                 max_power: 100.0,
@@ -98,7 +101,10 @@ impl Default for PaperPressBundle {
             assembly: Assembly,
             input: AssemblyInput(Some(Item::Resource(ResourceItem::Pulp))),
             output: AssemblyOutput(Some(Item::Material(MaterialItem::WetPaper))),
-            timer: AssemblyTimer(Timer::from_seconds(5.0, TimerMode::Repeating)),
+            timer: AssemblyTimer {
+                timer: Timer::from_seconds(5.0, TimerMode::Repeating),
+                item: None
+            },
             power: AssemblyPower {
                 current_power: Power::Mechanical(0.0),
                 max_power: 100.0,
@@ -140,7 +146,10 @@ impl Default for PaperDrierBundle {
             assembly: Assembly,
             input: AssemblyInput(Some(Item::Material(MaterialItem::WetPaper))),
             output: AssemblyOutput(Some(Item::Good(GoodItem::Paper))),
-            timer: AssemblyTimer(Timer::from_seconds(45.0, TimerMode::Repeating)),
+            timer: AssemblyTimer {
+                timer: Timer::from_seconds(45.0, TimerMode::Repeating),
+                item: None
+            },
             assembly_items: ItemIOContainer {
                 input: ItemContainer {
                     items: Vec::new(),

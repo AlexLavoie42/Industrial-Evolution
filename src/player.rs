@@ -63,7 +63,6 @@ pub fn player_pickup_item(
     mouse_pos: Res<MousePos>,
 ) {
     if input.just_pressed(KeyCode::F) {
-        println!("player: {:?}", q_player.iter().map(|(e, _, _, _)| e).collect::<Vec<Entity>>());
         let Ok((player, player_transform, mut player_container, children)) = q_player.get_single_mut() else { return };
         let near_item = q_items.iter_mut()
             .filter(|i| {

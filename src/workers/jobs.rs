@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::*;
 use workers::worker::*;
 
-#[derive(Debug, Reflect, PartialEq)]
+#[derive(Debug, Reflect, PartialEq, Clone)]
 pub enum JobAction {
     Work {
         power: Power,
@@ -26,7 +26,7 @@ pub enum JobAction {
 #[derive(Component, Debug, Reflect)]
 pub struct JobWaiting(pub bool);
 
-#[derive(Debug, Reflect, PartialEq)]
+#[derive(Debug, Reflect, PartialEq, Clone)]
 pub struct JobPoint {
     pub point: TilePos,
     pub point_size: IVec2,
@@ -43,7 +43,7 @@ pub struct Job {
     pub lock: bool
 }
 
-#[derive(Component, Debug, PartialEq, Reflect)]
+#[derive(Component, Debug, PartialEq, Reflect, Clone)]
 pub enum JobStatus {
     Active,
     Completed

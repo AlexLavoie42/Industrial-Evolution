@@ -41,7 +41,12 @@ impl Plugin for AssembliesPlugin {
                 refund_assembly,
             ))
             .add_systems(Update,
-                (produce_goods, add_assembly_power_input)
+                (
+                    produce_goods,
+                    add_assembly_power_input,
+                    show_assembly_progress_bars,
+                    update_assembly_progress_bars
+                ),
             )
             .add_systems(PreUpdate, (
                 mouse_collision_system::<Assembly>,

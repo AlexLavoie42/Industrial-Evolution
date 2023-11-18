@@ -120,18 +120,33 @@ pub fn produce_goods(
         assembly_input,
         assembly_output
     ) in q_assembly.iter_mut() {
+        let mut timer_item = q_assembly_timer.get_mut(assembly_entity).as_ref().map(|t| t.item).unwrap_or(None);
+        if !assembly_items.input.items.contains(&timer_item) {
+            timer_item = None;
+        }
+
+        if let Ok(mut timer) = q_assembly_timer.get_mut(assembly_entity) {
+            if timer_item.is_none() {
+                timer.timer.reset();
+                let next_item = assembly_items.input.items.get(0);
+                if let Some(next_item) = next_item {
+                    timer.item = *next_item;
+                    timer_item = *next_item;
+                }
+            }
+        }
+
+        let (Some(Some(mut input_entity)), Some(assembly_input)) = (assembly_items.input.items.last_mut(), &assembly_input.0) else { continue; };
+        let Ok(item) = q_items.get(input_entity) else { continue; };
+        if assembly_input != item {
+            continue;
+        }
+
         if assembly_items.input.items.is_empty() ||
         assembly_items.output.max_items == assembly_items.output.items.len() {
             continue;
         }
 
-        let timer = q_assembly_timer.get_mut(assembly_entity);
-        if let Ok(mut timer) = timer {
-            if !timer.0.tick(time.delta()).just_finished() {
-                continue;
-            }
-        }
-        
         if let Ok(power) = q_assembly_power.get(assembly_entity) {
             match power.current_power {
                 Power::Electrical(existing) | Power::Thermal(existing) | Power::Mechanical(existing) => {
@@ -140,10 +155,10 @@ pub fn produce_goods(
             }
         }
 
-        let (Some(Some(mut input_entity)), Some(assembly_input)) = (assembly_items.input.items.last_mut(), &assembly_input.0) else { continue; };
-        let Ok(item) = q_items.get(input_entity) else { continue; };
-        if assembly_input != item {
-            continue;
+        if let Ok(mut timer) = q_assembly_timer.get_mut(assembly_entity) {
+            if timer_item.is_none() || !timer.timer.tick(time.delta()).just_finished() {
+                continue;
+            }
         }
 
         let mut finish_production = || {
@@ -163,7 +178,7 @@ pub fn produce_goods(
                     let Ok(mut job) = q_jobs.get_mut(entity) else { continue };
                     let Some(current_job_i) = job.current_job else { continue };
                     let Some(current_job) = job.path.get_mut(current_job_i) else { continue };
-
+                    
                     current_job.job_status = JobStatus::Completed;
                 }
             }
