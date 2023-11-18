@@ -139,6 +139,16 @@ Learnings:
 - Introduce automation to the player once step at a time
 - Slowing monetary progression
     - Balancing dynamic economy will be really hard
+ 
+- Base gameplay loop is not engaging enough
+    - Worker setup/automation doesnt scale
+    - Players manually doing production is not fun enough. Minigames help but are band-aid
+
+    - Focus on intensity of time crunch during day cycle. Make enough money to survive. Keep player as the bottleneck either directly in production or managing/fixing/optimizing workers.
+    - Stardew valley style, try to fill up output before day is over.
+    - End of day lets player relax.
+    - Selecting resources to be bought for the next day. Unused resources incur storage fees.
+    - Core loop is a cycle between intense factory production time crunch, and end of day relief. Gives players breathing room and time to plan.
 
 ## Random Thoughts
 
