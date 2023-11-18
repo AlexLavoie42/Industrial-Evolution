@@ -22,7 +22,7 @@ pub fn hud_setup(
         // widget_update auto diffs props and state.
         // Optionally if you have context you can use: widget_update_with_context
         // otherwise you will need to create your own widget update system!
-        widget_update::<PlayerMoneyHUDProps, EmptyState>,
+        widget_update_with_money::<PlayerMoneyHUDProps, EmptyState>,
         // Add our render system!
         player_money_hud_render,
     );
@@ -69,6 +69,19 @@ impl Default for PlayerMoneyHUDBundle {
     }
 }
 
+// Our own version of widget_update that handles resource change events.
+pub fn widget_update_with_money<
+    Props: PartialEq + Component + Clone,
+    State: PartialEq + Component + Clone,
+>(
+    In((entity, previous_entity)): In<(Entity, Entity)>,
+    widget_context: Res<KayakWidgetContext>,
+    player_money: Res<PlayerMoney>,
+    widget_param: WidgetParam<Props, State>,
+) -> bool {
+    widget_param.has_changed(&widget_context, entity, previous_entity) || player_money.is_changed()
+}
+
 pub fn player_money_hud_render(
     In(entity): In<Entity>,
     mut query: Query<(&mut PlayerMoneyHUDProps, &mut ComputedStyles, &KStyle)>,
@@ -90,7 +103,6 @@ pub fn player_money_hud_render(
         }
         .with_style(style)
         .into();
-        return true;
     }
-    false
+    true
 }

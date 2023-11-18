@@ -29,7 +29,7 @@ impl Default for AssemblyProgressBarBaseBundle {
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::GRAY,
-                    custom_size: Some(Vec2::new(200.0, 25.0)),
+                    custom_size: Some(Vec2::new(100.0, 15.0)),
                     ..default()
                 },
                 transform: Transform::from_xyz(0.0, 0.0, 25.0),
@@ -56,11 +56,11 @@ impl Default for AssemblyProgressBarSectionBundle {
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::GREEN,
-                    custom_size: Some(Vec2::new(0.0, 25.0)),
+                    custom_size: Some(Vec2::new(0.0, 13.0)),
                     anchor: Anchor::CenterLeft,
                     ..default()
                 },
-                transform: Transform::from_xyz(-100.0, 0.0, 30.0),
+                transform: Transform::from_xyz(-50.0, 0.0, 30.0),
                 ..default()
             }
         }
@@ -111,8 +111,8 @@ pub fn update_assembly_progress_bars(
                         section.progress = timer.timer.percent();
                         
                         sprite.custom_size = Some(Vec2::new(
-                            200.0 * section.progress,
-                            25.0
+                            100.0 * section.progress,
+                            13.0
                         ))
                     }
                 }
