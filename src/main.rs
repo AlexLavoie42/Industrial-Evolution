@@ -60,7 +60,7 @@ fn main() {
 
         .add_systems(Startup, factory_setup)
         .add_systems(FixedUpdate, (player_movement, move_entities))
-        .add_systems(Update, (player_pickup_item, player_drop_item))
+        .add_systems(Update, (player_pickup_item, player_drop_item, player_power_assembly))
         .add_systems(Update, (camera_follow, camera_scroll_zoom))
         .add_systems(PostUpdate, despawn_later_system)
 
@@ -191,6 +191,10 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         container: ItemContainer { 
             items: Vec::new(),
             max_items: 2
+        },
+        production: PowerProduction {
+            output: None,
+            power: Power::Mechanical(100.0),
         }
     });
 }

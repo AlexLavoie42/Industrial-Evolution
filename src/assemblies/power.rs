@@ -19,6 +19,14 @@ pub fn add_assembly_power_input(
     mut q_assembly_power: Query<&mut AssemblyPower>,
     mut q_job_error: Query<&mut JobError>
 ) {
+    for mut assembly in q_assembly_power.iter_mut() {
+        assembly.current_power = match assembly.current_power {
+            Power::Mechanical(_) => Power::Mechanical(0.0),
+            Power::Thermal(_) => Power::Thermal(0.0),
+            Power::Electrical(_) => Power::Electrical(0.0)
+        };
+        assembly.powering_entities.clear();
+    }
     for ev in ev_power_input.iter() {
         if let Ok(mut assembly) = q_assembly_power.get_mut(ev.assembly) {
             match ev.power {
