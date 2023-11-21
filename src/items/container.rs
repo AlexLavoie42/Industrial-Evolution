@@ -68,8 +68,8 @@ pub struct ContainerInputSelectorBundle {
     pub sprite: SpriteBundle
 }
 
-impl Default for ContainerInputSelectorBundle {
-    fn default() -> Self {
+impl ContainerInputSelectorBundle {
+    pub fn new(asset_server: AssetServer) -> Self {
         ContainerInputSelectorBundle {
             marker: ContainerInputSelector,
             sprite: SpriteBundle {
@@ -78,10 +78,11 @@ impl Default for ContainerInputSelectorBundle {
                     ..Default::default()
                 },
                 sprite: Sprite {
-                    color: Color::GREEN,
-                    custom_size: Some(Vec2::new(48.0, 32.0)),
+                    custom_size: Some(Vec2::new(32.0, 64.0)),
                     ..Default::default()
                 },
+                texture: asset_server.load("Input Arrow.png"),
+                visibility: Visibility::Hidden,
                 ..Default::default()
             },
         }
@@ -94,8 +95,8 @@ pub struct ContainerOutputSelectorBundle {
     pub sprite: SpriteBundle
 }
 
-impl Default for ContainerOutputSelectorBundle {
-    fn default() -> Self {
+impl ContainerOutputSelectorBundle {
+    pub fn new(asset_server: AssetServer) -> Self {
         ContainerOutputSelectorBundle {
             marker: ContainerOutputSelector,
             sprite: SpriteBundle {
@@ -105,11 +106,33 @@ impl Default for ContainerOutputSelectorBundle {
                 },
                 sprite: Sprite {
                     color: Color::RED,
-                    custom_size: Some(Vec2::new(48.0, 32.0)),
+                    custom_size: Some(Vec2::new(32.0, 64.0)),
                     ..Default::default()
                 },
+                texture: asset_server.load("Output Arrow.png"),
+                visibility: Visibility::Hidden,
                 ..Default::default()
             },
+        }
+    }
+}
+
+pub fn toggle_container_selectors(
+    mut q_input_selector: Query<&mut Visibility, (With<ContainerInputSelector>, Without<ContainerOutputSelector>)>,
+    mut q_output_selector: Query<&mut Visibility, (With<ContainerOutputSelector>, Without<ContainerInputSelector>)>,
+) {
+    for mut selector in q_input_selector.iter_mut() {
+        if *selector == Visibility::Hidden {
+            *selector = Visibility::Visible;
+        } else {
+            *selector = Visibility::Hidden;
+        }
+    }
+    for mut selector in q_output_selector.iter_mut() {
+        if *selector == Visibility::Hidden {
+            *selector = Visibility::Visible;
+        } else {
+            *selector = Visibility::Hidden;
         }
     }
 }

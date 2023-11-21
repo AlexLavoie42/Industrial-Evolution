@@ -103,6 +103,26 @@ macro_rules! make_assembly_types {
                 }
             }
         }
+
+        paste! {
+            pub fn update_assembly_ghost(
+                $(mut [<ev_ $assembly_name:snake>]: EventWriter<ShowHoverGhost<$bundle>>,)*
+                mut ev_hide_ghost: EventWriter<HideHoverGhost>,
+                selected: Res<SelectedAssembly>,
+            ){
+                if selected.is_changed() {
+                    ev_hide_ghost.send(HideHoverGhost);
+                    match selected.selected {
+                        $(AssemblyType::$assembly_name => {
+                            println!("Selected {}", stringify!($assembly_name));
+                            [<ev_ $assembly_name:snake>].send(ShowHoverGhost::<$bundle> {
+                                bundle: PhantomData::<$bundle>
+                            });
+                        },)*
+                    }
+                }
+            }
+        }
     };
 }
 

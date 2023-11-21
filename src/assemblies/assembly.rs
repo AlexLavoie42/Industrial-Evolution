@@ -66,6 +66,7 @@ pub fn place_assembly(
     mut money: ResMut<PlayerMoney>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    asset_server: Res<AssetServer>,
     tilemap_q: Query<(
         &TilemapSize,
         &TilemapGridSize,
@@ -94,12 +95,13 @@ pub fn place_assembly(
             println!("Can't place assembly here");
             return;
         }
-        let mut output_bundle = ContainerOutputSelectorBundle::default();
-        output_bundle.sprite.transform.translation = Vec3::new(0.0, 64.0, 1.0);
+        let mut output_bundle = ContainerOutputSelectorBundle::new(asset_server.clone());
+
+        output_bundle.sprite.transform.translation = Vec3::new(0.0, (size.y as f32) * TILE_SIZE.y, 1.0);
         let output_entity = commands.spawn(output_bundle).id();
 
-        let mut input_bundle = ContainerInputSelectorBundle::default();
-        input_bundle.sprite.transform.translation = Vec3::new(0.0, -64.0, 1.0);
+        let mut input_bundle = ContainerInputSelectorBundle::new(asset_server.clone());
+        input_bundle.sprite.transform.translation = Vec3::new(0.0, -(size.y as f32) * TILE_SIZE.y, 1.0);
         let input_entity: Entity = commands.spawn(input_bundle).id();
         selected_assembly.selected.spawn_bundle(&mut commands, pos).push_children(&[input_entity, output_entity]);
     }

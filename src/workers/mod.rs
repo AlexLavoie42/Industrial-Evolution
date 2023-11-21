@@ -34,9 +34,9 @@ impl Plugin for WorkerPlugin {
             .add_event::<ShowHoverGhost::<WorkerBundle>>()
             .add_systems(Update, 
                 (
-                    (place_worker).run_if(in_state(PlayerState::Workers)),
+                    (place_worker).run_if(in_state(PlayerState::Workers)).run_if(in_state(PlacementState::Allowed)),
                     input_toggle_worker_mode,
-                    (job_mode_creation).run_if(in_state(PlayerState::Jobs)),
+                    (job_mode_creation).run_if(in_state(PlayerState::Jobs)).run_if(in_state(PlacementState::Allowed)),
                     activate_job_mode_on_click,
                     worker_do_job,
                     move_towards_path,
@@ -48,6 +48,7 @@ impl Plugin for WorkerPlugin {
                     worker_pick_up_item,
                     worker_drop_item,
                     job_error_marker,
+                    job_warning_marker,
                     (spawn_job_path_markers, job_path_lines).run_if(in_state(PlayerState::Jobs)),
                 )
             )

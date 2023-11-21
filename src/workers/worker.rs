@@ -168,7 +168,7 @@ pub fn worker_pick_up_item(
         let Ok((mut container, worker_transform, mut job, mut job_error))
             = q_worker_item_container.get_mut(ev.worker) else { continue };
         let Ok((mut item_transform, item_g_transform)) = q_item_transforms.get_mut(ev.item) else {
-            job_error.set_error("Item not found");
+            job_error.set_warning("Item not found");
             continue;
         };
         if container.items.iter().any(|i| *i == Some(ev.item)) {
@@ -259,7 +259,7 @@ pub fn worker_drop_item(
             
             if let Err(err) = container.add_item(Some(ev.item)) {
                 // TODO: Waiting?
-                job_error.set_error(format!("Error adding item to container: {err}").as_str());
+                job_error.set_warning(format!("Error adding item to container: {err}").as_str());
                 commands.entity(container_entity).remove_children([ev.item].as_slice());
                 commands.entity(ev.worker).push_children(&[ev.item]);
                 if let Err(err) = worker_container.add_item(Some(ev.item)) {

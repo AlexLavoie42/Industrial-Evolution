@@ -667,15 +667,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_input_mapper"
-version = "0.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d8c4b28f61fcc4ed53c51505fe37dae0a5df9eab6e820b823fbc22bcd2ac774"
-dependencies = [
- "bevy",
-]
-
-[[package]]
 name = "bevy_internal"
 version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2246,7 +2237,6 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_ecs_tilemap",
- "bevy_input_mapper",
  "kayak_ui",
  "paste",
  "pathfinding",

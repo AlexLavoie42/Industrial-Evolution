@@ -27,7 +27,6 @@ pub struct ItemPlugin;
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App) {
         app
-        
             .add_systems(OnEnter(PlayerState::Recievables),
                 |mut ev_show_ghost: EventWriter<ShowHoverGhost<ItemReceivableBundle>>| {
                     ev_show_ghost.send(ShowHoverGhost::<ItemReceivableBundle> {
@@ -54,6 +53,8 @@ impl Plugin for ItemPlugin {
                     ev_hide_ghost.send(HideHoverGhost);
                 }
             )
+            .add_systems(OnEnter(PlayerState::Jobs), toggle_container_selectors)
+            .add_systems(OnExit(PlayerState::Jobs), toggle_container_selectors)
             .add_event::<ShowHoverGhost::<TradeDepotBundle>>()
             .add_systems(Update, show_hover_ghost::<TradeDepotBundle>)
             .add_systems(PreUpdate, mouse_collision_system::<Item>)

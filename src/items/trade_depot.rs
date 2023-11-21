@@ -96,6 +96,7 @@ pub fn place_trade_depot(
     input: Res<Input<MouseButton>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    asset_server: Res<AssetServer>,
     tilemap_q: Query<(
         &TilemapSize,
         &TilemapGridSize,
@@ -111,7 +112,7 @@ pub fn place_trade_depot(
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
         let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
 
-        let mut input_bundle = ContainerInputSelectorBundle::default();
+        let mut input_bundle = ContainerInputSelectorBundle::new(asset_server.clone());
         input_bundle.sprite.transform.translation = Vec3::new(0.0, 42.0, 1.0);
         let input_entity = commands.spawn(input_bundle).id();
 

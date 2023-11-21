@@ -283,7 +283,6 @@ pub fn worker_do_job(
                                 });
                             }
                         }
-                        // TODO: Worker error state?
                     }
                 };
             }

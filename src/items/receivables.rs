@@ -109,6 +109,7 @@ pub fn place_receivable(
     input: Res<Input<MouseButton>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    asset_server: Res<AssetServer>,
     tilemap_q: Query<(
         &TilemapSize,
         &TilemapGridSize,
@@ -126,7 +127,7 @@ pub fn place_receivable(
         let size = ItemReceivableBundle::default().tile_size.0;
         let pos = get_corner_tile_pos(get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type), size);
 
-        let mut output_bundle = ContainerOutputSelectorBundle::default();
+        let mut output_bundle = ContainerOutputSelectorBundle::new(asset_server.clone());
         output_bundle.sprite.transform.translation = Vec3::new(0.0, -42.0, 1.0);
         let output_entity = commands.spawn(output_bundle).id();
 

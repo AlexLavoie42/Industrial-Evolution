@@ -3,7 +3,7 @@ use std::{cmp::{min, max}, time::Duration};
 use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}, time::common_conditions::{on_fixed_timer, on_timer}};
 use bevy_ecs_tilemap::{prelude::*, helpers::{hex_grid::neighbors, square_grid::neighbors::Neighbors}};
 use pathfinding::prelude::astar;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::quick::{WorldInspectorPlugin, StateInspectorPlugin};
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use kayak_ui::{
@@ -52,6 +52,13 @@ pub enum PlayerState {
     TradeDepot
 }
 
+#[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default, Reflect)]
+pub enum PlacementState {
+    Blocked,
+    #[default]
+    Allowed,
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -69,6 +76,7 @@ fn main() {
         .add_systems(Update, (player_pickup_item, player_drop_item, player_power_assembly))
         .add_systems(Update, (camera_follow, camera_scroll_zoom))
         .add_systems(PostUpdate, despawn_later_system)
+        .add_systems(Update, input_reset_player_mode)
 
         .add_systems(PostUpdate, (set_tilemap_collisions, debug_collision).run_if(on_timer(Duration::from_secs_f32(0.1))))
 
@@ -76,6 +84,7 @@ fn main() {
         .add_event::<HideHoverGhost>()
 
         .add_state::<PlayerState>()
+        .add_state::<PlacementState>()
         .add_systems(PreUpdate, (set_mouse_pos_res, set_mouse_tile_res))
         .insert_resource(MousePos(Vec2::ZERO))
         .insert_resource(MouseTile(TilePos::new(0, 0)))
@@ -132,6 +141,15 @@ fn debug_collision(
 ) {
     for (mut color, collision) in q_collisions.iter_mut() {
         color.0 = if collision.is_some() {Color::RED} else {Color::WHITE};
+    }
+}
+
+pub fn input_reset_player_mode(
+    mut next_state: ResMut<NextState<PlayerState>>,
+    keyboard_input: Res<Input<KeyCode>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Escape) {
+        next_state.set(PlayerState::None);
     }
 }
 

@@ -20,6 +20,7 @@ impl Plugin for AssembliesPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(OnEnter(PlayerState::Assemblies), selected_assembly_hover)
+            .add_systems(Update, update_assembly_ghost.run_if(in_state(PlayerState::Assemblies)))
             .add_systems(OnExit(PlayerState::Assemblies),
                 |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
                     ev_hide_ghost.send(HideHoverGhost);
@@ -36,7 +37,7 @@ impl Plugin for AssembliesPlugin {
             .add_event::<ShowHoverGhost::<PaperDrierBundle>>()
             .add_systems(Update,
             (
-                (place_assembly).run_if(in_state(PlayerState::Assemblies)),
+                (place_assembly).run_if(in_state(PlayerState::Assemblies)).run_if(in_state(PlacementState::Allowed)),
                 input_toggle_assembly_mode,
                 refund_assembly,
             ))
