@@ -43,6 +43,7 @@ impl Default for ItemReceivableBundle {
             },
             container: ItemContainer {
                 items: Vec::new(),
+                item_type: None,
                 max_items: 100
             },
             sprite: SpriteBundle {
@@ -62,6 +63,7 @@ impl Default for ItemReceivableBundle {
 pub fn purchase_receivables(
     mut commands: Commands,
     mut q_receivables: Query<(Entity, &mut ItemReceivable, &mut ItemContainer)>,
+    q_items: Query<&Item>,
     mut economy: ResMut<Economy>,
     mut money: ResMut<PlayerMoney>,
 ) {
@@ -71,7 +73,7 @@ pub fn purchase_receivables(
             for _ in 0..receivable.refill_quantity {
                 let mut item = receivable.item.spawn_bundle(&mut commands);
                 let item_entity = item.id();
-                match container.add_item(Some(item_entity)) {
+                match container.add_item((Some(item_entity), Some(Item::Resource(receivable.item)))) {
                     Ok(_) => {
                         commands.entity(receivable_entity).push_children(&[item_entity]);
                         

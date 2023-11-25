@@ -68,10 +68,12 @@ impl Default for PulpMillBundle {
             assembly_items: ItemIOContainer {
                 input: ItemContainer {
                     items: Vec::new(),
+                    item_type: Some(Item::Resource(ResourceItem::Wood)),
                     max_items: 5
                 },
                 output: ItemContainer {
                     items: Vec::new(),
+                    item_type: None,
                     max_items: 3
                 }
             },
@@ -114,10 +116,12 @@ impl Default for PaperPressBundle {
             assembly_items: ItemIOContainer {
                 input: ItemContainer {
                     items: Vec::new(),
+                    item_type: Some(Item::Resource(ResourceItem::Pulp)),
                     max_items: 5
                 },
                 output: ItemContainer {
                     items: Vec::new(),
+                    item_type: None,
                     max_items: 3
                 }
             },
@@ -153,10 +157,12 @@ impl Default for PaperDrierBundle {
             assembly_items: ItemIOContainer {
                 input: ItemContainer {
                     items: Vec::new(),
+                    item_type: Some(Item::Material(MaterialItem::WetPaper)),
                     max_items: 25
                 },
                 output: ItemContainer {
                     items: Vec::new(),
+                    item_type: None,
                     max_items: 2
                 }
             },

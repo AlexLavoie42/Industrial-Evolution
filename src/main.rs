@@ -214,6 +214,7 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         container: ItemContainer { 
             items: Vec::new(),
+            item_type: None,
             max_items: 2
         },
         production: PowerProduction {

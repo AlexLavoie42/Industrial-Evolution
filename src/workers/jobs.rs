@@ -281,6 +281,8 @@ pub fn worker_do_job(
                                     worker: worker_entity,
                                     container: input_container
                                 });
+                            } else {
+                                // TODO: Error
                             }
                         }
                     }

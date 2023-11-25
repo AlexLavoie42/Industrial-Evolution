@@ -51,7 +51,7 @@ impl Default for WorkerBundle {
             },
             job_error: JobError::new(),
             job_waiting: JobWaiting(false),
-            worker_items: ItemContainer { items: Vec::new(), max_items: 2 },
+            worker_items: ItemContainer { items: Vec::new(), max_items: 2, item_type: None },
             production: PowerProduction {
                 power: Power::Mechanical(100.0),
                 output: None
@@ -156,7 +156,7 @@ pub struct WorkerPickUpItemEvent {
 
 pub fn worker_pick_up_item(
     mut commands: Commands,
-    mut q_item_transforms: Query<(&mut Transform, &GlobalTransform), (With<Item>, Without<Worker>)>,
+    mut q_item_transforms: Query<(&mut Transform, &GlobalTransform, &Item), (With<Item>, Without<Worker>)>,
     mut q_worker_item_container: Query<(&mut ItemContainer, &GlobalTransform, &mut Job, &mut JobError), (With<Worker>, Without<Item>)>,
     mut q_io_item_containers: Query<&mut ItemIOContainer>,
     mut q_item_containers: Query<&mut ItemContainer, Without<Worker>>,
@@ -167,7 +167,7 @@ pub fn worker_pick_up_item(
         // TODO: Lock each item to avoid a race condition with multiple workers
         let Ok((mut container, worker_transform, mut job, mut job_error))
             = q_worker_item_container.get_mut(ev.worker) else { continue };
-        let Ok((mut item_transform, item_g_transform)) = q_item_transforms.get_mut(ev.item) else {
+        let Ok((mut item_transform, item_g_transform, item_type)) = q_item_transforms.get_mut(ev.item) else {
             job_error.set_warning("Item not found");
             continue;
         };
@@ -192,7 +192,7 @@ pub fn worker_pick_up_item(
             continue;
         }
 
-        let Ok(_) = container.add_item(Some(ev.item)) else {
+        let Ok(_) = container.add_item((Some(ev.item), Some(*item_type))) else {
             if let Some(current_job_i) = job.current_job {
                 let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
                 current_job.job_status = JobStatus::Active;
@@ -227,7 +227,7 @@ pub struct WorkerDropItemEvent {
 
 pub fn worker_drop_item(
     mut commands: Commands,
-    mut q_item_transforms: Query<&mut Transform, With<Item>>,
+    mut q_item_transforms: Query<(&mut Transform, &Item)>,
     mut q_item_containers: Query<&mut ItemContainer, Without<Worker>>,
     mut q_worker_containers: Query<(&mut ItemContainer, &mut Job, &mut JobError), With<Worker>>,
     mut q_assembly_item_containers: Query<&mut ItemIOContainer>,
@@ -238,7 +238,7 @@ pub fn worker_drop_item(
             continue;
         };
         // TODO: Drop item with no container?
-        let (Some(container_entity), Ok(mut item_transform)) = (ev.container, q_item_transforms.get_mut(ev.item)) else {
+        let (Some(container_entity), Ok((mut item_transform, item_type))) = (ev.container, q_item_transforms.get_mut(ev.item)) else {
             job_error.set_error("Item or Container not found");
             continue;
         };
@@ -257,12 +257,12 @@ pub fn worker_drop_item(
             item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
             println!("Dropping item {:?} into {:?}", ev.item, container_entity);
             
-            if let Err(err) = container.add_item(Some(ev.item)) {
+            if let Err(err) = container.add_item((Some(ev.item), Some(*item_type))) {
                 // TODO: Waiting?
                 job_error.set_warning(format!("Error adding item to container: {err}").as_str());
                 commands.entity(container_entity).remove_children([ev.item].as_slice());
                 commands.entity(ev.worker).push_children(&[ev.item]);
-                if let Err(err) = worker_container.add_item(Some(ev.item)) {
+                if let Err(err) = worker_container.add_item((Some(ev.item), Some(*item_type))) {
                     job_error.set_error(format!("Error picking item back up: {err}").as_str());
                 }
             } else {

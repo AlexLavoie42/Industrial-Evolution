@@ -21,6 +21,8 @@ pub fn hud_setup(
 
     let base_hud_menu_image = assets.load("Hud Menu-Thin.png");
     let assembly_mode_menu_image = assets.load("Assemblies Icon.png");
+    let assembly_mode_hover_menu_image = assets.load("Assemblies Icon-Hover.png");
+    let assembly_mode_selected_menu_image = assets.load("Assemblies Icon-selected.png");
     let worker_mode_menu_image = assets.load("Workers Icon.png");
     let pulp_mill_menu_image = assets.load("Pulp Mill Icon.png");
     let paper_press_menu_image = assets.load("Paper Press Icon.png");
@@ -49,7 +51,13 @@ pub fn hud_setup(
     );
 
     let assembly_button_click = OnEvent::new(
-        move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut next_player_state: ResMut<NextState<PlayerState>>, player_state: Res<State<PlayerState>> | {
+        move |
+            In(entity): In<Entity>,
+            event: ResMut<KEvent>,
+            mut state: Query<&mut ImageButtonState>,
+            mut next_player_state: ResMut<NextState<PlayerState>>,
+            player_state: Res<State<PlayerState>>
+        | {
             if let EventType::Click(_) = event.event_type {
                 if player_state.get() == &PlayerState::Assemblies {
                     next_player_state.set(PlayerState::None);
@@ -57,15 +65,35 @@ pub fn hud_setup(
                     next_player_state.set(PlayerState::Assemblies);
                 }
             }
+            if let Ok(mut state) = state.get_mut(entity) {
+                if player_state.get() == &PlayerState::Assemblies {
+                    state.selected = true;
+                } else {
+                    state.selected = false;
+                }
+            }
         },
     );
     let worker_button_click = OnEvent::new(
-        move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut next_player_state: ResMut<NextState<PlayerState>>, player_state: Res<State<PlayerState>> | {
+        move |
+            In(entity): In<Entity>,
+            event: ResMut<KEvent>,
+            mut state: Query<&mut ImageButtonState>,
+            mut next_player_state: ResMut<NextState<PlayerState>>,
+            player_state: Res<State<PlayerState>> 
+        | {
             if let EventType::Click(_) = event.event_type {
                 if player_state.get() == &PlayerState::Workers {
                     next_player_state.set(PlayerState::None);
                 } else {
                     next_player_state.set(PlayerState::Workers);
+                }
+            }
+            if let Ok(mut state) = state.get_mut(entity) {
+                if player_state.get() == &PlayerState::Workers {
+                    state.selected = true;
+                } else {
+                    state.selected = false;
                 }
             }
         },
@@ -126,6 +154,8 @@ pub fn hud_setup(
                 <ImageButtonBundle
                     props={ImageButtonProps {
                         image: pulp_mill_menu_image.clone(),
+                        hover_image: pulp_mill_menu_image.clone(),
+                        selected_image: pulp_mill_menu_image.clone(),
                     }}
                     styles={KStyle {
                         width: Units::Pixels(64.0).into(),
@@ -146,6 +176,8 @@ pub fn hud_setup(
                 <ImageButtonBundle
                     props={ImageButtonProps {
                         image: paper_press_menu_image.clone(),
+                        hover_image: paper_press_menu_image.clone(),
+                        selected_image: paper_press_menu_image.clone(),
                     }}
                     styles={KStyle {
                         width: Units::Pixels(64.0).into(),
@@ -165,6 +197,8 @@ pub fn hud_setup(
                 <ImageButtonBundle
                     props={ImageButtonProps {
                         image: paper_drier_menu_image.clone(),
+                        hover_image: paper_drier_menu_image.clone(),
+                        selected_image: paper_drier_menu_image.clone(),
                     }}
                     styles={KStyle {
                         width: Units::Pixels(64.0).into(),
@@ -223,7 +257,9 @@ pub fn hud_setup(
                         ..default()
                     }}
                     props={ImageButtonProps {
-                        image: assembly_mode_menu_image,
+                        image: assembly_mode_menu_image.clone(),
+                        hover_image: assembly_mode_hover_menu_image.clone(),
+                        selected_image: assembly_mode_selected_menu_image.clone(),
                     }}
                     on_event={
                         assembly_button_click
@@ -243,7 +279,9 @@ pub fn hud_setup(
                         ..default()
                     }}
                     props={ImageButtonProps {
-                        image: worker_mode_menu_image,
+                        image: worker_mode_menu_image.clone(),
+                        hover_image: worker_mode_menu_image.clone(),
+                        selected_image: worker_mode_menu_image.clone(),
                     }}
                     on_event={
                         worker_button_click
@@ -406,9 +444,15 @@ pub fn assemblies_hud_render(
 pub struct ImageButtonProps {
     pub image: Handle<Image>,
     pub hover_image: Handle<Image>,
-    pub selected_image: Handle<Image>
+    pub selected_image: Handle<Image>,
 }
 impl Widget for ImageButtonProps {}
+
+#[derive(Component, Default, PartialEq, Clone)]
+pub struct ImageButtonState {
+    pub selected: bool,
+    pub hover: bool,
+}
 
 #[derive(Bundle)]
 pub struct ImageButtonBundle {
@@ -438,6 +482,7 @@ pub fn image_button_render(
     mut commands: Commands,
     widget_context: Res<KayakWidgetContext>,
     mut query: Query<(&mut ImageButtonProps, &mut ComputedStyles, &KStyle)>,
+    button_state: Query<&ImageButtonState>
 ) -> bool {
     if let Ok((props, mut computed_styles, style)) = query.get_mut(entity) {
         *computed_styles = KStyle::default()
@@ -445,16 +490,48 @@ pub fn image_button_render(
             .into();
 
         let parent_id = Some(entity);
+        let mut image = props.image.clone();
+        let state_entity = widget_context.use_state(
+            // Bevy commands
+            &mut commands,
+            // The widget entity.
+            entity,
+            // The default starting values for the state.
+            ImageButtonState::default()
+        );
+        if let Ok(state) = button_state.get(state_entity) {
+            if state.selected {
+                image = props.selected_image.clone();
+            }
+            if state.hover {
+                image = props.hover_image.clone();
+            }
+        }
         rsx!(
             <NinePatchBundle
                 nine_patch={NinePatch {
-                    handle: props.image.clone(),
+                    handle: image.clone(),
                     border: Edge::all(0.0),
                 }}
                 on_event={OnEvent::new(
-                    move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut placement_state: ResMut<NextState<PlacementState>> | {
-                        if let EventType::Hover(_) = event.event_type {
-                            props.image = props.hover_image.clone();
+                    move |In(_entity): In<Entity>, mut commands: Commands, event: ResMut<KEvent>, q_parent: Query<&Parent>, mut q_state: Query<&mut ImageButtonState> | {
+                        if let EventType::MouseIn(_) = event.event_type {
+                            println!("in entity: {:?}", _entity);
+                            if let Ok(parent) = q_parent.get(_entity) {
+                                println!("parent: {:?}", parent.get());
+                                if let Ok(mut state) = q_state.get_mut(parent.get()) {
+                                    state.hover = true;
+                                }
+                            }
+                        }
+                        if let EventType::MouseOut(_) = event.event_type {
+                            println!("entity: {:?}", _entity);
+                            if let Ok(parent) = q_parent.get(_entity) {
+                                println!("parent: {:?}", parent.get());
+                                if let Ok(mut state) = q_state.get_mut(parent.get()) {
+                                    state.hover = false;
+                                }
+                            }
                         }
                     }
                 )}

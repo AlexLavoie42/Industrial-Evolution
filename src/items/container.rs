@@ -4,6 +4,7 @@ use crate::*;
 pub struct ItemContainer {
     pub items: Vec<Option<Entity>>,
     pub max_items: usize,
+    pub item_type: Option<Item>
 }
 
 pub struct ItemStackBundle {
@@ -13,11 +14,16 @@ pub struct ItemStackBundle {
 }
 
 impl ItemContainer {
-    pub fn add_item(&mut self, item: Option<Entity>) -> Result<(), &'static str> {
+    pub fn add_item(&mut self, item: (Option<Entity>, Option<Item>)) -> Result<(), &'static str> {
         if self.items.len() >= self.max_items {
             return Err("Maximum number of items reached");
         }
-        Ok(self.items.push(item))
+        if let Some(item_type) = self.item_type {
+            if Some(item_type) != item.1 {
+                return Err("Invalid item type");
+            }
+        }
+        Ok(self.items.push(item.0))
     }
 
     pub fn remove_item(&mut self, item: Option<Entity>) -> Result<Option<Entity>, &'static str> {

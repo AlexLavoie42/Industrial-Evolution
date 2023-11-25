@@ -31,6 +31,7 @@ impl Default for TradeDepotBundle {
             depot: TradeDepot,
             items: ItemContainer {
                 items: Vec::new(),
+                item_type: None,
                 max_items: 25
             },
             sprite: SpriteBundle {

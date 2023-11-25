@@ -49,14 +49,16 @@ impl Plugin for WorkerPlugin {
                     worker_drop_item,
                     job_error_marker,
                     job_warning_marker,
-                    (spawn_job_path_markers, job_path_lines).run_if(in_state(PlayerState::Jobs)),
+                    (spawn_job_path_markers, job_path_lines, remove_job_point_click).run_if(in_state(PlayerState::Jobs)),
                 )
             )
             .add_systems(OnExit(PlayerState::Jobs), despawn_job_path_markers)
-            .add_systems(PreUpdate, 
+            .add_systems(PreUpdate, (
                 mouse_collision_system::<Worker>,
-            )
+                mouse_collision_system::<JobPathMarker>,
+            ))
             .add_event::<GenericMouseCollisionEvent::<Worker>>()
+            .add_event::<GenericMouseCollisionEvent::<JobPathMarker>>()
             .add_event::<MouseCollisionEvent>()
             .add_event::<WorkerPickUpItemEvent>()
             .add_event::<WorkerDropItemEvent>()

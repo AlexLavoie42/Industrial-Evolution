@@ -1,9 +1,10 @@
 use crate::*;
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct JobPathMarker {
     pub job_point: JobPoint,
 }
+impl Clickable for JobPathMarker {}
 
 #[derive(Bundle)]
 pub struct JobPathMarkerBundle {
@@ -87,4 +88,50 @@ pub fn despawn_job_path_markers(
     q_job_markers
         .iter()
         .for_each(|(entity, _)| commands.entity(entity).despawn_recursive());
+}
+
+pub fn remove_job_point_click(
+    mut commands: Commands,
+    mut hover_job_point: EventReader<GenericMouseCollisionEvent<JobPathMarker>>,
+    q_job_markers: Query<&JobPathMarker>,
+    mut q_jobs: Query<&mut Job>,
+    selected_worker: Res<SelectedWorker>,
+    input: Res<Input<MouseButton>>,
+) {
+    for event in hover_job_point.iter() {
+        // TODO: Hover interaction
+        if input.just_pressed(MouseButton::Right) {
+            if let Some((_, entity)) = event.collision {
+                let Ok(marker) = q_job_markers.get(entity) else { continue };
+                let Some(selected) = selected_worker.selected else { continue };
+                let Ok(mut job) = q_jobs.get_mut(selected) else { continue };
+    
+                job.path.retain(|x| x != &marker.job_point);
+            }
+        }
+    }
+}
+
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct JobUIContainerProps;
+impl Widget for JobUIContainerProps {}
+
+#[derive(Bundle)]
+pub struct JobUIContainerBundle {
+    pub props: JobUIContainerProps,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub on_event: OnEvent,
+    pub widget_name: WidgetName,
+}
+impl Default for JobUIContainerBundle {
+    fn default() -> Self {
+        Self {
+            props: JobUIContainerProps,
+            styles: KStyle::default(),
+            computed_styles: ComputedStyles::default(),
+            on_event: OnEvent::default(),
+            widget_name: JobUIContainerProps::default().get_name(),
+        }
+    }
 }

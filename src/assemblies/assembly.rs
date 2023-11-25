@@ -189,7 +189,7 @@ pub fn produce_goods(
         if let Some(assembly_output) = &assembly_output.0 {
             let mut output_entity_commands: bevy::ecs::system::EntityCommands<'_, '_, '_> = assembly_output.spawn_bundle(&mut commands);
             let output_entity = output_entity_commands.id();
-            if let Ok(_) = assembly_items.output.add_item(Some(output_entity)) {
+            if let Ok(_) = assembly_items.output.add_item((Some(output_entity), Some(*assembly_output))) {
                 if let Ok(_) = assembly_items.input.remove_item(Some(input_entity)) {
                     commands.entity(assembly_entity).remove_children(&[input_entity]);
                     commands.entity(input_entity).insert(DespawnLater);
