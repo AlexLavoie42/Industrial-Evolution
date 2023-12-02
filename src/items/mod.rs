@@ -62,12 +62,12 @@ impl Plugin for ItemPlugin {
             .add_systems(Update, (
                 place_receivable.run_if(in_state(PlayerState::Recievables)),
                 input_toggle_receivable_mode
-            ))
-            .add_systems(Update, sell_trade_depot_items)
+            ).run_if(in_state(DayCycleState::Day)))
+            .add_systems(OnEnter(DayCycleState::Night), sell_trade_depot_items)
             .add_systems(Update, (
                 place_trade_depot.run_if(in_state(PlayerState::TradeDepot)),
                 input_toggle_trade_depot_mode
-            ))
+            ).run_if(in_state(DayCycleState::Day)))
             .add_event::<GenericMouseCollisionEvent<Item>>()
             .register_type::<ItemContainer>()
         ;

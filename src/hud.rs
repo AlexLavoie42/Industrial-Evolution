@@ -49,6 +49,21 @@ pub fn hud_setup(
         widget_update_with_player_state::<AssembliesHudProps, EmptyState>,
         assemblies_hud_render,
     );
+    widget_context.add_widget_system(
+        NightUIProps::default().get_name(),
+        widget_update_with_day_state::<NightUIProps, EmptyState>,
+        night_ui_render,
+    );
+    widget_context.add_widget_system(
+        HUDContainerProps::default().get_name(),
+        widget_update_with_day_state::<HUDContainerProps, EmptyState>,
+        hud_container_render,
+    );
+    widget_context.add_widget_system(
+        DayCountText::default().get_name(),
+        widget_update_with_player_state::<DayCountText, EmptyState>,
+        day_count_text_render,
+    );
 
     let assembly_button_click = OnEvent::new(
         move |
@@ -120,130 +135,193 @@ pub fn hud_setup(
             }
         },
     );
+    
+    let next_day_button_click = OnEvent::new(
+        move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut next_day_state: ResMut<NextState<DayCycleState>> | {
+            if let EventType::Click(_) = event.event_type {
+                next_day_state.set(DayCycleState::Day);
+            }
+        },
+    );
 
     let parent_id = None;
     rsx! {
         <KayakAppBundle>
-            <PlayerMoneyHUDBundle/>
-            <AssembliesHudBundle
-                props={AssembliesHudProps {
+            // HUD
+            <HUDContainerBundle>
+                <PlayerMoneyHUDBundle/>
+                <AssembliesHudBundle
+                    props={AssembliesHudProps {
+                        image: base_hud_menu_image.clone(),
+                    }}
+                    styles={KStyle {
+                        top: Units::Stretch(15.0).into(),
+                        left: Units::Stretch(1.0).into(),
+                        right: Units::Stretch(1.0).into(),
+                        height: Units::Pixels(128.0).into(),
+                        width: Units::Pixels(1024.0).into(),
+                        layout_type: LayoutType::Row.into(),
+                        ..default()
+                    }}
+                    on_event={
+                        OnEvent::new(
+                            move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut placement_state: ResMut<NextState<PlacementState>> | {
+                                if let EventType::Hover(_) = event.event_type {
+                                    placement_state.set(PlacementState::Blocked);
+                                }
+                                if let EventType::MouseOut(_) = event.event_type {
+                                    placement_state.set(PlacementState::Allowed);
+                                }
+                            }
+                        )
+                    }
+                >
+                    <ImageButtonBundle
+                        props={ImageButtonProps {
+                            image: pulp_mill_menu_image.clone(),
+                            hover_image: pulp_mill_menu_image.clone(),
+                            selected_image: pulp_mill_menu_image.clone(),
+                        }}
+                        styles={KStyle {
+                            width: Units::Pixels(64.0).into(),
+                            height: Units::Pixels(64.0).into(),
+                            offset: Edge::new(
+                                Units::Stretch(1.0),
+                                Units::Pixels(0.0),
+                                Units::Stretch(1.0),
+                                Units::Pixels(25.0),
+                            ).into(),
+                            
+                            ..default()
+                        }}
+                        on_event={
+                            pulp_mill_button_click
+                        }
+                    />
+                    <ImageButtonBundle
+                        props={ImageButtonProps {
+                            image: paper_press_menu_image.clone(),
+                            hover_image: paper_press_menu_image.clone(),
+                            selected_image: paper_press_menu_image.clone(),
+                        }}
+                        styles={KStyle {
+                            width: Units::Pixels(64.0).into(),
+                            height: Units::Pixels(64.0).into(),
+                            offset: Edge::new(
+                                Units::Stretch(1.0),
+                                Units::Pixels(0.0),
+                                Units::Stretch(1.0),
+                                Units::Pixels(25.0),
+                            ).into(),
+                            ..default()
+                        }}
+                        on_event={
+                            paper_press_button_click
+                        }
+                    />
+                    <ImageButtonBundle
+                        props={ImageButtonProps {
+                            image: paper_drier_menu_image.clone(),
+                            hover_image: paper_drier_menu_image.clone(),
+                            selected_image: paper_drier_menu_image.clone(),
+                        }}
+                        styles={KStyle {
+                            width: Units::Pixels(64.0).into(),
+                            height: Units::Pixels(64.0).into(),
+                            offset: Edge::new(
+                                Units::Stretch(1.0),
+                                Units::Pixels(0.0),
+                                Units::Stretch(1.0),
+                                Units::Pixels(25.0),
+                            ).into(),
+                            ..default()
+                        }}
+                        on_event={
+                            paper_drier_button_click
+                        }
+                    />
+                </AssembliesHudBundle>
+                <NinePatchBundle
+                    nine_patch={NinePatch {
+                        handle: base_hud_menu_image.clone(),
+                        border: Edge::all(0.0),
+                    }}
+                    styles={KStyle {
+                        bottom: Units::Pixels(15.0).into(),
+                        top: Units::Stretch(1.0).into(),
+                        left: Units::Stretch(1.0).into(),
+                        right: Units::Stretch(1.0).into(),
+                        height: Units::Pixels(128.0).into(),
+                        width: Units::Pixels(1024.0).into(),
+                        layout_type: LayoutType::Row.into(),
+                        ..default()
+                    }}
+                    on_event={
+                        OnEvent::new(
+                            move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut placement_state: ResMut<NextState<PlacementState>> | {
+                                if let EventType::Hover(_) = event.event_type {
+                                    placement_state.set(PlacementState::Blocked);
+                                }
+                                if let EventType::MouseOut(_) = event.event_type {
+                                    placement_state.set(PlacementState::Allowed);
+                                }
+                            }
+                        )
+                    }
+                >
+                    <ImageButtonBundle
+                        styles={KStyle {
+                            width: Units::Pixels(128.0).into(),
+                            height: Units::Pixels(64.0).into(),
+                            offset: Edge::new(
+                                Units::Stretch(1.0),
+                                Units::Pixels(0.0),
+                                Units::Stretch(1.0),
+                                Units::Pixels(25.0),
+                            ).into(),
+                            ..default()
+                        }}
+                        props={ImageButtonProps {
+                            image: assembly_mode_menu_image.clone(),
+                            hover_image: assembly_mode_hover_menu_image.clone(),
+                            selected_image: assembly_mode_selected_menu_image.clone(),
+                        }}
+                        on_event={
+                            assembly_button_click
+                        }
+                    />
+                    
+                    <ImageButtonBundle
+                        styles={KStyle {
+                            width: Units::Pixels(128.0).into(),
+                            height: Units::Pixels(64.0).into(),
+                            offset: Edge::new(
+                                Units::Stretch(1.0),
+                                Units::Pixels(0.0),
+                                Units::Stretch(1.0),
+                                Units::Pixels(25.0),
+                            ).into(),
+                            ..default()
+                        }}
+                        props={ImageButtonProps {
+                            image: worker_mode_menu_image.clone(),
+                            hover_image: worker_mode_menu_image.clone(),
+                            selected_image: worker_mode_menu_image.clone(),
+                        }}
+                        on_event={
+                            worker_button_click
+                        }
+                    />
+                </NinePatchBundle>
+            </HUDContainerBundle>
+
+            // Night Menu
+            <NightUIBundle
+                props={NightUIProps {
                     image: base_hud_menu_image.clone(),
                 }}
-                styles={KStyle {
-                    top: Units::Stretch(15.0).into(),
-                    left: Units::Stretch(1.0).into(),
-                    right: Units::Stretch(1.0).into(),
-                    height: Units::Pixels(128.0).into(),
-                    width: Units::Pixels(1024.0).into(),
-                    layout_type: LayoutType::Row.into(),
-                    ..default()
-                }}
-                on_event={
-                    OnEvent::new(
-                        move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut placement_state: ResMut<NextState<PlacementState>> | {
-                            if let EventType::Hover(_) = event.event_type {
-                                placement_state.set(PlacementState::Blocked);
-                            }
-                            if let EventType::MouseOut(_) = event.event_type {
-                                placement_state.set(PlacementState::Allowed);
-                            }
-                        }
-                    )
-                }
             >
-                <ImageButtonBundle
-                    props={ImageButtonProps {
-                        image: pulp_mill_menu_image.clone(),
-                        hover_image: pulp_mill_menu_image.clone(),
-                        selected_image: pulp_mill_menu_image.clone(),
-                    }}
-                    styles={KStyle {
-                        width: Units::Pixels(64.0).into(),
-                        height: Units::Pixels(64.0).into(),
-                        offset: Edge::new(
-                            Units::Stretch(1.0),
-                            Units::Pixels(0.0),
-                            Units::Stretch(1.0),
-                            Units::Pixels(25.0),
-                        ).into(),
-                        
-                        ..default()
-                    }}
-                    on_event={
-                        pulp_mill_button_click
-                    }
-                />
-                <ImageButtonBundle
-                    props={ImageButtonProps {
-                        image: paper_press_menu_image.clone(),
-                        hover_image: paper_press_menu_image.clone(),
-                        selected_image: paper_press_menu_image.clone(),
-                    }}
-                    styles={KStyle {
-                        width: Units::Pixels(64.0).into(),
-                        height: Units::Pixels(64.0).into(),
-                        offset: Edge::new(
-                            Units::Stretch(1.0),
-                            Units::Pixels(0.0),
-                            Units::Stretch(1.0),
-                            Units::Pixels(25.0),
-                        ).into(),
-                        ..default()
-                    }}
-                    on_event={
-                        paper_press_button_click
-                    }
-                />
-                <ImageButtonBundle
-                    props={ImageButtonProps {
-                        image: paper_drier_menu_image.clone(),
-                        hover_image: paper_drier_menu_image.clone(),
-                        selected_image: paper_drier_menu_image.clone(),
-                    }}
-                    styles={KStyle {
-                        width: Units::Pixels(64.0).into(),
-                        height: Units::Pixels(64.0).into(),
-                        offset: Edge::new(
-                            Units::Stretch(1.0),
-                            Units::Pixels(0.0),
-                            Units::Stretch(1.0),
-                            Units::Pixels(25.0),
-                        ).into(),
-                        ..default()
-                    }}
-                    on_event={
-                        paper_drier_button_click
-                    }
-                />
-            </AssembliesHudBundle>
-            <NinePatchBundle
-                nine_patch={NinePatch {
-                    handle: base_hud_menu_image.clone(),
-                    border: Edge::all(0.0),
-                }}
-                styles={KStyle {
-                    bottom: Units::Pixels(15.0).into(),
-                    top: Units::Stretch(1.0).into(),
-                    left: Units::Stretch(1.0).into(),
-                    right: Units::Stretch(1.0).into(),
-                    height: Units::Pixels(128.0).into(),
-                    width: Units::Pixels(1024.0).into(),
-                    layout_type: LayoutType::Row.into(),
-                    ..default()
-                }}
-                on_event={
-                    OnEvent::new(
-                        move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut placement_state: ResMut<NextState<PlacementState>> | {
-                            if let EventType::Hover(_) = event.event_type {
-                                placement_state.set(PlacementState::Blocked);
-                            }
-                            if let EventType::MouseOut(_) = event.event_type {
-                                placement_state.set(PlacementState::Allowed);
-                            }
-                        }
-                    )
-                }
-            >
+                <DayCountTextBundle />
                 <ImageButtonBundle
                     styles={KStyle {
                         width: Units::Pixels(128.0).into(),
@@ -254,6 +332,7 @@ pub fn hud_setup(
                             Units::Stretch(1.0),
                             Units::Pixels(25.0),
                         ).into(),
+                        position_type: KPositionType::SelfDirected.into(),
                         ..default()
                     }}
                     props={ImageButtonProps {
@@ -262,36 +341,68 @@ pub fn hud_setup(
                         selected_image: assembly_mode_selected_menu_image.clone(),
                     }}
                     on_event={
-                        assembly_button_click
+                        next_day_button_click
                     }
                 />
-                
-                <ImageButtonBundle
-                    styles={KStyle {
-                        width: Units::Pixels(128.0).into(),
-                        height: Units::Pixels(64.0).into(),
-                        offset: Edge::new(
-                            Units::Stretch(1.0),
-                            Units::Pixels(0.0),
-                            Units::Stretch(1.0),
-                            Units::Pixels(25.0),
-                        ).into(),
-                        ..default()
-                    }}
-                    props={ImageButtonProps {
-                        image: worker_mode_menu_image.clone(),
-                        hover_image: worker_mode_menu_image.clone(),
-                        selected_image: worker_mode_menu_image.clone(),
-                    }}
-                    on_event={
-                        worker_button_click
-                    }
-                />
-            </NinePatchBundle>
+            </NightUIBundle>
         </KayakAppBundle>
     };
 
     commands.spawn((widget_context, EventDispatcher::default()));
+}
+
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct HUDContainerProps;
+impl Widget for HUDContainerProps {}
+
+#[derive(Bundle)]
+pub struct HUDContainerBundle {
+    pub props: HUDContainerProps,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub children: KChildren,
+    pub widget_name: WidgetName,
+}
+impl Default for HUDContainerBundle {
+    fn default() -> Self {
+        Self {
+            props: Default::default(),
+            styles: KStyle {
+                position_type: KPositionType::SelfDirected.into(),
+                ..default()
+            },
+            computed_styles: Default::default(),
+            children: Default::default(),
+            widget_name: HUDContainerProps::default().get_name(),
+        }
+    }
+}
+
+pub fn hud_container_render(
+    In(entity): In<Entity>,
+    mut commands: Commands,
+    widget_context: Res<KayakWidgetContext>,
+    mut query: Query<(&HUDContainerProps, &mut ComputedStyles, &KStyle, &KChildren)>,
+    day_cycle: Res<State<DayCycleState>>,
+) -> bool {
+    if let Ok((props, mut computed_styles, style, base_children)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(style)
+            .into();
+        let parent_id = Some(entity);
+        rsx!(
+            <ElementBundle>
+                {if day_cycle.get() == &DayCycleState::Day {
+                    constructor!(
+                        <ElementBundle
+                            children={base_children.clone()}
+                        />
+                    );
+                }}
+            </ElementBundle>
+        );
+    }
+    true
 }
 
 #[derive(Component, Clone, PartialEq, Default)]

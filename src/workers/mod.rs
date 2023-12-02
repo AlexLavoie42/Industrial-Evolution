@@ -50,7 +50,7 @@ impl Plugin for WorkerPlugin {
                     job_error_marker,
                     job_warning_marker,
                     (spawn_job_path_markers, job_path_lines, remove_job_point_click).run_if(in_state(PlayerState::Jobs)),
-                )
+                ).run_if(in_state(DayCycleState::Day))
             )
             .add_systems(OnExit(PlayerState::Jobs), despawn_job_path_markers)
             .add_systems(PreUpdate, (

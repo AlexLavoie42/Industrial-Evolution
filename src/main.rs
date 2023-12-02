@@ -38,6 +38,9 @@ use ghost::*;
 mod hud;
 use hud::*;
 
+mod day_cycle;
+use day_cycle::*;
+
 const GRID_SIZE: TilemapSize = TilemapSize { x: 100, y: 100 };
 const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
 
@@ -71,10 +74,14 @@ fn main() {
         .add_plugins(ItemPlugin)
         .add_plugins(MoneyPlugin)
 
+        .add_systems(Update, day_timer_system)
+        .add_state::<DayCycleState>()
+        .insert_resource(DayTimer::default())
+
         .add_systems(Startup, (factory_setup, apply_deferred, hud_setup).chain())
-        .add_systems(FixedUpdate, (player_movement, move_entities))
-        .add_systems(Update, (player_pickup_item, player_drop_item, player_power_assembly))
-        .add_systems(Update, (camera_follow, camera_scroll_zoom))
+        .add_systems(FixedUpdate, (player_movement, move_entities).run_if(in_state(DayCycleState::Day)))
+        .add_systems(Update, (player_pickup_item, player_drop_item, player_power_assembly).run_if(in_state(DayCycleState::Day)))
+        .add_systems(Update, (camera_follow, camera_scroll_zoom).run_if(in_state(DayCycleState::Day)))
         .add_systems(PostUpdate, despawn_later_system)
         .add_systems(Update, input_reset_player_mode)
 

@@ -37,17 +37,18 @@ impl Plugin for AssembliesPlugin {
             .add_event::<ShowHoverGhost::<PaperDrierBundle>>()
             .add_systems(Update,
             (
-                (place_assembly).run_if(in_state(PlayerState::Assemblies)).run_if(in_state(PlacementState::Allowed)),
-                input_toggle_assembly_mode,
-                refund_assembly,
-            ))
+                    (place_assembly).run_if(in_state(PlayerState::Assemblies)).run_if(in_state(PlacementState::Allowed)),
+                    input_toggle_assembly_mode,
+                    refund_assembly,
+                ).run_if(in_state(DayCycleState::Day)),
+            )
             .add_systems(Update,
                 (
                     produce_goods,
                     add_assembly_power_input,
                     show_assembly_progress_bars,
                     update_assembly_progress_bars
-                ),
+                ).run_if(in_state(DayCycleState::Day)),
             )
             .add_systems(PreUpdate, (
                 mouse_collision_system::<Assembly>,

@@ -10,7 +10,8 @@ pub struct MoneyPlugin;
 impl Plugin for MoneyPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(Update, (market_system, market_forces, upkeep_system))
+            .add_systems(Update, market_system)
+            .add_systems(OnEnter(DayCycleState::Night), (market_forces, upkeep_system))
             .insert_resource(PlayerMoney {
                 amount: 2500.0
             })
