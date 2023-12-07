@@ -32,7 +32,7 @@ impl Default for TradeDepotBundle {
             items: ItemContainer {
                 items: Vec::new(),
                 item_type: None,
-                max_items: 25
+                max_items: 100
             },
             sprite: SpriteBundle {
                 sprite: Sprite {

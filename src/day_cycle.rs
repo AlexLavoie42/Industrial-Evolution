@@ -1,6 +1,6 @@
 use crate::*;
 
-const DAY_LENGTH_SECONDS : f32 = 3.0; //60.0 * 5.0;
+const DAY_LENGTH_SECONDS : f32 = 10.0; //60.0 * 5.0;
 
 #[derive(States, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum DayCycleState {
@@ -94,24 +94,22 @@ pub fn night_ui_render(
         }
         .with_style(base_style)
         .into();
-
-        let parent_id = Some(entity);
-        rsx!(
-            <ElementBundle>
-                {if day_state.get() == &DayCycleState::Night {
-                    constructor! {
-                        <BackgroundBundle
-                            styles={KStyle {
-                                background_color: StyleProp::<Color>::Value(Color::rgb_u8(31, 31, 35)),
-                                ..Default::default()
-                            }}
-                            children={base_children.clone()}
-                            on_event={base_on_event.clone()}
-                        />
-                    }
-                }}
-            </ElementBundle>
-        );
+        if day_state.get() == &DayCycleState::Night {
+            let parent_id = Some(entity);
+            rsx!(
+                <BackgroundBundle
+                    styles={KStyle {
+                        background_color: StyleProp::<Color>::Value(Color::rgb_u8(31, 31, 35)),
+                        ..Default::default()
+                    }}
+                    children={base_children.clone()}
+                    on_event={base_on_event.clone()}
+                />
+            );
+        } else {
+            computed_styles.0.height = StyleProp::Value(Units::Pixels(0.0));
+            computed_styles.0.width = StyleProp::Value(Units::Pixels(0.0));
+        }
     }
     true
 }
@@ -163,6 +161,181 @@ pub fn day_count_text_render(
                     ..Default::default()
                 }}
             />
+        );
+    }
+    true
+}
+
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct ReceivablesSelection;
+impl Widget for ReceivablesSelection {}
+
+#[derive(Bundle)]
+pub struct ReceivablesSelectionBundle {
+    pub props: ReceivablesSelection,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub children: KChildren,
+    pub on_event: OnEvent,
+    pub widget_name: WidgetName,
+}
+impl Default for ReceivablesSelectionBundle {
+    fn default() -> Self {
+        Self {
+            props: Default::default(),
+            styles: KStyle {
+                ..Default::default()
+            },
+            computed_styles: Default::default(),
+            children: Default::default(),
+            on_event: OnEvent::default(),
+            widget_name: ReceivablesSelection::default().get_name(),
+        }
+    }
+}
+
+pub fn receivables_selection_render(
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
+    mut commands: Commands,
+    mut query: Query<(&mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    economy: Res<Economy>,
+) -> bool {
+    if let Ok((mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
+        *computed_styles = KStyle {
+            ..Default::default()
+        }
+        .with_style(base_style)
+        .into();
+
+    let parent_id = Some(entity);
+    rsx!(
+        <ElementBundle
+            styles={KStyle {
+                background_color: StyleProp::<Color>::Value(Color::rgb_u8(31, 31, 35)),
+                ..Default::default()
+            }}
+            children={base_children.clone()}
+            on_event={base_on_event.clone()}
+        >
+            <TextWidgetBundle
+                text={TextProps {
+                    content: "Receivables".to_string(),
+                    ..Default::default()
+                }}
+            />
+            {
+                for (item, price) in economy.prices.iter() {
+                    constructor!(
+                        <ReceivableSelectorBundle
+                            props={ReceivableSelector {
+                                item: item.clone(),
+                                price: price.current_price
+                            }}
+                            on_event={OnEvent::new(
+                                move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_receivables: ResMut<ReceivableSelections>, props: Query<&ReceivableSelector> | {
+                                    if let EventType::Click(_) = event.event_type {
+                                        let Ok(selector) = props.get(entity) else { return; };
+                                        selected_receivables.selected.push(selector.item.clone());
+                                    }
+                                },
+                            )}
+                        />
+                    );
+                }
+            }
+        </ElementBundle>
+    );
+    }
+    true
+}
+
+#[derive(Resource, Default)]
+pub struct ReceivableSelections {
+    pub selected: Vec<PurchasableItem>
+}
+
+pub fn widget_update_with_receivable_selection<
+Props: PartialEq + Component + Clone,
+KState: PartialEq + Component + Clone,
+>(
+    In((entity, previous_entity)): In<(Entity, Entity)>,
+    widget_context: Res<KayakWidgetContext>,
+    widget_param: WidgetParam<Props, KState>,
+    receivables_selections: Res<ReceivableSelections>
+) -> bool {
+    widget_param.has_changed(&widget_context, entity, previous_entity) || receivables_selections.is_changed()
+}
+
+#[derive(Component, Clone, PartialEq)]
+pub struct ReceivableSelector {
+    pub item: PurchasableItem,
+    pub price: f32
+}
+impl Default for ReceivableSelector {
+    fn default() -> Self {
+        Self {
+            item: PurchasableItem::Resource(ResourceItem::Wood),
+            price: 0.0
+        }
+    }
+}
+impl Widget for ReceivableSelector {}
+
+#[derive(Bundle)]
+pub struct ReceivableSelectorBundle {
+    pub props: ReceivableSelector,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub children: KChildren,
+    pub on_event: OnEvent,
+    pub widget_name: WidgetName,
+}
+impl Default for ReceivableSelectorBundle {
+    fn default() -> Self {
+        Self {
+            props: Default::default(),
+            styles: KStyle {
+                ..Default::default()
+            },
+            computed_styles: Default::default(),
+            children: Default::default(),
+            on_event: OnEvent::default(),
+            widget_name: ReceivableSelector::default().get_name(),
+        }
+    }
+}
+
+
+pub fn receivable_selector_render(
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
+    mut commands: Commands,
+    mut query: Query<(&ReceivableSelector, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    receivables_selections: Res<ReceivableSelections>,
+) -> bool {
+    if let Ok((props, mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
+        *computed_styles = KStyle {
+            ..Default::default()
+        }
+        .with_style(base_style)
+        .into();
+    
+        let selected_count = receivables_selections.selected.iter().filter(|item| *item == &props.item).count();
+        let parent_id = Some(entity);
+        rsx!(
+            <NinePatchBundle
+                styles={KStyle {
+                    ..default()
+                }}
+            >
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("{:?}: {:.2} || Selected: {:0} ", props.item, props.price, selected_count),
+                        ..Default::default()
+                    }}
+                />
+            </NinePatchBundle>
         );
     }
     true

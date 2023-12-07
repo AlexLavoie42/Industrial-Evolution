@@ -2,16 +2,11 @@ use bevy::sprite::Anchor;
 
 use crate::*;
 
-#[derive(Component, Debug, Reflect)]
-pub struct ItemReceivable {
-    pub item: ResourceItem,
-    pub refill_quantity: i32,
-    pub refill_limit: usize
-}
-
+#[derive(Component)]
+pub struct ItemReceivable;
 #[derive(Bundle)]
 pub struct ItemReceivableBundle {
-    pub item: ItemReceivable,
+    pub marker: ItemReceivable,
     pub container: ItemContainer,
     pub sprite: SpriteBundle,
     pub solid: SolidEntity,
@@ -36,11 +31,7 @@ impl ItemReceivableBundle {
 impl Default for ItemReceivableBundle {
     fn default() -> Self {
         ItemReceivableBundle {
-            item: ItemReceivable {
-                item: ResourceItem::Wood,
-                refill_quantity: 100,
-                refill_limit: 20
-            },
+            marker: ItemReceivable,
             container: ItemContainer {
                 items: Vec::new(),
                 item_type: None,
@@ -62,30 +53,57 @@ impl Default for ItemReceivableBundle {
 
 pub fn purchase_receivables(
     mut commands: Commands,
-    mut q_receivables: Query<(Entity, &mut ItemReceivable, &mut ItemContainer)>,
-    q_items: Query<&Item>,
+    mut q_receivables: Query<(Entity, &mut ItemContainer), With<ItemReceivable>>,
+    mut selected_receivables: ResMut<ReceivableSelections>,
     mut economy: ResMut<Economy>,
     mut money: ResMut<PlayerMoney>,
 ) {
-    for (receivable_entity, receivable, mut container) in q_receivables.iter_mut() {
-        if container.items.len() < receivable.refill_limit {
-            // TODO: Timer
-            for _ in 0..receivable.refill_quantity {
-                let mut item = receivable.item.spawn_bundle(&mut commands);
-                let item_entity = item.id();
-                match container.add_item((Some(item_entity), Some(Item::Resource(receivable.item)))) {
+    for (receivable_entity, mut container) in q_receivables.iter_mut() {
+        if container.items.len() < container.max_items {
+            for selection in selected_receivables.selected.iter() {
+                let mut item_command = match selection {
+                    PurchasableItem::Good(item) => item.spawn_bundle(&mut commands),
+                    PurchasableItem::Resource(item) => item.spawn_bundle(&mut commands)
+                };
+                let item_entity = item_command.id();
+
+                let mut selected_item = match selection {
+                    PurchasableItem::Good(item) => Item::Good(*item),
+                    PurchasableItem::Resource(item) => Item::Resource(*item),
+                };
+                match container.add_item((Some(item_entity), Some(selected_item))) {
                     Ok(_) => {
                         commands.entity(receivable_entity).push_children(&[item_entity]);
                         
-                        let Some(price) = Item::Resource(receivable.item).get_price(&economy) else { continue; };
+                        let Some(price) = selected_item.get_price(&economy) else { continue; };
                         let Ok(_) = money.try_remove_money(price) else { continue; };
-                        let Ok(_) = Item::Resource(receivable.item).buy(&mut economy, 1) else { continue; };
+                        let Ok(_) = selected_item.buy(&mut economy, 1) else { continue; };
                     },
                     Err(e) => {
                         println!("Error adding item to container: {:?}", e);
-                        item.despawn_recursive();
+                        item_command.despawn_recursive();
                     }
                 }
+            }
+        }
+    }
+    selected_receivables.selected.clear();
+}
+
+pub const STORAGE_FEE: f32 = 5.0;
+
+pub fn receivables_storage_fee(
+    mut money: ResMut<PlayerMoney>,
+    mut q_receivables: Query<&mut ItemContainer, With<ItemReceivable>>
+) {
+    for mut container in q_receivables.iter_mut() {
+        for mut item in container.items.iter_mut() {
+            if let Some(item_entity) = item {
+                if money.amount < STORAGE_FEE {
+                    println!("Player does not have enough money to pay storage fee");
+                    return;
+                }
+                money.amount -= STORAGE_FEE;
             }
         }
     }

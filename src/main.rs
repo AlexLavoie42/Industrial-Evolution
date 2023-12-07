@@ -35,6 +35,9 @@ use money::*;
 mod ghost;
 use ghost::*;
 
+mod ui;
+use ui::*;
+
 mod hud;
 use hud::*;
 
@@ -77,6 +80,7 @@ fn main() {
         .add_systems(Update, day_timer_system)
         .add_state::<DayCycleState>()
         .insert_resource(DayTimer::default())
+        .insert_resource(ReceivableSelections::default())
 
         .add_systems(Startup, (factory_setup, apply_deferred, hud_setup).chain())
         .add_systems(FixedUpdate, (player_movement, move_entities).run_if(in_state(DayCycleState::Day)))

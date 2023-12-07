@@ -28,7 +28,6 @@ pub fn hud_setup(
     let paper_press_menu_image = assets.load("Paper Press Icon.png");
     let paper_drier_menu_image = assets.load("Paper Drier Icon.png");
 
-    // Next we need to add the systems
     widget_context.add_widget_system(
         // We are registering these systems with a specific WidgetName.
         PlayerMoneyHUDProps::default().get_name(),
@@ -63,6 +62,16 @@ pub fn hud_setup(
         DayCountText::default().get_name(),
         widget_update_with_player_state::<DayCountText, EmptyState>,
         day_count_text_render,
+    );
+    widget_context.add_widget_system(
+        ReceivablesSelection::default().get_name(),
+        widget_update_with_day_state::<ReceivablesSelection, EmptyState>,
+        receivables_selection_render,
+    );
+    widget_context.add_widget_system(
+        ReceivableSelector::default().get_name(),
+        widget_update_with_receivable_selection::<ReceivableSelector, EmptyState>,
+        receivable_selector_render,
     );
 
     let assembly_button_click = OnEvent::new(
@@ -322,6 +331,9 @@ pub fn hud_setup(
                 }}
             >
                 <DayCountTextBundle />
+
+                <ReceivablesSelectionBundle />
+
                 <ImageButtonBundle
                     styles={KStyle {
                         width: Units::Pixels(128.0).into(),
@@ -457,7 +469,7 @@ pub fn player_money_hud_render(
         *computed_styles = KStyle {
             color: Color::BLACK.into(),
             render_command: StyleProp::Value(RenderCommand::Text {
-                content: format!("Money: {:}", props.current_money),
+                content: format!("Money: {:.2}", props.current_money),
                 alignment: Alignment::Start,
                 word_wrap: false,
                 subpixel: false,
@@ -592,10 +604,10 @@ pub fn image_button_render(
     In(entity): In<Entity>,
     mut commands: Commands,
     widget_context: Res<KayakWidgetContext>,
-    mut query: Query<(&mut ImageButtonProps, &mut ComputedStyles, &KStyle)>,
+    mut query: Query<(&mut ImageButtonProps, &mut ComputedStyles, &KStyle, &OnEvent)>,
     button_state: Query<&ImageButtonState>
 ) -> bool {
-    if let Ok((props, mut computed_styles, style)) = query.get_mut(entity) {
+    if let Ok((props, mut computed_styles, style, event)) = query.get_mut(entity) {
         *computed_styles = KStyle::default()
             .with_style(style)
             .into();
@@ -625,7 +637,7 @@ pub fn image_button_render(
                     border: Edge::all(0.0),
                 }}
                 on_event={OnEvent::new(
-                    move |In(_entity): In<Entity>, mut commands: Commands, event: ResMut<KEvent>, q_parent: Query<&Parent>, mut q_state: Query<&mut ImageButtonState> | {
+                    move |In(_entity): In<Entity>, mut commands: Commands, mut event: ResMut<KEvent>, q_parent: Query<&Parent>, mut q_state: Query<&mut ImageButtonState> | {
                         if let EventType::MouseIn(_) = event.event_type {
                             println!("in entity: {:?}", _entity);
                             if let Ok(parent) = q_parent.get(_entity) {
