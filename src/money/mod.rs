@@ -2,6 +2,8 @@ use bevy::utils::HashMap;
 
 use crate::*;
 
+use rand::{thread_rng, Rng};
+
 mod upkeep;
 pub use upkeep::*;
 
@@ -183,24 +185,29 @@ fn market_forces(
     mut market_timer: ResMut<MarketTimer>,
 ) {
     if market_timer.0.just_finished() {
+        let mut rng = thread_rng();
         for (item, price) in economy.prices.iter_mut() {
+            let price_gap = price.current_price / price.base_price;
             if price.supply == 0.0 {
-                price.supply += MARKET_FORCE;
+                price.supply += MARKET_FORCE * price_gap;
             }
             if price.demand == 0.0 {
-                price.demand += MARKET_FORCE;
+                price.demand += MARKET_FORCE * price_gap;
             }
-            match item {
-                PurchasableItem::Resource(_) => {
-                    if price.demand > price.supply {
-                        price.supply += MARKET_FORCE;
-                    }
-                },
-                PurchasableItem::Good(_) => {
-                    if price.demand < price.supply {
-                        price.demand += MARKET_FORCE;
-                    }
-                }
+            if price.demand > 10000.0 && price.supply > 10000.0 {
+                price.demand /= 100.0;
+                price.supply /= 100.0;
+
+                price.demand = price.demand.round();
+                price.supply = price.supply.round();
+            }
+            let weighted_supply = rng.gen_range(price.supply*0.8..price.supply);
+            let weighted_demand = rng.gen_range(price.demand*0.8..price.demand);
+            if weighted_demand > weighted_supply {
+                price.supply += MARKET_FORCE * price_gap;
+            }
+            if weighted_demand <= weighted_supply {
+                price.demand += MARKET_FORCE * price_gap;
             }
         }
     }
