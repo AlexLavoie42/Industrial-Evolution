@@ -195,7 +195,7 @@ pub fn worker_pick_up_item(
         let Ok(_) = container.add_item((Some(ev.item), Some(*item_type))) else {
             if let Some(current_job_i) = job.current_job {
                 let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
-                current_job.job_status = JobStatus::Active;
+                current_job.job_status = JobStatus::Completed;
             }
             continue;
         }; 
