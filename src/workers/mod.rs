@@ -67,6 +67,7 @@ impl Plugin for WorkerPlugin {
             .register_type::<WorkerState>()
             .register_type::<MoveToTile>()
             .register_type::<JobError>()
+            .register_type::<PowerProduction>()
             .insert_resource(SelectedWorker {
                 selected: None
             });

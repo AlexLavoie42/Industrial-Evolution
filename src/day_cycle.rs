@@ -1,11 +1,11 @@
 use crate::*;
 
-const DAY_LENGTH_SECONDS : f32 = 10.0; //60.0 * 5.0;
+const DAY_LENGTH_SECONDS : f32 = 60.0 * 1.5;
 
 #[derive(States, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum DayCycleState {
-    #[default]
     Day,
+    #[default]
     Night
 }
 
@@ -18,7 +18,6 @@ impl Default for DayTimer {
     fn default() -> Self {
         Self {
             day_count: 0,
-            // 5 min days
             day_timer: Timer::from_seconds(DAY_LENGTH_SECONDS, TimerMode::Repeating)
         }
     }

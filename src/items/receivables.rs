@@ -115,10 +115,10 @@ pub fn input_toggle_receivable_mode(
     mut next_state: ResMut<NextState<PlayerState>>
 ) {
     if input.just_pressed(KeyCode::R) {
-        if state.get() == &PlayerState::Recievables {
+        if state.get() == &PlayerState::Receivables {
             next_state.set(PlayerState::None);
         } else {
-            next_state.set(PlayerState::Recievables);
+            next_state.set(PlayerState::Receivables);
             
         }
     }

@@ -108,7 +108,7 @@ pub fn player_pickup_item(
         let io_container_dist = near_io_container.as_ref().map(|c| Vec3::distance(c.1.translation, player_transform.translation));
         let item_dist = near_item.as_ref().map(|i| Vec3::distance(i.1.translation(), player_transform.translation));
 
-        if container_dist.unwrap_or(INFINITY) < item_dist.unwrap_or(INFINITY) && !player_container.items.is_empty() {
+        if near_container.is_some() && !player_container.items.is_empty() {
             println!("Dropping item in container");
             if let Some((container, _, container_entity)) = near_container.as_mut() {
                 let Some(Some(child)) = children.map(|c| c.first()) else { return; };
@@ -135,7 +135,7 @@ pub fn player_pickup_item(
                     }
                 }
             }
-        } else if io_container_dist.unwrap_or(INFINITY) < item_dist.unwrap_or(INFINITY) && !player_container.items.is_empty() {
+        } else if near_io_container.is_some() && !player_container.items.is_empty() {
             println!("Dropping item in IO container");
             if let Some((mut container, _, container_entity)) = near_io_container {
                 let Some(Some(child)) = children.map(|c| c.first()) else { return; };
@@ -230,11 +230,11 @@ pub fn player_power_assembly(
     input: Res<Input<KeyCode>>,
     mouse_pos: Res<MousePos>,
     mut ev_power_input: EventWriter<AssemblyPowerInput>,
-    q_assemblies: Query<(Entity, &Transform), With<AssemblyPower>>,
-    q_player: Query<(Entity, &PowerProduction), With<Player>>,
+    q_assemblies: Query<(Entity, &Transform), (With<AssemblyPower>, Without<Player>)>,
+    q_player: Query<(Entity, &PowerProduction, &Transform), (With<Player>, Without<AssemblyPower>)>,
 ) {
     if input.pressed(KeyCode::Space) {
-        let Ok((player, power_prod)) = q_player.get_single() else { return };
+        let Ok((player, power_prod, player_transform)) = q_player.get_single() else { return };
         let closest_assembly = q_assemblies.iter()
             .min_by(|a, b| {
                 let a_distance = Vec3::distance(a.1.translation, vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
@@ -242,7 +242,11 @@ pub fn player_power_assembly(
                 a_distance.partial_cmp(&b_distance).unwrap()
             });
 
-        if let Some((entity, _)) = closest_assembly {
+        if let Some((entity, transform)) = closest_assembly {
+            let distance = Vec3::distance(transform.translation, vec3(player_transform.translation.x, player_transform.translation.y, 0.0));
+            if distance > PLAYER_REACH {
+                return;
+            }
             ev_power_input.send(AssemblyPowerInput {
                 assembly: entity,
                 power: power_prod.power,

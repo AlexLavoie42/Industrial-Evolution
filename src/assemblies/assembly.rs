@@ -21,7 +21,7 @@ pub struct AssemblyPower {
     pub current_power: Power,
     pub max_power: f32,
     pub powering_entities: Vec<Entity>,
-    pub power_cost: f32
+    pub power_cost: f32,
 }
 
 pub fn input_toggle_assembly_mode(

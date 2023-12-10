@@ -87,23 +87,22 @@ pub fn job_mode_creation(
     mouse_input: Res<Input<MouseButton>>,
     mouse_pos: Res<MouseTile>,
     selected_worker: Res<SelectedWorker>,
-    mut q_worker: Query<&mut Job, With<Worker>>,
+    mut q_worker: Query<(&mut Job, &PowerProduction), With<Worker>>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &Transform, &TilemapType)>
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
         let (tilemap_size, grid_size, map_transform, map_type) = q_tilemap.get_single().unwrap();
         let click_evs: Vec<&MouseCollisionEvent> = mouse_collision.iter().collect();
         let Some(worker_entity) = selected_worker.selected else { return; };
-        let Ok(mut job) = q_worker.get_mut(worker_entity) else { return; };
+        let Ok((mut job, power_production)) = q_worker.get_mut(worker_entity) else { return; };
         if let Some(ev) = click_evs.first() {
                 if let Some((_, entity)) = ev.collision {
                     if let Ok((assembly, transform, tile_size)) = q_assemblies.get(entity) {
                         let assembly_world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
                         let assembly_pos = get_corner_tile_pos(assembly_world_pos, tile_size.0);
                         if let Some(assembly_tile_pos) = TilePos::from_world_pos(&assembly_pos, tilemap_size, grid_size, map_type) {
-                            let power: Power = Power::Mechanical(100.0);
                             let action: JobAction = JobAction::Work {
-                                power,
+                                power: power_production.power,
                                 assembly,
                             };
                             let job_point = JobPoint {

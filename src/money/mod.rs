@@ -157,7 +157,7 @@ impl Default for MarketTimer {
     }
 }
 
-const MARKET_FORCE: f32 = 1.0;
+const MARKET_FORCE: f32 = 10.0;
 const PRICE_INCREASE_MULT: f32 = 1.1;
 const PRICE_DECREASE_MULT: f32 = 0.9;
 fn market_system(

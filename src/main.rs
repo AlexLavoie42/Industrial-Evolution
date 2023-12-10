@@ -54,8 +54,9 @@ pub enum PlayerState {
     Assemblies,
     Workers,
     Jobs,
-    Recievables,
-    TradeDepot
+    Receivables,
+    TradeDepot,
+    Power
 }
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default, Reflect)]
@@ -230,7 +231,18 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         production: PowerProduction {
             output: None,
-            power: Power::Mechanical(100.0),
+            power: Power::Mechanical(40.0),
         }
     });
+
+    let mut output_bundle = ContainerOutputSelectorBundle::new(asset_server.clone());
+    output_bundle.sprite.transform.translation = Vec3::new(0.0, -42.0, 1.0);
+    let output_entity = commands.spawn(output_bundle).id();
+    commands.spawn(ItemReceivableBundle::from_translation(vec3(6.0 * TILE_SIZE.x, 8.0 * TILE_SIZE.y, 1.0))).push_children(&[output_entity]);
+
+    let mut input_bundle = ContainerInputSelectorBundle::new(asset_server.clone());
+    input_bundle.sprite.transform.translation = Vec3::new(0.0, 42.0, 1.0);
+    let input_entity = commands.spawn(input_bundle).id();
+
+    commands.spawn(TradeDepotBundle::from_translation(vec3(-4.0 * TILE_SIZE.x, -12.0 * TILE_SIZE.y, 1.0))).push_children(&[input_entity]);
 }

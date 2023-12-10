@@ -1,7 +1,6 @@
 use crate::*;
-use workers::jobs::*;
 
-#[derive(Component)]
+#[derive(Component, Debug, Reflect)]
 pub struct PowerProduction {
     pub power: Power,
     pub output: Option<Entity>
@@ -53,7 +52,7 @@ impl Default for WorkerBundle {
             job_waiting: JobWaiting(false),
             worker_items: ItemContainer { items: Vec::new(), max_items: 2, item_type: None },
             production: PowerProduction {
-                power: Power::Mechanical(100.0),
+                power: Power::Mechanical(20.0),
                 output: None
             },
             sprite: SpriteBundle {

@@ -47,7 +47,8 @@ impl Plugin for AssembliesPlugin {
                     produce_goods,
                     add_assembly_power_input,
                     show_assembly_progress_bars,
-                    update_assembly_progress_bars
+                    update_assembly_progress_bars,
+                    assembly_power_display
                 ).run_if(in_state(DayCycleState::Day)),
             )
             .add_systems(PreUpdate, (

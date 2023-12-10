@@ -162,17 +162,18 @@ pub fn produce_goods(
         assembly_items.output.max_items == assembly_items.output.items.len() {
             continue;
         }
-
+        let mut power_mult = 1.0;
         if let Ok(power) = q_assembly_power.get(assembly_entity) {
             match power.current_power {
                 Power::Electrical(existing) | Power::Thermal(existing) | Power::Mechanical(existing) => {
                     if existing < power.power_cost { continue; };
+                    power_mult = existing / power.power_cost;
                 },
             }
         }
 
         if let Ok(mut timer) = q_assembly_timer.get_mut(assembly_entity) {
-            if timer_item.is_none() || !timer.timer.tick(time.delta()).just_finished() {
+            if timer_item.is_none() || !timer.timer.tick(time.delta().mul_f32(power_mult)).just_finished() {
                 continue;
             }
         }

@@ -27,14 +27,14 @@ pub struct ItemPlugin;
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(OnEnter(PlayerState::Recievables),
+            .add_systems(OnEnter(PlayerState::Receivables),
                 |mut ev_show_ghost: EventWriter<ShowHoverGhost<ItemReceivableBundle>>| {
                     ev_show_ghost.send(ShowHoverGhost::<ItemReceivableBundle> {
                         bundle: PhantomData::<ItemReceivableBundle>
                     });
                 }
             )
-            .add_systems(OnExit(PlayerState::Recievables),
+            .add_systems(OnExit(PlayerState::Receivables),
                 |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
                     ev_hide_ghost.send(HideHoverGhost);
                 }
@@ -58,15 +58,15 @@ impl Plugin for ItemPlugin {
             .add_event::<ShowHoverGhost::<TradeDepotBundle>>()
             .add_systems(Update, show_hover_ghost::<TradeDepotBundle>)
             .add_systems(PreUpdate, mouse_collision_system::<Item>)
-            .add_systems(Update, (
-                place_receivable.run_if(in_state(PlayerState::Recievables)),
-                input_toggle_receivable_mode
-            ).run_if(in_state(DayCycleState::Day)))
-            .add_systems(OnEnter(DayCycleState::Night), (sell_trade_depot_items, receivables_storage_fee, purchase_receivables))
-            .add_systems(Update, (
-                place_trade_depot.run_if(in_state(PlayerState::TradeDepot)),
-                input_toggle_trade_depot_mode
-            ).run_if(in_state(DayCycleState::Day)))
+            // .add_systems(Update, (
+            //     place_receivable.run_if(in_state(PlayerState::Receivables)),
+            //     input_toggle_receivable_mode
+            // ).run_if(in_state(DayCycleState::Day)))
+            .add_systems(OnEnter(DayCycleState::Day), (sell_trade_depot_items, receivables_storage_fee, purchase_receivables))
+            // .add_systems(Update, (
+            //     place_trade_depot.run_if(in_state(PlayerState::TradeDepot)),
+            //     input_toggle_trade_depot_mode
+            // ).run_if(in_state(DayCycleState::Day)))
             .add_event::<GenericMouseCollisionEvent<Item>>()
             .register_type::<ItemContainer>()
         ;
