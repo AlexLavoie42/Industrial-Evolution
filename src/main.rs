@@ -84,11 +84,24 @@ fn main() {
         .insert_resource(ReceivableSelections::default())
 
         .add_systems(Startup, (factory_setup, apply_deferred, hud_setup).chain())
-        .add_systems(FixedUpdate, (player_movement, move_entities).run_if(in_state(DayCycleState::Day)))
-        .add_systems(Update, (player_pickup_item, player_drop_item, player_power_assembly).run_if(in_state(DayCycleState::Day)))
+        .add_systems(FixedUpdate, (
+            (player_movement).run_if(not(in_state(PlayerState::Power))),
+            move_entities
+        ).run_if(in_state(DayCycleState::Day)))
+        .add_systems(OnEnter(PlayerState::Power), |mut query: Query<&mut Movement, With<Player>>| {
+            let mut movement = query.single_mut();
+            movement.input = None;
+        })
+        .add_systems(Update, (
+            player_pickup_item,
+            player_drop_item,
+            player_power_assembly,
+            activate_power_mode_on_click
+        ).run_if(in_state(DayCycleState::Day)))
         .add_systems(Update, (camera_follow, camera_scroll_zoom).run_if(in_state(DayCycleState::Day)))
         .add_systems(PostUpdate, despawn_later_system)
         .add_systems(Update, input_reset_player_mode)
+        .insert_resource(AssemblyPowerSelection::default())
 
         .add_systems(PostUpdate, (set_tilemap_collisions, debug_collision).run_if(on_timer(Duration::from_secs_f32(0.1))))
 
@@ -229,10 +242,13 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             item_type: None,
             max_items: 2
         },
-        production: PowerProduction {
-            output: None,
-            power: Power::Mechanical(40.0),
-        }
+        production: {PlayerPowerProduction {
+            max_output: Power::Mechanical(60.0),
+            min_output: Power::Mechanical(5.0),
+            count_timer: Timer::from_seconds(0.2, TimerMode::Repeating),
+            input_count: 0,
+            no_input_count: 0,
+        }}
     });
 
     let mut output_bundle = ContainerOutputSelectorBundle::new(asset_server.clone());

@@ -7,6 +7,60 @@ pub enum Power {
     Electrical(f32)
 }
 
+impl std::ops::Sub for Power {
+    type Output = Power;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Power::Mechanical(a), Power::Mechanical(b)) => Power::Mechanical(a - b),
+            (Power::Thermal(a), Power::Thermal(b)) => Power::Thermal(a - b),
+            (Power::Electrical(a), Power::Electrical(b)) => Power::Electrical(a - b),
+            (Power::Mechanical(a), _) => Power::Mechanical(a),
+            (Power::Thermal(a), _) => Power::Thermal(a),
+            (Power::Electrical(a), _) => Power::Electrical(a),
+        }
+    }
+}
+
+impl std::ops::Add for Power {
+    type Output = Power;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Power::Mechanical(a), Power::Mechanical(b)) => Power::Mechanical(a + b),
+            (Power::Thermal(a), Power::Thermal(b)) => Power::Thermal(a + b),
+            (Power::Electrical(a), Power::Electrical(b)) => Power::Electrical(a + b),
+            (Power::Mechanical(a), _) => Power::Mechanical(a),
+            (Power::Thermal(a), _) => Power::Thermal(a),
+            (Power::Electrical(a), _) => Power::Electrical(a),
+        }
+    }
+}
+
+impl std::ops::Mul<f32> for Power {
+    type Output = Power;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        match self {
+            Power::Mechanical(a) => Power::Mechanical(a * rhs),
+            Power::Thermal(a) => Power::Thermal(a * rhs),
+            Power::Electrical(a) => Power::Electrical(a * rhs),
+        }
+    }
+}
+
+impl std::ops::Div<f32> for Power {
+    type Output = Power;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        match self {
+            Power::Mechanical(a) => Power::Mechanical(a / rhs),
+            Power::Thermal(a) => Power::Thermal(a / rhs),
+            Power::Electrical(a) => Power::Electrical(a / rhs),
+        }
+    }
+}
+
 #[derive(Event)]
 pub struct AssemblyPowerInput {
     pub assembly: Entity,

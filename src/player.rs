@@ -1,7 +1,6 @@
-use std::f32::{consts::SQRT_2, INFINITY};
+use std::f32::consts::{SQRT_2, E};
 
-use bevy::input::mouse::{MouseWheel, MouseButtonInput};
-use pathfinding::num_traits::{Float, FloatConst};
+use bevy::input::mouse::MouseWheel;
 
 use crate::*;
 
@@ -15,7 +14,7 @@ pub struct PlayerBundle {
     pub movement: Movement,
     pub camera_follow: CameraFollow,
     pub container: ItemContainer,
-    pub production: PowerProduction
+    pub production: PlayerPowerProduction
 }
 
 pub fn player_movement(mut query: Query<&mut Movement, With<Player>>, keys: Res<Input<KeyCode>>) {
@@ -199,7 +198,7 @@ pub fn player_drop_item(
     mut q_player: Query<(Entity, &Transform, &mut ItemContainer, &Children), With<Player>>,
     input: Res<Input<KeyCode>>,
     mut q_containers: Query<(Entity, &Transform, &mut ItemContainer), Without<Player>>,
-    mut q_io_containers: Query<(Entity, &Transform, &mut ItemIOContainer), Without<Player>>,
+    q_io_containers: Query<(Entity, &Transform, &mut ItemIOContainer), Without<Player>>,
     mut item_transforms: Query<&mut Transform, (With<Item>, Without<Player>, Without<ItemContainer>, Without<ItemIOContainer>)>,
     mouse_pos: Res<MousePos>,
 ) {
@@ -226,30 +225,94 @@ pub fn player_drop_item(
     }
 }
 
+#[derive(Resource, Default)]
+pub struct AssemblyPowerSelection {
+    pub selected: Option<Entity>
+}
+
+#[derive(Component)]
+pub struct PlayerPowerProduction {
+    pub max_output: Power,
+    pub min_output: Power,
+    pub input_count: usize,
+    pub count_timer: Timer,
+    pub no_input_count: usize
+}
+
+pub fn activate_power_mode_on_click(
+    q_assemblies: Query<(Entity, &Transform), (With<AssemblyPower>, Without<Player>)>,
+    q_player: Query<&Transform, (With<Player>, Without<AssemblyPower>)>,
+    mut mouse_collision: EventReader<GenericMouseCollisionEvent<Assembly>>,
+    input: Res<Input<MouseButton>>,
+    player_state: Res<State<PlayerState>>,
+    mut power_selection: ResMut<AssemblyPowerSelection>,
+    mut next_state: ResMut<NextState<PlayerState>>
+    
+) {
+    if player_state.get() == &PlayerState::None {
+        if input.just_pressed(MouseButton::Left) {
+            for ev in mouse_collision.iter() {
+                if let Some((_, entity)) = ev.collision {
+                    if let Ok((assembly_entity, transform)) = q_assemblies.get(entity) {
+                        let Ok(player_transform) = q_player.get_single() else { return; };
+                        let distance = Vec3::distance(player_transform.translation, transform.translation);
+                        if distance > PLAYER_REACH {
+                            continue;
+                        }
+
+                        power_selection.selected = Some(assembly_entity);
+                        next_state.set(PlayerState::Power);
+                        println!("Assembly {} selected", assembly_entity.index());
+                    }
+                }
+            }
+        }
+    }
+}
+
+const POWER_DECREASE_MULT: f32 = 0.40;
+const POWER_DECREASE_BASE: usize = 7; 
+const INCREASE_CURVE_MULT: f32 = 0.07;
+const NO_INPUT_MULT: f32 = 3.0;
+
 pub fn player_power_assembly(
     input: Res<Input<KeyCode>>,
     mouse_pos: Res<MousePos>,
     mut ev_power_input: EventWriter<AssemblyPowerInput>,
-    q_assemblies: Query<(Entity, &Transform), (With<AssemblyPower>, Without<Player>)>,
-    q_player: Query<(Entity, &PowerProduction, &Transform), (With<Player>, Without<AssemblyPower>)>,
+    q_assemblies: Query<Entity, (With<AssemblyPower>, Without<Player>)>,
+    mut q_player: Query<(Entity, &mut PlayerPowerProduction, &Transform), (With<Player>, Without<AssemblyPower>)>,
+    selected_assembly: Res<AssemblyPowerSelection>,
+    player_state: Res<State<PlayerState>>,
+    time: Res<Time>,
 ) {
-    if input.pressed(KeyCode::Space) {
-        let Ok((player, power_prod, player_transform)) = q_player.get_single() else { return };
-        let closest_assembly = q_assemblies.iter()
-            .min_by(|a, b| {
-                let a_distance = Vec3::distance(a.1.translation, vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
-                let b_distance = Vec3::distance(b.1.translation, vec3(mouse_pos.0.x, mouse_pos.0.y, 0.0));
-                a_distance.partial_cmp(&b_distance).unwrap()
-            });
-
-        if let Some((entity, transform)) = closest_assembly {
-            let distance = Vec3::distance(transform.translation, vec3(player_transform.translation.x, player_transform.translation.y, 0.0));
-            if distance > PLAYER_REACH {
-                return;
+    let sigmoid = |x: f32, mult: f32| -> f32 {
+        2.0 * ((1.0) / (1.0 + E.powf(-mult * x))) - 1.0
+    };
+    if player_state.get() == &PlayerState::Power {
+        let Ok((player, mut power_prod, player_transform)) = q_player.get_single_mut() else { return };
+        
+        if power_prod.count_timer.tick(time.delta()).just_finished() {
+            if power_prod.input_count > 0 {
+                let mut decrease = (POWER_DECREASE_BASE + (power_prod.input_count as f32 * (POWER_DECREASE_MULT + (sigmoid(power_prod.no_input_count as f32, 1.0) * NO_INPUT_MULT))) as usize) / 10;
+                decrease = decrease.min(power_prod.input_count);
+                power_prod.input_count = power_prod.input_count - decrease;
             }
+            power_prod.no_input_count += 1;
+        }
+
+        let Some(selected_assembly) = selected_assembly.selected else { return; };
+        if input.just_pressed(KeyCode::Space) {
+            power_prod.input_count += 10;
+            power_prod.no_input_count = 0;
+        }
+
+        let output_mult = sigmoid(power_prod.input_count as f32 / 10.0, INCREASE_CURVE_MULT);
+        let power_output = ((power_prod.max_output - power_prod.min_output) * output_mult) + power_prod.min_output;
+
+        if let Ok(entity) = q_assemblies.get(selected_assembly) {
             ev_power_input.send(AssemblyPowerInput {
                 assembly: entity,
-                power: power_prod.power,
+                power: power_output,
                 source: player,
             });
         }
@@ -288,8 +351,8 @@ pub fn camera_follow(
     cam_transform.translation = cam_transform.translation.lerp(player_transform.translation, 0.1);
 }
 
-const MAX_CAMERA_ZOOM: f32 = 1.5;
-const MIN_CAMERA_ZOOM: f32 = 0.25;
+const MAX_CAMERA_ZOOM: f32 = 1.4;
+const MIN_CAMERA_ZOOM: f32 = 0.4;
 
 pub fn camera_scroll_zoom(
     mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>,

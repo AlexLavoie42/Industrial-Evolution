@@ -401,6 +401,10 @@ pub fn hud_container_render(
         *computed_styles = KStyle::default()
             .with_style(style)
             .into();
+        if day_cycle.get() == &DayCycleState::Night {
+            computed_styles.0.width = Units::Pixels(0.0).into();
+            computed_styles.0.height = Units::Pixels(0.0).into();
+        }
         let parent_id = Some(entity);
         rsx!(
             <ElementBundle>
