@@ -70,6 +70,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(WorldInspectorPlugin::default())
+        .add_plugins(ResourceInspectorPlugin::<Economy>::default())
         .add_plugins(TilemapPlugin)
         .add_plugins((KayakContextPlugin, KayakWidgets))
 
@@ -88,9 +89,10 @@ fn main() {
             (player_movement).run_if(not(in_state(PlayerState::Power))),
             move_entities
         ).run_if(in_state(DayCycleState::Day)))
-        .add_systems(OnEnter(PlayerState::Power), |mut query: Query<&mut Movement, With<Player>>| {
-            let mut movement = query.single_mut();
+        .add_systems(OnEnter(PlayerState::Power), |mut query: Query<(&mut Movement, &mut PlayerPowerProduction), With<Player>>| {
+            let (mut movement, mut power) = query.single_mut();
             movement.input = None;
+            power.input_count = 0;
         })
         .add_systems(Update, (
             player_pickup_item,
