@@ -39,6 +39,11 @@ pub fn hud_setup(
         player_money_hud_render,
     );
     widget_context.add_widget_system(
+        ClockHUDProps::default().get_name(),
+        widget_update_on_tick::<ClockHUDProps, EmptyState>,
+        clock_hud_render,
+    );
+    widget_context.add_widget_system(
         ImageButtonProps::default().get_name(),
         widget_update::<ImageButtonProps, EmptyState>,
         image_button_render,
@@ -159,6 +164,7 @@ pub fn hud_setup(
             // HUD
             <HUDContainerBundle>
                 <PlayerMoneyHUDBundle/>
+                <ClockHUDBundle/>
                 <AssembliesHudBundle
                     props={AssembliesHudProps {
                         image: base_hud_menu_image.clone(),
@@ -474,6 +480,95 @@ pub fn player_money_hud_render(
             color: Color::BLACK.into(),
             render_command: StyleProp::Value(RenderCommand::Text {
                 content: format!("Money: {:.2}", props.current_money),
+                alignment: Alignment::Start,
+                word_wrap: false,
+                subpixel: false,
+                text_layout: TextLayout::default(),
+                properties: TextProperties::default()
+            }),
+            ..Default::default()
+        }
+        .with_style(style)
+        .into();
+    }
+    true
+}
+
+pub fn widget_update_on_tick<
+    Props: PartialEq + Component + Clone,
+    State: PartialEq + Component + Clone,
+>(
+    In((entity, previous_entity)): In<(Entity, Entity)>,
+    widget_context: Res<KayakWidgetContext>,
+    time: Res<Time>,
+    widget_param: WidgetParam<Props, State>,
+) -> bool {
+    widget_param.has_changed(&widget_context, entity, previous_entity) || time.is_changed()
+}
+
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct ClockHUDProps;
+impl Widget for ClockHUDProps {}
+
+#[derive(Bundle)]
+pub struct ClockHUDBundle {
+    pub props: ClockHUDProps,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub widget_name: WidgetName,
+}
+impl Default for ClockHUDBundle {
+    fn default() -> Self {
+        Self {
+            props: Default::default(),
+            styles: KStyle {
+                font_size: StyleProp::Value(45.0),
+                left: StyleProp::Value(Units::Stretch(1.0)),
+                bottom: StyleProp::Value(Units::Stretch(1.0)),
+                position_type: StyleProp::Value(KPositionType::SelfDirected),
+                ..default()
+            },
+            computed_styles: Default::default(),
+            widget_name: ClockHUDProps::default().get_name(),
+        }
+    }
+}
+
+pub fn clock_hud_render(
+    In(entity): In<Entity>,
+    mut query: Query<(&mut ClockHUDProps, &mut ComputedStyles, &KStyle)>,
+    day_timer: Res<DayTimer>,
+) -> bool {
+    fn calculate_time(time: f32, start_time: u32, end_time: u32) -> String {
+    
+        // Calculate the total duration
+        let total_duration = if end_time > start_time {
+            end_time - start_time
+        } else {
+            24*60 - start_time + end_time
+        };
+    
+        // Calculate the current time in minutes
+        let current_time = start_time + (total_duration as f32 * time as f32 / DAY_LENGTH_SECONDS as f32) as u32;
+    
+        // Calculate hours and minutes
+        let hours = current_time / 60;
+        let minutes = current_time % 60;
+
+        if hours > 12 {
+            return format!("Time: {:02}:{:02} PM", hours - 12, (minutes / 10) * 10);
+        }
+    
+        return format!("Time: {:02}:{:02} AM", hours, (minutes / 10) * 10);
+    }
+
+    if let Ok((mut props, mut computed_styles, style)) = query.get_mut(entity) {
+        let time = day_timer.day_timer.elapsed_secs();
+
+        *computed_styles = KStyle {
+            color: Color::BLACK.into(),
+            render_command: StyleProp::Value(RenderCommand::Text {
+                content: calculate_time(time, 6*60, 20*60),
                 alignment: Alignment::Start,
                 word_wrap: false,
                 subpixel: false,

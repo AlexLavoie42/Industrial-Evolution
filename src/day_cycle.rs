@@ -1,6 +1,6 @@
 use crate::*;
 
-const DAY_LENGTH_SECONDS : f32 = 60.0 * 1.5;
+pub const DAY_LENGTH_SECONDS : f32 = 60.0 * 1.5;
 
 #[derive(States, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum DayCycleState {
