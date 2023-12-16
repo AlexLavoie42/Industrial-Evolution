@@ -79,7 +79,11 @@ fn main() {
         .add_plugins(ItemPlugin)
         .add_plugins(MoneyPlugin)
 
-        .add_systems(Update, day_timer_system)
+        .add_systems(Update, day_timer_system.run_if(in_state(DayCycleState::Day)))
+        .add_systems(OnEnter(DayCycleState::Night), |mut day_timer: ResMut<DayTimer>| {
+            day_timer.day_timer.reset();
+            day_timer.day_count += 1;
+        })
         .add_state::<DayCycleState>()
         .insert_resource(DayTimer::default())
         .insert_resource(ReceivableSelections::default())

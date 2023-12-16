@@ -1,6 +1,6 @@
 use crate::*;
 
-pub const DAY_LENGTH_SECONDS : f32 = 60.0 * 1.5;
+pub const DAY_LENGTH_SECONDS : f32 = 60.0 * 2.0;
 
 #[derive(States, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum DayCycleState {
@@ -33,7 +33,6 @@ pub fn day_timer_system(
 
     if day_timer.day_timer.tick(time.delta()).just_finished() {
         next_state.set(DayCycleState::Night);
-        day_timer.day_count += 1;
     }
 }
 

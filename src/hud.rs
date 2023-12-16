@@ -28,6 +28,9 @@ pub fn hud_setup(
     let paper_press_menu_image = assets.load("Paper Press Icon.png");
     let paper_drier_menu_image = assets.load("Paper Drier Icon.png");
 
+    let next_day_menu_image = assets.load("Next Day Icon.png");
+    let end_day_menu_image = assets.load("End Day Icon.png");
+
     widget_context.add_widget_system(
         // We are registering these systems with a specific WidgetName.
         PlayerMoneyHUDProps::default().get_name(),
@@ -124,6 +127,18 @@ pub fn hud_setup(
                 } else {
                     state.selected = false;
                 }
+            }
+        },
+    );
+    let end_day_button_click = OnEvent::new(
+        move |
+            In(entity): In<Entity>,
+            event: ResMut<KEvent>,
+            mut state: Query<&mut ImageButtonState>,
+            mut day_state: ResMut<NextState<DayCycleState>>,
+        | {
+            if let EventType::Click(_) = event.event_type {
+                day_state.set(DayCycleState::Night);
             }
         },
     );
@@ -327,6 +342,29 @@ pub fn hud_setup(
                             worker_button_click
                         }
                     />
+
+                    
+                    <ImageButtonBundle
+                        styles={KStyle {
+                            width: Units::Pixels(128.0).into(),
+                            height: Units::Pixels(64.0).into(),
+                            offset: Edge::new(
+                                Units::Stretch(1.0),
+                                Units::Pixels(25.0),
+                                Units::Stretch(1.0),
+                                Units::Stretch(1.0),
+                            ).into(),
+                            ..default()
+                        }}
+                        props={ImageButtonProps {
+                            image: end_day_menu_image.clone(),
+                            hover_image: worker_mode_menu_image.clone(),
+                            selected_image: worker_mode_menu_image.clone(),
+                        }}
+                        on_event={
+                            end_day_button_click
+                        }
+                    />
                 </NinePatchBundle>
             </HUDContainerBundle>
 
@@ -348,13 +386,13 @@ pub fn hud_setup(
                             Units::Stretch(1.0),
                             Units::Pixels(0.0),
                             Units::Stretch(1.0),
-                            Units::Pixels(25.0),
+                            Units::Stretch(1.0),
                         ).into(),
                         position_type: KPositionType::SelfDirected.into(),
                         ..default()
                     }}
                     props={ImageButtonProps {
-                        image: assembly_mode_menu_image.clone(),
+                        image: next_day_menu_image.clone(),
                         hover_image: assembly_mode_hover_menu_image.clone(),
                         selected_image: assembly_mode_selected_menu_image.clone(),
                     }}
@@ -568,7 +606,7 @@ pub fn clock_hud_render(
         *computed_styles = KStyle {
             color: Color::BLACK.into(),
             render_command: StyleProp::Value(RenderCommand::Text {
-                content: calculate_time(time, 6*60, 20*60),
+                content: calculate_time(time, 5*60, 20*60),
                 alignment: Alignment::Start,
                 word_wrap: false,
                 subpixel: false,
