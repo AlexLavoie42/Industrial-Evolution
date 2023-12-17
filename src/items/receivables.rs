@@ -94,6 +94,7 @@ pub const STORAGE_FEE: f32 = 5.0;
 
 pub fn receivables_storage_fee(
     mut money: ResMut<PlayerMoney>,
+    mut upkeep_tracker: ResMut<UpkeepTracker>,
     mut q_receivables: Query<&mut ItemContainer, With<ItemReceivable>>
 ) {
     for mut container in q_receivables.iter_mut() {

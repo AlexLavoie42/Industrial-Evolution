@@ -80,10 +80,13 @@ fn main() {
         .add_plugins(MoneyPlugin)
 
         .add_systems(Update, day_timer_system.run_if(in_state(DayCycleState::Day)))
-        .add_systems(OnEnter(DayCycleState::Night), |mut day_timer: ResMut<DayTimer>| {
-            day_timer.day_timer.reset();
-            day_timer.day_count += 1;
-        })
+        .add_systems(OnEnter(DayCycleState::Night), (
+            |mut day_timer: ResMut<DayTimer>| {
+                day_timer.day_timer.reset();
+                day_timer.day_count += 1;
+            },
+            reset_factory
+        ))
         .add_state::<DayCycleState>()
         .insert_resource(DayTimer::default())
         .insert_resource(ReceivableSelections::default())
@@ -267,4 +270,22 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let input_entity = commands.spawn(input_bundle).id();
 
     commands.spawn(TradeDepotBundle::from_translation(vec3(-4.0 * TILE_SIZE.x, -12.0 * TILE_SIZE.y, 1.0))).push_children(&[input_entity]);
+}
+
+pub fn reset_factory(
+    mut commands: Commands,
+    mut q_workers: Query<(&mut Transform, &mut Job), (With<Worker>, Without<Player>)>,
+    mut q_player: Query<&mut Transform, (With<Player>, Without<Worker>)>,
+    mut player_state: ResMut<NextState<PlayerState>>,
+) {
+    let mut player = q_player.get_single_mut().unwrap();
+    player.translation.x = 0.0;
+    player.translation.y = 0.0;
+
+    player_state.set(PlayerState::None);
+
+    for (mut worker_transform, mut worker_job) in q_workers.iter_mut() {
+        worker_transform.translation.x = 0.0;
+        worker_transform.translation.y = 0.0;
+    }
 }
