@@ -14,7 +14,8 @@ impl Default for UpkeepTimer {
 #[derive(PartialEq, Clone, Copy)]
 pub enum UpkeepSource {
     Factory,
-    Worker
+    Worker,
+    Living
 }
 
 #[derive(Clone, Copy)]
@@ -47,18 +48,29 @@ impl UpkeepTracker {
     }
 }
 
+pub fn worker_upkeep(
+    mut upkeep_tracker: ResMut<UpkeepTracker>,
+    q_workers: Query<&Worker>,
+) {
+    upkeep_tracker.calculate_worker_upkeep(q_workers.iter().count() as i32);
+}
+
+const LIVING_EXPENSE_BASE: f32 = 25.0;
+
+pub fn living_expenses(
+    mut upkeep_tracker: ResMut<UpkeepTracker>,
+) {
+    upkeep_tracker.upkeep.push(Upkeep(LIVING_EXPENSE_BASE, UpkeepSource::Worker));
+}
+
 pub fn upkeep_system(
     mut player_money: ResMut<PlayerMoney>,
     mut market_timer: ResMut<UpkeepTimer>,
     mut upkeep_tracker: ResMut<UpkeepTracker>,
-    q_workers: Query<&Worker>,
     time: Res<Time>,
 ) {
-    if market_timer.0.tick(time.delta()).just_finished() {
-        upkeep_tracker.calculate_worker_upkeep(q_workers.iter().count() as i32);
-        upkeep_tracker.update();
-        if let Err(err) = player_money.try_remove_money(upkeep_tracker.total) {
-            println!("Cant afford upkeep!");
-        }
+    upkeep_tracker.update();
+    if let Err(err) = player_money.try_remove_money(upkeep_tracker.total) {
+        println!("Cant afford upkeep!");
     }
 }

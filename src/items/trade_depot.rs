@@ -9,14 +9,6 @@ pub struct TradeDepotBundle {
     pub sprite: SpriteBundle,
     pub items: ItemContainer
 }
-impl GetGhostBundle for TradeDepotBundle {
-    fn get_sprite_bundle(&self) -> SpriteBundle {
-        self.sprite.clone()
-    }
-    fn get_tile_size(&self) -> Option<EntityTileSize> {
-        None
-    }
-}
 impl TradeDepotBundle {
     pub fn from_translation(translation: Vec3) -> Self {
         let mut bundle = TradeDepotBundle::default();

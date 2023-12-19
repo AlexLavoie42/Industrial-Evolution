@@ -2,8 +2,6 @@ use std::{marker::PhantomData, fmt::Debug};
 
 use crate::*;
 
-
-
 #[derive(Resource)]
 pub struct MousePos(pub Vec2);
 

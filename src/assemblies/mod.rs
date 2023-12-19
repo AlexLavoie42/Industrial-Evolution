@@ -27,11 +27,9 @@ impl Plugin for AssembliesPlugin {
                 }
             )
             // TODO: Macro
-            .add_systems(Update, show_hover_ghost::<AssemblyBundle>)
             .add_systems(Update, show_hover_ghost::<PulpMillBundle>)
             .add_systems(Update, show_hover_ghost::<PaperPressBundle>)
             .add_systems(Update, show_hover_ghost::<PaperDrierBundle>)
-            .add_event::<ShowHoverGhost::<AssemblyBundle>>()
             .add_event::<ShowHoverGhost::<PulpMillBundle>>()
             .add_event::<ShowHoverGhost::<PaperPressBundle>>()
             .add_event::<ShowHoverGhost::<PaperDrierBundle>>()

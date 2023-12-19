@@ -7,23 +7,97 @@ use crate::*;
 #[derive(Component)]
 pub struct Player;
 
+const MOVE_ANIMATION_FRAMES: usize = 6;
+
+#[derive(Component, Clone, Debug)]
+pub struct SpriteDirection {
+    pub direction: usize,
+    pub moving: bool,
+    pub movement_frame: usize,
+    pub animation_timer: Timer,
+}
+impl Default for SpriteDirection {
+    fn default() -> Self {
+        Self {
+            animation_timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+            direction: 0,
+            moving: false,
+            movement_frame: 0,
+        }
+    }
+}
+impl SpriteDirection {
+    pub fn set_from_vec(&mut self, vec: Vec2) {
+        let mut direction = 0;
+        if vec.x > 0.0 {
+            direction = 0;
+        } else if vec.x < 0.0 {
+            direction = 2;
+        } else if vec.y > 0.0 {
+            direction = 1;
+        } else if vec.y < 0.0 {
+            direction = 3;
+        } else {
+            if self.direction > 3 {
+                self.direction -= 24;
+                self.direction /= MOVE_ANIMATION_FRAMES;
+            }
+            return;
+        }
+        if self.moving {
+            direction *= MOVE_ANIMATION_FRAMES;
+            direction += self.movement_frame;
+            direction += 24;
+        }
+        self.direction = direction;
+    }
+}
+
+pub fn sprite_direction_system(
+    mut query: Query<(&mut SpriteDirection, &mut TextureAtlasSprite)>,
+) {
+    for (mut direction, mut sprite) in query.iter_mut() {
+        sprite.index = direction.direction;
+    }
+}
+
+pub fn movement_animation_system(
+    mut query: Query<&mut SpriteDirection>,
+    time: Res<Time>
+) {
+    for mut direction in query.iter_mut() {
+        if direction.moving && direction.animation_timer.tick(time.delta()).just_finished() {
+            direction.movement_frame = (direction.movement_frame + 1) % MOVE_ANIMATION_FRAMES;
+        } else if !direction.moving {
+            direction.movement_frame = 0;
+        }
+    }
+}
+
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub marker: Player,
-    pub sprite: SpriteBundle,
+    pub sprite_sheet: SpriteSheetBundle,
     pub movement: Movement,
+    pub direction: SpriteDirection,
     pub camera_follow: CameraFollow,
     pub container: ItemContainer,
     pub production: PlayerPowerProduction
 }
 
-pub fn player_movement(mut query: Query<&mut Movement, With<Player>>, keys: Res<Input<KeyCode>>) {
-    let mut movement = query.single_mut();
+pub fn player_movement(
+    mut query: Query<(&mut Movement, &mut SpriteDirection), With<Player>>,
+    keys: Res<Input<KeyCode>>,
+) {
+    let (mut movement, mut direction) = query.single_mut();
     let input = Vec2 {
         x: if keys.pressed(KeyCode::A) { -1.0 } else if keys.pressed(KeyCode::D) { 1.0 } else { 0.0 },
         y: if keys.pressed(KeyCode::S) { -1.0 } else if keys.pressed(KeyCode::W) { 1.0 } else { 0.0 }
     };
     movement.input = Some(input);
+    direction.moving = input.length() > 0.0;
+    direction.set_from_vec(input);
+    println!("{:?}", direction.direction);
 }
 
 pub fn move_entities (

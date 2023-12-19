@@ -24,21 +24,34 @@ pub struct WorkerBundle {
     pub job: Job,
     pub job_error: JobError,
     pub job_waiting: JobWaiting,
-    pub sprite: SpriteBundle,
+    pub sprite: SpriteSheetBundle,
     pub movement: Movement,
     pub pathfinding: MoveToTile,
     pub production: PowerProduction
 }
 impl GetGhostBundle for WorkerBundle {
-    fn get_sprite_bundle(&self) -> SpriteBundle {
-        self.sprite.clone()
+    fn get_sprite_bundle(&self) -> SpriteBundle { 
+        SpriteBundle {
+            sprite: Sprite {
+                anchor: self.sprite.sprite.anchor,
+                color: self.sprite.sprite.color,
+                custom_size: self.sprite.sprite.custom_size,
+                flip_x: self.sprite.sprite.flip_x,
+                flip_y: self.sprite.sprite.flip_y,
+                ..Default::default()
+            },
+            texture: *self.sprite.texture_atlas
+                .get_field::<Handle<Image>>("texture")
+                .unwrap_or(&Handle::<Image>::default()),
+            ..Default::default()
+        }
     }
     fn get_tile_size(&self) -> Option<EntityTileSize> {
         None
     }
 }
-impl Default for WorkerBundle {
-    fn default() -> WorkerBundle {
+impl DefaultWithSprites for WorkerBundle {
+    fn default_with_sprites(sprites: &SpriteSheets) -> WorkerBundle {
         WorkerBundle {
             marker: Worker,
             state: WorkerState::Paused,
@@ -55,12 +68,8 @@ impl Default for WorkerBundle {
                 power: Power::Mechanical(20.0),
                 output: None
             },
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    color: Color::ORANGE,
-                    custom_size: Some(Vec2::new(25.0, 50.0)),
-                    ..default()
-                },
+            sprite: SpriteSheetBundle {
+                texture_atlas: sprites.workers[0].clone(),
                 ..default()
             },
             movement: Movement { speed_x: 1.25, speed_y: 1.25, input: None },
@@ -85,6 +94,7 @@ pub fn place_worker(
         &Transform
     )>,
     mut money: ResMut<PlayerMoney>,
+    sprites: Res<SpriteSheets>,
 ) {
     if input.just_pressed(MouseButton::Left) {
         let Ok(_) = money.try_remove_money(WORKER_PRICE) else { 
@@ -100,14 +110,14 @@ pub fn place_worker(
         let pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
 
         commands.spawn(WorkerBundle {
-            sprite: SpriteBundle {
+            sprite: SpriteSheetBundle {
                 transform: Transform {
                     translation: Vec3::new(pos.x, pos.y, 5.0),
-                    ..WorkerBundle::default().sprite.transform
+                    ..WorkerBundle::default_with_sprites(&sprites).sprite.transform
                 },
-                ..WorkerBundle::default().sprite
+                ..WorkerBundle::default_with_sprites(&sprites).sprite
             },
-            ..default()
+            ..WorkerBundle::default_with_sprites(&sprites)
         });
     }
 }

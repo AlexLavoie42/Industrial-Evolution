@@ -110,6 +110,7 @@ fn main() {
         .add_systems(Update, (camera_follow, camera_scroll_zoom).run_if(in_state(DayCycleState::Day)))
         .add_systems(PostUpdate, despawn_later_system)
         .add_systems(Update, input_reset_player_mode)
+        .add_systems(Update, (sprite_direction_system, movement_animation_system))
         .insert_resource(AssemblyPowerSelection::default())
 
         .add_systems(PostUpdate, (set_tilemap_collisions, debug_collision).run_if(on_timer(Duration::from_secs_f32(0.1))))
@@ -122,6 +123,9 @@ fn main() {
         .add_systems(PreUpdate, (set_mouse_pos_res, set_mouse_tile_res))
         .insert_resource(MousePos(Vec2::ZERO))
         .insert_resource(MouseTile(TilePos::new(0, 0)))
+        .insert_resource(SpriteSheets {
+            workers: vec![],
+        })
         .run();
 }
 
@@ -187,10 +191,30 @@ pub fn input_reset_player_mode(
     }
 }
 
+#[derive(Resource)]
+pub struct SpriteSheets {
+    pub workers: Vec<Handle<TextureAtlas>>,
+}
+
 #[derive(Component)]
 struct Factory;
 
-pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn factory_setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>, 
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut sprite_sheets: ResMut<SpriteSheets>,
+) {
+    for i in 0..2 {
+        let texture_handle: Handle<Image> = asset_server.load(format!("Worker {}.png", i));
+        let texture_atlas =
+        TextureAtlas::from_grid(texture_handle, Vec2::new(32.0, 64.0), 24, 3, None, None);
+
+        let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+        sprite_sheets.workers.push(texture_atlas_handle.clone());
+    }
+
     let texture_handle: Handle<Image> = asset_server.load("tiles_map.png");
 
     commands.spawn((Camera2dBundle::default(), MainCamera, CameraUIKayak));
@@ -230,16 +254,19 @@ pub fn factory_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..Default::default()
     });
 
+    let texture_handle = asset_server.load("Character placeholder.png");
+    let texture_atlas =
+        TextureAtlas::from_grid(texture_handle, Vec2::new(32.0, 64.0), 24, 3, None, None);
+
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands.spawn(PlayerBundle {
         marker: Player,
         camera_follow: CameraFollow::default(),
         movement: Movement { speed_x: 2.0, speed_y: 2.0, input: None },
-        sprite: SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(18.0, 25.0)),
-                color: Color::RED,
-                ..default()
-            },
+        direction: SpriteDirection::default(),
+        sprite_sheet: SpriteSheetBundle {
+            texture_atlas: texture_atlas_handle,
+            sprite: TextureAtlasSprite::new(3),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
                 ..default()
