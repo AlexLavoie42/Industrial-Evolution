@@ -48,8 +48,8 @@ make_assembly_bundle!(PulpMillBundle,
     output: AssemblyOutput,
     timer: AssemblyTimer
 );
-impl Default for PulpMillBundle {
-    fn default() -> PulpMillBundle {
+impl DefaultWithSprites for PulpMillBundle {
+    fn default_with_sprites(sprites: &SpriteStorage) -> PulpMillBundle {
         PulpMillBundle {
             assembly_type: AssemblyType::PulpMill,
             assembly: Assembly,
@@ -82,8 +82,9 @@ impl Default for PulpMillBundle {
             sprite: SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
-                    ..AssemblyBundle::default().sprite.sprite
+                    ..Default::default()
                 },
+                texture: sprites.pulp_mill.clone(),
                 ..AssemblyBundle::default().sprite
             }
         }
@@ -96,8 +97,8 @@ make_assembly_bundle!(PaperPressBundle,
     output: AssemblyOutput,
     timer: AssemblyTimer
 );
-impl Default for PaperPressBundle {
-    fn default() -> PaperPressBundle {
+impl DefaultWithSprites for PaperPressBundle {
+    fn default_with_sprites(sprites: &SpriteStorage) -> PaperPressBundle {
         PaperPressBundle {
             assembly_type: AssemblyType::PaperPress,
             assembly: Assembly,
@@ -129,9 +130,10 @@ impl Default for PaperPressBundle {
             tile_size: EntityTileSize(IVec2::new(2, 2)),
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    custom_size: Some(Vec2::new(32.0, 32.0)),
-                    ..AssemblyBundle::default().sprite.sprite
+                    custom_size: Some(Vec2::new(64.0, 64.0)),
+                    ..default()
                 },
+                texture: sprites.paper_press.clone(),
                 ..AssemblyBundle::default().sprite
             }
         }
@@ -143,8 +145,8 @@ make_assembly_bundle!(PaperDrierBundle,
     output: AssemblyOutput,
     timer: AssemblyTimer
 );
-impl Default for PaperDrierBundle {
-    fn default() -> Self {
+impl DefaultWithSprites for PaperDrierBundle {
+    fn default_with_sprites(sprites: &SpriteStorage) -> Self {
         PaperDrierBundle {
             assembly_type: AssemblyType::PaperDrier,
             assembly: Assembly,
@@ -170,9 +172,10 @@ impl Default for PaperDrierBundle {
             tile_size: EntityTileSize(IVec2::new(2, 2)),
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    custom_size: Some(Vec2::new(32.0, 32.0)),
-                    ..AssemblyBundle::default().sprite.sprite
+                    custom_size: Some(Vec2::new(64.0, 64.0)),
+                    ..default()
                 },
+                texture: sprites.paper_drier.clone(),
                 ..AssemblyBundle::default().sprite
             }
         }

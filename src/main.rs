@@ -123,8 +123,11 @@ fn main() {
         .add_systems(PreUpdate, (set_mouse_pos_res, set_mouse_tile_res))
         .insert_resource(MousePos(Vec2::ZERO))
         .insert_resource(MouseTile(TilePos::new(0, 0)))
-        .insert_resource(SpriteSheets {
+        .insert_resource(SpriteStorage {
             workers: vec![],
+            pulp_mill: Handle::default(),
+            paper_press: Handle::default(),
+            paper_drier: Handle::default(),
         })
         .run();
 }
@@ -192,8 +195,11 @@ pub fn input_reset_player_mode(
 }
 
 #[derive(Resource)]
-pub struct SpriteSheets {
+pub struct SpriteStorage {
     pub workers: Vec<Handle<TextureAtlas>>,
+    pub pulp_mill: Handle<Image>,
+    pub paper_press: Handle<Image>,
+    pub paper_drier: Handle<Image>,
 }
 
 #[derive(Component)]
@@ -203,7 +209,7 @@ pub fn factory_setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>, 
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    mut sprite_sheets: ResMut<SpriteSheets>,
+    mut sprites: ResMut<SpriteStorage>,
 ) {
     for i in 0..2 {
         let texture_handle: Handle<Image> = asset_server.load(format!("Worker {}.png", i));
@@ -212,8 +218,12 @@ pub fn factory_setup(
 
         let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
-        sprite_sheets.workers.push(texture_atlas_handle.clone());
+        sprites.workers.push(texture_atlas_handle.clone());
     }
+
+    sprites.pulp_mill = asset_server.load("Pulp Mill Icon.png");
+    sprites.paper_press = asset_server.load("Paper Press Icon.png");
+    sprites.paper_drier = asset_server.load("Paper Drier Icon.png");
 
     let texture_handle: Handle<Image> = asset_server.load("tiles_map.png");
 

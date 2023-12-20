@@ -46,7 +46,8 @@ pub trait AssemblySpawn<'a, 'w, 's> {
     fn spawn_bundle(
         &self,
         commands: &'a mut Commands<'w, 's>,
-        position: Vec2
+        sprites: &SpriteStorage,
+        position: Vec2,
     ) -> EntityCommands<'w, 's, 'a>;
 }
 
@@ -66,11 +67,12 @@ macro_rules! make_assembly_types {
             fn spawn_bundle(
                 &self,
                 commands: &'a mut Commands<'w, 's>,
+                sprites: &SpriteStorage,
                 position: Vec2
             ) -> EntityCommands<'w, 's, 'a> {
                 match self {
                     $(AssemblyType::$assembly_name => {
-                        let mut bundle = $bundle::default();
+                        let mut bundle = $bundle::default_with_sprites(sprites);
                         bundle.sprite.transform.translation = Vec3::new(position.x, position.y, 1.0);
                         commands.spawn(bundle)
                     }),*
@@ -79,10 +81,10 @@ macro_rules! make_assembly_types {
         }
 
         impl AssemblyType {
-            pub fn get_tile_size(self) -> EntityTileSize {
+            pub fn get_tile_size(self, sprites: &SpriteStorage) -> EntityTileSize {
                 match self {
                     $(AssemblyType::$assembly_name => {
-                        $bundle::default().tile_size
+                        $bundle::default_with_sprites(sprites).tile_size
                     })*,
                 }
             }

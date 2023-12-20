@@ -39,11 +39,11 @@ pub fn hover_ghost_tracking(
 }
 
 pub trait DefaultWithSprites {
-    fn default_with_sprites(sprite_sheets: &SpriteSheets) -> Self;
+    fn default_with_sprites(sprite_sheets: &SpriteStorage) -> Self;
 }
 
 impl <T: Default> DefaultWithSprites for T {
-    fn default_with_sprites(sprite_sheets: &SpriteSheets) -> Self {
+    fn default_with_sprites(sprite_sheets: &SpriteStorage) -> Self {
         T::default()
     }
 }
@@ -88,7 +88,7 @@ pub fn show_hover_ghost<T: GetGhostBundle + DefaultWithSprites>(
         &TilemapType,
         &Transform
     )>,
-    sprites: Res<SpriteSheets>,
+    sprites: Res<SpriteStorage>,
 ) {
     for _ev in ev_show_ghost.iter() {
         let (camera, camera_transform) = q_camera.single();

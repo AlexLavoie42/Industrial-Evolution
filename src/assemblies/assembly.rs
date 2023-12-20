@@ -74,6 +74,7 @@ pub fn place_assembly(
         &Transform
     )>,
     q_collision_tiles: Query<&TilePos, With<TileMapCollision>>,
+    sprites: Res<SpriteStorage>
 ) {
     if input.just_pressed(MouseButton::Left) {
         let price = assembly_prices.prices.get(&selected_assembly.selected);
@@ -89,7 +90,7 @@ pub fn place_assembly(
         let (tilemap_size, grid_size, map_type, map_transform) = tilemap_q.single();
 
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
-        let size = selected_assembly.selected.get_tile_size().0;
+        let size = selected_assembly.selected.get_tile_size(&sprites).0;
         let pos = get_corner_tile_pos(get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type), size);
         if q_collision_tiles.iter().any(|p| *p == tile_pos) {
             println!("Can't place assembly here");
@@ -103,6 +104,6 @@ pub fn place_assembly(
         let mut input_bundle = ContainerInputSelectorBundle::new(asset_server.clone());
         input_bundle.sprite.transform.translation = Vec3::new(0.0, -(size.y as f32) * TILE_SIZE.y, 1.0);
         let input_entity: Entity = commands.spawn(input_bundle).id();
-        selected_assembly.selected.spawn_bundle(&mut commands, pos).push_children(&[input_entity, output_entity]);
+        selected_assembly.selected.spawn_bundle(&mut commands, &sprites, pos).push_children(&[input_entity, output_entity]);
     }
 }

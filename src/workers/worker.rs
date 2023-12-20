@@ -39,7 +39,7 @@ impl GetGhostBundle for WorkerBundle {
     }
 }
 impl DefaultWithSprites for WorkerBundle {
-    fn default_with_sprites(sprites: &SpriteSheets) -> WorkerBundle {
+    fn default_with_sprites(sprites: &SpriteStorage) -> WorkerBundle {
         WorkerBundle {
             marker: Worker,
             state: WorkerState::Paused,
@@ -88,7 +88,7 @@ pub fn place_worker(
         &Transform
     )>,
     mut money: ResMut<PlayerMoney>,
-    sprites: Res<SpriteSheets>,
+    sprites: Res<SpriteStorage>,
 ) {
     if input.just_pressed(MouseButton::Left) {
         let Ok(_) = money.try_remove_money(WORKER_PRICE) else { 
