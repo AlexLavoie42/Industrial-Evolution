@@ -68,7 +68,12 @@ pub struct ShowHoverGhost<T: GetGhostBundle> {
 }
 
 pub trait GetGhostBundle: Bundle {
-    fn get_sprite_bundle(&self) -> SpriteBundle;
+    fn get_sprite_bundle(&self) -> Option<SpriteBundle> {
+        None
+    }
+    fn get_spritesheet_bundle(&self) -> Option<SpriteSheetBundle> {
+        None
+    }
     fn get_tile_size(&self) -> Option<EntityTileSize>;
 }
 
@@ -93,16 +98,29 @@ pub fn show_hover_ghost<T: GetGhostBundle + DefaultWithSprites>(
         if let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform)
         {
             let mut pos = get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type);
-            let mut sprite_bundle = T::default_with_sprites(&sprites).get_sprite_bundle();
-            let tile_size = T::default_with_sprites(&sprites).get_tile_size();
-            if let Some(tile_size) = tile_size {
-                pos = get_corner_tile_pos(pos, tile_size.0);
+            if let Some(mut sprite_bundle) = T::default_with_sprites(&sprites).get_sprite_bundle() {
+                let tile_size = T::default_with_sprites(&sprites).get_tile_size();
+                if let Some(tile_size) = tile_size {
+                    pos = get_corner_tile_pos(pos, tile_size.0);
+                }
+                sprite_bundle.transform.translation = vec3(pos.x, pos.y, sprite_bundle.transform.translation.z);
+                sprite_bundle.sprite.color.set_a(0.5);
+                let mut ghost = commands.spawn((sprite_bundle, HoverGhost::default_with_sprites(&sprites)));
+                if let Some(tile_size) = tile_size {
+                    ghost.insert(tile_size);
+                }
             }
-            sprite_bundle.transform.translation = vec3(pos.x, pos.y, sprite_bundle.transform.translation.z);
-            sprite_bundle.sprite.color.set_a(0.5);
-            let mut ghost = commands.spawn((sprite_bundle, HoverGhost::default_with_sprites(&sprites)));
-            if let Some(tile_size) = tile_size {
-                ghost.insert(tile_size);
+            if let Some(mut sprite_bundle) = T::default_with_sprites(&sprites).get_spritesheet_bundle() {
+                let tile_size = T::default_with_sprites(&sprites).get_tile_size();
+                if let Some(tile_size) = tile_size {
+                    pos = get_corner_tile_pos(pos, tile_size.0);
+                }
+                sprite_bundle.transform.translation = vec3(pos.x, pos.y, sprite_bundle.transform.translation.z);
+                sprite_bundle.sprite.color.set_a(0.5);
+                let mut ghost = commands.spawn((sprite_bundle, HoverGhost::default_with_sprites(&sprites)));
+                if let Some(tile_size) = tile_size {
+                    ghost.insert(tile_size);
+                }
             }
         }
     } 

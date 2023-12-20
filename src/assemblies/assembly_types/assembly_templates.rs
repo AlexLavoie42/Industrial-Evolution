@@ -32,8 +32,8 @@ macro_rules! make_assembly_bundle {
             $(pub $extra_field: $extra_type,)*
         }
         impl GetGhostBundle for $assembly_name {
-            fn get_sprite_bundle(&self) -> SpriteBundle {
-                self.sprite.clone()
+            fn get_sprite_bundle(&self) -> Option<SpriteBundle> {
+                Some(self.sprite.clone())
             }
             fn get_tile_size(&self) -> Option<EntityTileSize> {
                 return Some(self.tile_size);

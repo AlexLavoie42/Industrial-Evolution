@@ -86,24 +86,21 @@ pub struct PlayerBundle {
 }
 
 pub fn player_movement(
-    mut query: Query<(&mut Movement, &mut SpriteDirection), With<Player>>,
+    mut query: Query<&mut Movement, With<Player>>,
     keys: Res<Input<KeyCode>>,
 ) {
-    let (mut movement, mut direction) = query.single_mut();
+    let mut movement = query.single_mut();
     let input = Vec2 {
         x: if keys.pressed(KeyCode::A) { -1.0 } else if keys.pressed(KeyCode::D) { 1.0 } else { 0.0 },
         y: if keys.pressed(KeyCode::S) { -1.0 } else if keys.pressed(KeyCode::W) { 1.0 } else { 0.0 }
     };
     movement.input = Some(input);
-    direction.moving = input.length() > 0.0;
-    direction.set_from_vec(input);
-    println!("{:?}", direction.direction);
 }
 
 pub fn move_entities (
-    mut q_movement: Query<(&Movement, &mut Transform)>,
+    mut q_movement: Query<(&Movement, &mut Transform, Option<&mut SpriteDirection>)>,
 ) {
-    for (Movement { mut input, speed_x, speed_y }, mut transform) in q_movement.iter_mut() {
+    for (Movement { mut input, speed_x, speed_y }, mut transform, sprite_direction) in q_movement.iter_mut() {
         if let Some(input_vec) = input {
             let Vec2 { x, y } = input_vec.normalize_or_zero();
             let mut movement: Vec3 = Vec3 {
@@ -119,6 +116,17 @@ pub fn move_entities (
                 movement.y = dist * movement.y.signum();
             }
             transform.translation += movement;
+
+            if let Some(mut direction) = sprite_direction {
+                if movement.length() > 0.0 {
+                    direction.moving = true;
+                }
+                direction.set_from_vec(input_vec);
+            }
+        } else {
+            if let Some(mut direction) = sprite_direction {
+                direction.moving = false;
+            }
         }
     }
 }

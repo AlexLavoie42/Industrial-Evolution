@@ -188,12 +188,30 @@ impl<T: Clickable> MouseCollider for T {
 // Not working for child entities?
 pub fn mouse_collision_system<T: MouseCollider + Debug>(
     components: Query<(&T, &GlobalTransform, &Sprite, Entity)>,
+    sheet_components: Query<(&T, &GlobalTransform, &TextureAtlasSprite, Entity)>,
     mouse_pos: Res<MousePos>,
     mut ev_generic: EventWriter<GenericMouseCollisionEvent<T>>,
     mut ev_all: EventWriter<MouseCollisionEvent>
 ) {
     for (component, transform, sprite, entity) in components.iter() {
         if let Some(collision) = component.check_mouse_collision(&mouse_pos, transform, sprite) {
+            let ev = MouseCollisionEvent {
+                collision: Some((collision, entity))
+            };
+            ev_all.send(ev);
+
+            let ev = GenericMouseCollisionEvent {
+                collision: Some((collision, entity)),
+                marker: PhantomData::<T>
+            };
+            ev_generic.send(ev);
+        }
+    }
+    for (component, transform, sprite, entity) in sheet_components.iter() {
+        if let Some(collision) = component.check_mouse_collision(&mouse_pos, transform, &Sprite {
+            custom_size: sprite.custom_size,
+            ..Default::default()
+        }) {
             let ev = MouseCollisionEvent {
                 collision: Some((collision, entity))
             };

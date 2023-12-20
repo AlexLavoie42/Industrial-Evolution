@@ -12,6 +12,14 @@ pub struct ItemReceivableBundle {
     pub solid: SolidEntity,
     pub tile_size: EntityTileSize
 }
+impl GetGhostBundle for ItemReceivableBundle {
+    fn get_sprite_bundle(&self) -> Option<SpriteBundle> {
+        Some(self.sprite.clone())
+    }
+    fn get_tile_size(&self) -> Option<EntityTileSize> {
+        Some(self.tile_size)
+    }
+}
 impl ItemReceivableBundle {
     pub fn from_translation(translation: Vec3) -> Self {
         let mut bundle = ItemReceivableBundle::default();

@@ -26,25 +26,13 @@ pub struct WorkerBundle {
     pub job_waiting: JobWaiting,
     pub sprite: SpriteSheetBundle,
     pub movement: Movement,
+    pub direction: SpriteDirection,
     pub pathfinding: MoveToTile,
     pub production: PowerProduction
 }
 impl GetGhostBundle for WorkerBundle {
-    fn get_sprite_bundle(&self) -> SpriteBundle { 
-        SpriteBundle {
-            sprite: Sprite {
-                anchor: self.sprite.sprite.anchor,
-                color: self.sprite.sprite.color,
-                custom_size: self.sprite.sprite.custom_size,
-                flip_x: self.sprite.sprite.flip_x,
-                flip_y: self.sprite.sprite.flip_y,
-                ..Default::default()
-            },
-            texture: *self.sprite.texture_atlas
-                .get_field::<Handle<Image>>("texture")
-                .unwrap_or(&Handle::<Image>::default()),
-            ..Default::default()
-        }
+    fn get_spritesheet_bundle(&self) -> Option<SpriteSheetBundle> {
+        Some(self.sprite.clone())
     }
     fn get_tile_size(&self) -> Option<EntityTileSize> {
         None
@@ -70,8 +58,14 @@ impl DefaultWithSprites for WorkerBundle {
             },
             sprite: SpriteSheetBundle {
                 texture_atlas: sprites.workers[0].clone(),
+                sprite: TextureAtlasSprite {
+                    custom_size: Some(Vec2::new(32.0, 64.0)),
+                    index: 3,
+                    ..default()
+                },
                 ..default()
             },
+            direction: SpriteDirection::default(),
             movement: Movement { speed_x: 1.25, speed_y: 1.25, input: None },
             pathfinding: MoveToTile { target: None, path: None, path_i: 0 }
         }

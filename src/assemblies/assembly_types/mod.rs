@@ -34,8 +34,8 @@ impl Default for AssemblyBundle {
 }
 
 impl GetGhostBundle for AssemblyBundle {
-    fn get_sprite_bundle(&self) -> SpriteBundle {
-        self.sprite.clone()
+    fn get_sprite_bundle(&self) -> Option<SpriteBundle> {
+        Some(self.sprite.clone())
     }
     fn get_tile_size(&self) -> Option<EntityTileSize> {
         Some(self.tile_size)
