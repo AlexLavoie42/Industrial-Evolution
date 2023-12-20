@@ -95,13 +95,13 @@
 - External Market events will be random / scripted to start
 - Selling or Buying will create a market event for that item
 
-### Receivables
+### Imports
 - Automatically purchase, ship & store resources
 - Configurable refill limit & shipment size
 - Configurable limit price?
 - Limited placement (Factory walls?)
 
-### Trade Depot
+### Export
 - Automatically sell goods
 - Configurable limit price?
 - Limited placement (Factory walls?)

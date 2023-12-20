@@ -13,11 +13,11 @@ pub use goods::*;
 mod container;
 pub use container::*;
 
-mod receivables;
-pub use receivables::*;
+mod imports;
+pub use imports::*;
 
-mod trade_depot;
-pub use trade_depot::*;
+mod exports;
+pub use exports::*;
 
 mod materials;
 pub use materials::*;
@@ -27,45 +27,45 @@ pub struct ItemPlugin;
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(OnEnter(PlayerState::Receivables),
-                |mut ev_show_ghost: EventWriter<ShowHoverGhost<ItemReceivableBundle>>| {
-                    ev_show_ghost.send(ShowHoverGhost::<ItemReceivableBundle> {
-                        bundle: PhantomData::<ItemReceivableBundle>
+            .add_systems(OnEnter(PlayerState::Imports),
+                |mut ev_show_ghost: EventWriter<ShowHoverGhost<ItemImportBundle>>| {
+                    ev_show_ghost.send(ShowHoverGhost::<ItemImportBundle> {
+                        bundle: PhantomData::<ItemImportBundle>
                     });
                 }
             )
-            .add_systems(OnExit(PlayerState::Receivables),
+            .add_systems(OnExit(PlayerState::Imports),
                 |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
                     ev_hide_ghost.send(HideHoverGhost);
                 }
             )
-            .add_systems(Update, show_hover_ghost::<ItemReceivableBundle>)
-            .add_event::<ShowHoverGhost::<ItemReceivableBundle>>()
-            .add_systems(OnEnter(PlayerState::TradeDepot),
-                |mut ev_show_ghost: EventWriter<ShowHoverGhost<TradeDepotBundle>>| {
-                    ev_show_ghost.send(ShowHoverGhost::<TradeDepotBundle> {
-                        bundle: PhantomData::<TradeDepotBundle>
+            .add_systems(Update, show_hover_ghost::<ItemImportBundle>)
+            .add_event::<ShowHoverGhost::<ItemImportBundle>>()
+            .add_systems(OnEnter(PlayerState::Export),
+                |mut ev_show_ghost: EventWriter<ShowHoverGhost<ItemExportBundle>>| {
+                    ev_show_ghost.send(ShowHoverGhost::<ItemExportBundle> {
+                        bundle: PhantomData::<ItemExportBundle>
                     });
                 }
             )
-            .add_systems(OnExit(PlayerState::TradeDepot),
+            .add_systems(OnExit(PlayerState::Export),
                 |mut ev_hide_ghost: EventWriter<HideHoverGhost>| {
                     ev_hide_ghost.send(HideHoverGhost);
                 }
             )
             .add_systems(OnEnter(PlayerState::Jobs), toggle_container_selectors)
             .add_systems(OnExit(PlayerState::Jobs), toggle_container_selectors)
-            .add_event::<ShowHoverGhost::<TradeDepotBundle>>()
-            .add_systems(Update, show_hover_ghost::<TradeDepotBundle>)
+            .add_event::<ShowHoverGhost::<ItemExportBundle>>()
+            .add_systems(Update, show_hover_ghost::<ItemExportBundle>)
             .add_systems(PreUpdate, mouse_collision_system::<Item>)
             // .add_systems(Update, (
-            //     place_receivable.run_if(in_state(PlayerState::Receivables)),
-            //     input_toggle_receivable_mode
+            //     place_import.run_if(in_state(PlayerState::Imports)),
+            //     input_toggle_import_mode
             // ).run_if(in_state(DayCycleState::Day)))
-            .add_systems(OnEnter(DayCycleState::Day), (sell_trade_depot_items, receivables_storage_fee, purchase_receivables))
+            .add_systems(OnEnter(DayCycleState::Day), (sell_export_items, item_imports_storage_fee, purchase_item_imports))
             // .add_systems(Update, (
-            //     place_trade_depot.run_if(in_state(PlayerState::TradeDepot)),
-            //     input_toggle_trade_depot_mode
+            //     place_export.run_if(in_state(PlayerState::Export)),
+            //     input_toggle_export_mode
             // ).run_if(in_state(DayCycleState::Day)))
             .add_event::<GenericMouseCollisionEvent<Item>>()
             .register_type::<ItemContainer>()

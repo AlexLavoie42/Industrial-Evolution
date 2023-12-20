@@ -1,15 +1,15 @@
 use crate::*;
 
 #[derive(Component, Debug, Reflect)]
-pub struct TradeDepot;
+pub struct ItemExport;
 
 #[derive(Bundle)]
-pub struct TradeDepotBundle {
-    pub depot: TradeDepot,
+pub struct ItemExportBundle {
+    pub depot: ItemExport,
     pub sprite: SpriteBundle,
     pub items: ItemContainer
 }
-impl GetGhostBundle for TradeDepotBundle {
+impl GetGhostBundle for ItemExportBundle {
     fn get_sprite_bundle(&self) -> Option<SpriteBundle> {
         Some(self.sprite.clone())
     }
@@ -17,18 +17,18 @@ impl GetGhostBundle for TradeDepotBundle {
         None
     }
 }
-impl TradeDepotBundle {
-    pub fn from_translation(translation: Vec3) -> Self {
-        let mut bundle = TradeDepotBundle::default();
+impl ItemExportBundle {
+    pub fn from_translation(translation: Vec3, sprites: &SpriteStorage) -> Self {
+        let mut bundle = ItemExportBundle::default_with_sprites(sprites);
         bundle.sprite.transform.translation = translation;
         return bundle;
     }
 }
 
-impl Default for TradeDepotBundle {
-    fn default() -> Self {
-        TradeDepotBundle {
-            depot: TradeDepot,
+impl DefaultWithSprites for ItemExportBundle {
+    fn default_with_sprites(sprites: &SpriteStorage) -> Self {
+        ItemExportBundle {
+            depot: ItemExport,
             items: ItemContainer {
                 items: Vec::new(),
                 item_type: None,
@@ -36,22 +36,22 @@ impl Default for TradeDepotBundle {
             },
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::ORANGE,
-                    custom_size: Some(Vec2::new(25.0, 50.0)),
+                    custom_size: Some(Vec2::new(128.0, 64.0)),
                     ..default()
                 },
+                texture: sprites.exports.clone(),
                 ..default()
             }
         }
     }
 }
 
-pub fn sell_trade_depot_items(
+pub fn sell_export_items(
     mut commands: Commands,
     mut economy: ResMut<Economy>,
     mut money: ResMut<PlayerMoney>,
     mut q_items: Query<&mut Item>,
-    mut q_depot: Query<(&TradeDepot, &mut ItemContainer)>
+    mut q_depot: Query<(&ItemExport, &mut ItemContainer)>
 ) {
     for (depot, mut container) in q_depot.iter_mut() {
         let mut container_ref = container;
@@ -77,27 +77,28 @@ pub fn sell_trade_depot_items(
     }
 }
 
-pub fn input_toggle_trade_depot_mode(
+pub fn input_toggle_place_export_mode(
     input: Res<Input<KeyCode>>,
     state: Res<State<PlayerState>>,
     mut next_state: ResMut<NextState<PlayerState>>
 ) {
     if input.just_pressed(KeyCode::T) {
-        if state.get() == &PlayerState::TradeDepot {
+        if state.get() == &PlayerState::Export {
             next_state.set(PlayerState::None);
         } else {
-            next_state.set(PlayerState::TradeDepot);
+            next_state.set(PlayerState::Export);
             
         }
     }
 }
 
-pub fn place_trade_depot(
+pub fn place_item_export(
     mut commands: Commands,
     input: Res<Input<MouseButton>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     asset_server: Res<AssetServer>,
+    sprites: Res<SpriteStorage>,
     tilemap_q: Query<(
         &TilemapSize,
         &TilemapGridSize,
@@ -117,6 +118,7 @@ pub fn place_trade_depot(
         input_bundle.sprite.transform.translation = Vec3::new(0.0, 42.0, 1.0);
         let input_entity = commands.spawn(input_bundle).id();
 
-        commands.spawn(TradeDepotBundle::from_translation(Vec3 { x: pos.x, y: pos.y, z: 1.0 })).push_children(&[input_entity]);
+        commands.spawn(ItemExportBundle::from_translation(Vec3 { x: pos.x, y: pos.y, z: 1.0 }, &sprites))
+            .push_children(&[input_entity]);
     }
 }

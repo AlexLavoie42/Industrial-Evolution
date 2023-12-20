@@ -54,8 +54,8 @@ pub enum PlayerState {
     Assemblies,
     Workers,
     Jobs,
-    Receivables,
-    TradeDepot,
+    Imports,
+    Export,
     Power
 }
 
@@ -89,7 +89,7 @@ fn main() {
         ))
         .add_state::<DayCycleState>()
         .insert_resource(DayTimer::default())
-        .insert_resource(ReceivableSelections::default())
+        .insert_resource(ImportSelections::default())
 
         .add_systems(Startup, (factory_setup, apply_deferred, hud_setup).chain())
         .add_systems(FixedUpdate, (
@@ -128,6 +128,8 @@ fn main() {
             pulp_mill: Handle::default(),
             paper_press: Handle::default(),
             paper_drier: Handle::default(),
+            imports: Handle::default(),
+            exports: Handle::default(),
         })
         .run();
 }
@@ -200,6 +202,8 @@ pub struct SpriteStorage {
     pub pulp_mill: Handle<Image>,
     pub paper_press: Handle<Image>,
     pub paper_drier: Handle<Image>,
+    pub imports: Handle<Image>,
+    pub exports: Handle<Image>,
 }
 
 #[derive(Component)]
@@ -225,6 +229,9 @@ pub fn factory_setup(
     sprites.paper_press = asset_server.load("Paper Press Icon.png");
     sprites.paper_drier = asset_server.load("Paper Drier Icon.png");
 
+    sprites.imports = asset_server.load("Imports.png");
+    sprites.exports = asset_server.load("Exports.png");
+
     let texture_handle: Handle<Image> = asset_server.load("tiles_map.png");
 
     commands.spawn((Camera2dBundle::default(), MainCamera, CameraUIKayak));
@@ -241,7 +248,7 @@ pub fn factory_setup(
                     .spawn(TileBundle {
                         position: tile_pos,
                         tilemap_id,
-                        texture_index: TileTextureIndex(8),
+                        texture_index: TileTextureIndex(239),
                         ..Default::default()
                     })
                     .id();
@@ -266,7 +273,7 @@ pub fn factory_setup(
 
     let texture_handle = asset_server.load("Character placeholder.png");
     let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(32.0, 64.0), 24, 3, None, None);
+        TextureAtlas::from_grid(texture_handle, Vec2::new(32.0, 64.0), 24, 5, None, None);
 
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands.spawn(PlayerBundle {
@@ -278,7 +285,7 @@ pub fn factory_setup(
             texture_atlas: texture_atlas_handle,
             sprite: TextureAtlasSprite::new(3),
             transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 0.0),
+                translation: Vec3::new(0.0, 0.0, 5.0),
                 ..default()
             },
             ..default()
@@ -300,13 +307,14 @@ pub fn factory_setup(
     let mut output_bundle = ContainerOutputSelectorBundle::new(asset_server.clone());
     output_bundle.sprite.transform.translation = Vec3::new(0.0, -42.0, 1.0);
     let output_entity = commands.spawn(output_bundle).id();
-    commands.spawn(ItemReceivableBundle::from_translation(vec3(6.0 * TILE_SIZE.x, 8.0 * TILE_SIZE.y, 1.0))).push_children(&[output_entity]);
+    commands.spawn(ItemImportBundle::from_translation(vec3(4.0 * TILE_SIZE.x, 8.0 * TILE_SIZE.y, -1.0), &sprites))
+        .push_children(&[output_entity]);
 
     let mut input_bundle = ContainerInputSelectorBundle::new(asset_server.clone());
     input_bundle.sprite.transform.translation = Vec3::new(0.0, 42.0, 1.0);
     let input_entity = commands.spawn(input_bundle).id();
 
-    commands.spawn(TradeDepotBundle::from_translation(vec3(-4.0 * TILE_SIZE.x, -12.0 * TILE_SIZE.y, 1.0))).push_children(&[input_entity]);
+    commands.spawn(ItemExportBundle::from_translation(vec3(-14.0 * TILE_SIZE.x, -16.0 * TILE_SIZE.y, -1.0), &sprites)).push_children(&[input_entity]);
 }
 
 pub fn reset_factory(

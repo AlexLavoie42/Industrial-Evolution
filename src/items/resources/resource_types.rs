@@ -22,8 +22,9 @@ impl Default for WoodBundle {
                     custom_size: Some(Vec2::new(8.0, 8.0)),
                     ..default()
                 },
+                transform: Transform::from_xyz(0.0, 0.0, 6.0),
                 ..default()
-            }
+            },
         }
     }
 }
@@ -50,6 +51,7 @@ impl Default for PulpBundle {
                     custom_size: Some(Vec2::new(8.0, 8.0)),
                     ..default()
                 },
+                transform: Transform::from_xyz(0.0, 0.0, 6.0),
                 ..default()
             }
         }

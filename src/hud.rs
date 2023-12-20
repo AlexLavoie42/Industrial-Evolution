@@ -72,14 +72,14 @@ pub fn hud_setup(
         day_count_text_render,
     );
     widget_context.add_widget_system(
-        ReceivablesSelection::default().get_name(),
-        widget_update_with_day_state::<ReceivablesSelection, EmptyState>,
-        receivables_selection_render,
+        ImportsSelection::default().get_name(),
+        widget_update_with_day_state::<ImportsSelection, EmptyState>,
+        imports_selection_render,
     );
     widget_context.add_widget_system(
-        ReceivableSelector::default().get_name(),
-        widget_update_with_receivable_selection::<ReceivableSelector, EmptyState>,
-        receivable_selector_render,
+        ImportSelector::default().get_name(),
+        widget_update_with_import_selection::<ImportSelector, EmptyState>,
+        import_selector_render,
     );
 
     let assembly_button_click = OnEvent::new(
@@ -376,7 +376,7 @@ pub fn hud_setup(
             >
                 <DayCountTextBundle />
 
-                <ReceivablesSelectionBundle />
+                <ImportsSelectionBundle />
 
                 <ImageButtonBundle
                     styles={KStyle {

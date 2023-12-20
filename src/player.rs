@@ -12,7 +12,6 @@ const MOVE_ANIMATION_FRAMES: usize = 6;
 #[derive(Component, Clone, Debug)]
 pub struct SpriteDirection {
     pub direction: usize,
-    pub moving: bool,
     pub movement_frame: usize,
     pub animation_timer: Timer,
 }
@@ -21,7 +20,6 @@ impl Default for SpriteDirection {
         Self {
             animation_timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             direction: 0,
-            moving: false,
             movement_frame: 0,
         }
     }
@@ -29,24 +27,32 @@ impl Default for SpriteDirection {
 impl SpriteDirection {
     pub fn set_from_vec(&mut self, vec: Vec2) {
         let mut direction = 0;
+        let mut moving = false;
         if vec.x > 0.0 {
             direction = 0;
+            moving = true;
         } else if vec.x < 0.0 {
             direction = 2;
+            moving = true;
         } else if vec.y > 0.0 {
             direction = 1;
+            moving = true;
         } else if vec.y < 0.0 {
             direction = 3;
+            moving = true;
         } else {
             if self.direction > 3 {
-                self.direction -= 24;
-                self.direction /= MOVE_ANIMATION_FRAMES;
+                direction = self.direction - 24;
+                if direction >= 24 {
+                    direction -= 24;
+                }
+                direction /= MOVE_ANIMATION_FRAMES;
             }
-            return;
         }
-        if self.moving {
-            direction *= MOVE_ANIMATION_FRAMES;
-            direction += self.movement_frame;
+        direction *= MOVE_ANIMATION_FRAMES;
+        direction += self.movement_frame;
+        direction += 24;
+        if moving {
             direction += 24;
         }
         self.direction = direction;
@@ -66,10 +72,8 @@ pub fn movement_animation_system(
     time: Res<Time>
 ) {
     for mut direction in query.iter_mut() {
-        if direction.moving && direction.animation_timer.tick(time.delta()).just_finished() {
+        if direction.animation_timer.tick(time.delta()).just_finished() {
             direction.movement_frame = (direction.movement_frame + 1) % MOVE_ANIMATION_FRAMES;
-        } else if !direction.moving {
-            direction.movement_frame = 0;
         }
     }
 }
@@ -118,14 +122,11 @@ pub fn move_entities (
             transform.translation += movement;
 
             if let Some(mut direction) = sprite_direction {
-                if movement.length() > 0.0 {
-                    direction.moving = true;
-                }
                 direction.set_from_vec(input_vec);
             }
         } else {
             if let Some(mut direction) = sprite_direction {
-                direction.moving = false;
+                direction.set_from_vec(Vec2::ZERO);
             }
         }
     }

@@ -165,19 +165,19 @@ pub fn day_count_text_render(
 }
 
 #[derive(Component, Clone, PartialEq, Default)]
-pub struct ReceivablesSelection;
-impl Widget for ReceivablesSelection {}
+pub struct ImportsSelection;
+impl Widget for ImportsSelection {}
 
 #[derive(Bundle)]
-pub struct ReceivablesSelectionBundle {
-    pub props: ReceivablesSelection,
+pub struct ImportsSelectionBundle {
+    pub props: ImportsSelection,
     pub styles: KStyle,
     pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub on_event: OnEvent,
     pub widget_name: WidgetName,
 }
-impl Default for ReceivablesSelectionBundle {
+impl Default for ImportsSelectionBundle {
     fn default() -> Self {
         Self {
             props: Default::default(),
@@ -187,12 +187,12 @@ impl Default for ReceivablesSelectionBundle {
             computed_styles: Default::default(),
             children: Default::default(),
             on_event: OnEvent::default(),
-            widget_name: ReceivablesSelection::default().get_name(),
+            widget_name: ImportsSelection::default().get_name(),
         }
     }
 }
 
-pub fn receivables_selection_render(
+pub fn imports_selection_render(
     In(entity): In<Entity>,
     widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
@@ -218,23 +218,23 @@ pub fn receivables_selection_render(
         >
             <TextWidgetBundle
                 text={TextProps {
-                    content: "Receivables".to_string(),
+                    content: "Imports".to_string(),
                     ..Default::default()
                 }}
             />
             {
                 for (item, price) in economy.prices.iter() {
                     constructor!(
-                        <ReceivableSelectorBundle
-                            props={ReceivableSelector {
+                        <ImportSelectorBundle
+                            props={ImportSelector {
                                 item: item.clone(),
                                 price: price.current_price
                             }}
                             on_event={OnEvent::new(
-                                move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_receivables: ResMut<ReceivableSelections>, props: Query<&ReceivableSelector> | {
+                                move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_imports: ResMut<ImportSelections>, props: Query<&ImportSelector> | {
                                     if let EventType::Click(_) = event.event_type {
                                         let Ok(selector) = props.get(entity) else { return; };
-                                        selected_receivables.selected.push(selector.item.clone());
+                                        selected_imports.selected.push(selector.item.clone());
                                     }
                                 },
                             )}
@@ -249,28 +249,28 @@ pub fn receivables_selection_render(
 }
 
 #[derive(Resource, Default)]
-pub struct ReceivableSelections {
+pub struct ImportSelections {
     pub selected: Vec<PurchasableItem>
 }
 
-pub fn widget_update_with_receivable_selection<
+pub fn widget_update_with_import_selection<
 Props: PartialEq + Component + Clone,
 KState: PartialEq + Component + Clone,
 >(
     In((entity, previous_entity)): In<(Entity, Entity)>,
     widget_context: Res<KayakWidgetContext>,
     widget_param: WidgetParam<Props, KState>,
-    receivables_selections: Res<ReceivableSelections>
+    imports_selections: Res<ImportSelections>
 ) -> bool {
-    widget_param.has_changed(&widget_context, entity, previous_entity) || receivables_selections.is_changed()
+    widget_param.has_changed(&widget_context, entity, previous_entity) || imports_selections.is_changed()
 }
 
 #[derive(Component, Clone, PartialEq)]
-pub struct ReceivableSelector {
+pub struct ImportSelector {
     pub item: PurchasableItem,
     pub price: f32
 }
-impl Default for ReceivableSelector {
+impl Default for ImportSelector {
     fn default() -> Self {
         Self {
             item: PurchasableItem::Resource(ResourceItem::Wood),
@@ -278,18 +278,18 @@ impl Default for ReceivableSelector {
         }
     }
 }
-impl Widget for ReceivableSelector {}
+impl Widget for ImportSelector {}
 
 #[derive(Bundle)]
-pub struct ReceivableSelectorBundle {
-    pub props: ReceivableSelector,
+pub struct ImportSelectorBundle {
+    pub props: ImportSelector,
     pub styles: KStyle,
     pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub on_event: OnEvent,
     pub widget_name: WidgetName,
 }
-impl Default for ReceivableSelectorBundle {
+impl Default for ImportSelectorBundle {
     fn default() -> Self {
         Self {
             props: Default::default(),
@@ -299,18 +299,18 @@ impl Default for ReceivableSelectorBundle {
             computed_styles: Default::default(),
             children: Default::default(),
             on_event: OnEvent::default(),
-            widget_name: ReceivableSelector::default().get_name(),
+            widget_name: ImportSelector::default().get_name(),
         }
     }
 }
 
 
-pub fn receivable_selector_render(
+pub fn import_selector_render(
     In(entity): In<Entity>,
     widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
-    mut query: Query<(&ReceivableSelector, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
-    receivables_selections: Res<ReceivableSelections>,
+    mut query: Query<(&ImportSelector, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    imports_selections: Res<ImportSelections>,
 ) -> bool {
     if let Ok((props, mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
         *computed_styles = KStyle {
@@ -319,7 +319,7 @@ pub fn receivable_selector_render(
         .with_style(base_style)
         .into();
     
-        let selected_count = receivables_selections.selected.iter().filter(|item| *item == &props.item).count();
+        let selected_count = imports_selections.selected.iter().filter(|item| *item == &props.item).count();
         let parent_id = Some(entity);
         rsx!(
             <NinePatchBundle

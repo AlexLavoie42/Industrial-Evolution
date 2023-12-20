@@ -3,16 +3,16 @@ use bevy::sprite::Anchor;
 use crate::*;
 
 #[derive(Component)]
-pub struct ItemReceivable;
+pub struct ItemImport;
 #[derive(Bundle)]
-pub struct ItemReceivableBundle {
-    pub marker: ItemReceivable,
+pub struct ItemImportBundle {
+    pub marker: ItemImport,
     pub container: ItemContainer,
     pub sprite: SpriteBundle,
     pub solid: SolidEntity,
     pub tile_size: EntityTileSize
 }
-impl GetGhostBundle for ItemReceivableBundle {
+impl GetGhostBundle for ItemImportBundle {
     fn get_sprite_bundle(&self) -> Option<SpriteBundle> {
         Some(self.sprite.clone())
     }
@@ -20,18 +20,18 @@ impl GetGhostBundle for ItemReceivableBundle {
         Some(self.tile_size)
     }
 }
-impl ItemReceivableBundle {
-    pub fn from_translation(translation: Vec3) -> Self {
-        let mut bundle = ItemReceivableBundle::default();
+impl ItemImportBundle {
+    pub fn from_translation(translation: Vec3, sprites: &SpriteStorage) -> Self {
+        let mut bundle = ItemImportBundle::default_with_sprites(sprites);
         bundle.sprite.transform.translation = translation;
         return bundle;
     }
 }
 
-impl Default for ItemReceivableBundle {
-    fn default() -> Self {
-        ItemReceivableBundle {
-            marker: ItemReceivable,
+impl DefaultWithSprites for ItemImportBundle {
+    fn default_with_sprites(sprites: &SpriteStorage) -> Self {
+        ItemImportBundle {
+            marker: ItemImport,
             container: ItemContainer {
                 items: Vec::new(),
                 item_type: None,
@@ -39,10 +39,10 @@ impl Default for ItemReceivableBundle {
             },
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::YELLOW,
-                    custom_size: Some(Vec2::new(32.0, 64.0)),
+                    custom_size: Some(Vec2::new(128.0, 64.0)),
                     ..default()
                 },
+                texture: sprites.imports.clone(),
                 ..default()
             },
             solid: SolidEntity,
@@ -51,16 +51,16 @@ impl Default for ItemReceivableBundle {
     }
 }
 
-pub fn purchase_receivables(
+pub fn purchase_item_imports(
     mut commands: Commands,
-    mut q_receivables: Query<(Entity, &mut ItemContainer), With<ItemReceivable>>,
-    mut selected_receivables: ResMut<ReceivableSelections>,
+    mut q_imports: Query<(Entity, &mut ItemContainer), With<ItemImport>>,
+    mut selected_imports: ResMut<ImportSelections>,
     mut economy: ResMut<Economy>,
     mut money: ResMut<PlayerMoney>,
 ) {
-    for (receivable_entity, mut container) in q_receivables.iter_mut() {
+    for (import_entity, mut container) in q_imports.iter_mut() {
         if container.items.len() < container.max_items {
-            for selection in selected_receivables.selected.iter() {
+            for selection in selected_imports.selected.iter() {
                 let mut item_command = match selection {
                     PurchasableItem::Good(item) => item.spawn_bundle(&mut commands),
                     PurchasableItem::Resource(item) => item.spawn_bundle(&mut commands)
@@ -73,7 +73,7 @@ pub fn purchase_receivables(
                 };
                 match container.add_item((Some(item_entity), Some(selected_item))) {
                     Ok(_) => {
-                        commands.entity(receivable_entity).push_children(&[item_entity]);
+                        commands.entity(import_entity).push_children(&[item_entity]);
                         
                         let Some(price) = selected_item.get_price(&economy) else { continue; };
                         let Ok(_) = money.try_remove_money(price) else { continue; };
@@ -87,17 +87,17 @@ pub fn purchase_receivables(
             }
         }
     }
-    selected_receivables.selected.clear();
+    selected_imports.selected.clear();
 }
 
 pub const STORAGE_FEE: f32 = 5.0;
 
-pub fn receivables_storage_fee(
+pub fn item_imports_storage_fee(
     mut money: ResMut<PlayerMoney>,
     mut upkeep_tracker: ResMut<UpkeepTracker>,
-    mut q_receivables: Query<&mut ItemContainer, With<ItemReceivable>>
+    mut q_imports: Query<&mut ItemContainer, With<ItemImport>>
 ) {
-    for mut container in q_receivables.iter_mut() {
+    for mut container in q_imports.iter_mut() {
         for mut item in container.items.iter_mut() {
             if let Some(item_entity) = item {
                 if money.amount < STORAGE_FEE {
@@ -110,27 +110,28 @@ pub fn receivables_storage_fee(
     }
 }
 
-pub fn input_toggle_receivable_mode(
+pub fn input_toggle_place_import_mode(
     input: Res<Input<KeyCode>>,
     state: Res<State<PlayerState>>,
     mut next_state: ResMut<NextState<PlayerState>>
 ) {
     if input.just_pressed(KeyCode::R) {
-        if state.get() == &PlayerState::Receivables {
+        if state.get() == &PlayerState::Imports {
             next_state.set(PlayerState::None);
         } else {
-            next_state.set(PlayerState::Receivables);
+            next_state.set(PlayerState::Imports);
             
         }
     }
 }
 
-pub fn place_receivable(
+pub fn place_item_import(
     mut commands: Commands,
     input: Res<Input<MouseButton>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     asset_server: Res<AssetServer>,
+    sprites: Res<SpriteStorage>,
     tilemap_q: Query<(
         &TilemapSize,
         &TilemapGridSize,
@@ -145,13 +146,14 @@ pub fn place_receivable(
 
         let Some(tile_pos) = get_mouse_tile(window, camera, camera_transform, tilemap_size, grid_size, map_type, map_transform) else { return };
 
-        let size = ItemReceivableBundle::default().tile_size.0;
+        let size = ItemImportBundle::default_with_sprites(&sprites).tile_size.0;
         let pos = get_corner_tile_pos(get_tile_world_pos(&tile_pos, map_transform, grid_size, map_type), size);
 
         let mut output_bundle = ContainerOutputSelectorBundle::new(asset_server.clone());
         output_bundle.sprite.transform.translation = Vec3::new(0.0, -42.0, 1.0);
         let output_entity = commands.spawn(output_bundle).id();
 
-        commands.spawn(ItemReceivableBundle::from_translation(Vec3 { x: pos.x, y: pos.y, z: 1.0 })).push_children(&[output_entity]);
+        commands.spawn(ItemImportBundle::from_translation(Vec3 { x: pos.x, y: pos.y, z: 1.0 }, &sprites))
+            .push_children(&[output_entity]);
     }
 }
