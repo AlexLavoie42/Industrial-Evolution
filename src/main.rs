@@ -44,7 +44,7 @@ use hud::*;
 mod day_cycle;
 use day_cycle::*;
 
-const GRID_SIZE: TilemapSize = TilemapSize { x: 100, y: 100 };
+const GRID_SIZE: TilemapSize = TilemapSize { x: 70, y: 70 };
 const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
@@ -244,11 +244,18 @@ pub fn factory_setup(
         for x in 0..GRID_SIZE.x {
             for y in 0..GRID_SIZE.y {
                 let tile_pos = TilePos { x, y };
+                let mut index = 104;
+                if x % 2 == 0 {
+                    index += 1;
+                }
+                if y % 2 == 0 {
+                    index += 32;
+                }
                 let tile_entity = parent
                     .spawn(TileBundle {
                         position: tile_pos,
                         tilemap_id,
-                        texture_index: TileTextureIndex(239),
+                        texture_index: TileTextureIndex(index),
                         ..Default::default()
                     })
                     .id();

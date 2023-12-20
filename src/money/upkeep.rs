@@ -1,7 +1,7 @@
 use crate::*;
 
-const FACTORY_COST: f32 = 100.0;
-const DAY_TIMER: f32 = 5.0 * 60.0;
+const FACTORY_COST: f32 = 75.0;
+const DAY_TIMER: f32 = 6.5 * 60.0;
 
 #[derive(Resource)]
 pub struct UpkeepTimer(Timer);
@@ -15,7 +15,7 @@ impl Default for UpkeepTimer {
 pub enum UpkeepSource {
     Factory,
     Worker,
-    Living
+    
 }
 
 #[derive(Clone, Copy)]

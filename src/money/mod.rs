@@ -14,7 +14,7 @@ impl Plugin for MoneyPlugin {
         app
             .add_systems(OnEnter(DayCycleState::Night), (market_forces, market_system))
             .add_systems(OnEnter(DayCycleState::Night), (worker_upkeep, living_expenses))
-            .add_systems(OnEnter(DayCycleState::Day), (upkeep_system))
+            .add_systems(OnEnter(DayCycleState::Day), upkeep_system)
             .insert_resource(PlayerMoney {
                 amount: 2500.0
             })
