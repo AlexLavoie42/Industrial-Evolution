@@ -134,6 +134,7 @@ pub fn night_ui_render(
                             image: next_day_menu_image.clone(),
                             hover_image: next_day_menu_image.clone(),
                             selected_image: next_day_menu_image.clone(),
+                            ..default()
                         }}
                         on_event={
                             next_day_button_click

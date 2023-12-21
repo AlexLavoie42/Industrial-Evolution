@@ -182,6 +182,14 @@ Learnings:
         - Power generation
         - Stocks?
 
+- Bring in electricity at beginning?
+    - Powering manually seems weird and boring
+    - Would introduce more complexity right away
+
+- Economy should revolve around forcing player to shift production often
+    - Stops the player from just idling to make money
+    - Use economy to force players into multi step production
+
 ## Random Thoughts
 
 - Assembly by-products

@@ -32,9 +32,10 @@ pub fn ui_setup(
     );
     widget_context.add_widget_system(
         ImageButtonProps::default().get_name(),
-        widget_update::<ImageButtonProps, EmptyState>,
+        widget_update::<ImageButtonProps, ImageButtonState>,
         image_button_render,
     );
+    widget_context.add_widget_data::<ImageButtonProps, ImageButtonState>();
     widget_context.add_widget_system(
         BaseHudProps::default().get_name(),
         widget_update_with_player_state::<BaseHudProps, EmptyState>,
@@ -86,4 +87,100 @@ pub fn ui_setup(
     };
 
     commands.spawn((widget_context, EventDispatcher::default()));
+}
+
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct ImageButtonProps {
+    pub image: Handle<Image>,
+    pub hover_image: Handle<Image>,
+    pub selected_image: Handle<Image>,
+    pub selected: bool,
+}
+impl Widget for ImageButtonProps {}
+
+#[derive(Component, Default, PartialEq, Clone)]
+pub struct ImageButtonState {
+    pub hover: bool,
+}
+
+#[derive(Bundle)]
+pub struct ImageButtonBundle {
+    pub props: ImageButtonProps,
+    pub state: ImageButtonState,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub on_event: OnEvent,
+    pub widget_name: WidgetName,
+}
+impl Default for ImageButtonBundle {
+    fn default() -> Self {
+        Self {
+            on_event: OnEvent::default(),
+            props: Default::default(),
+            state: Default::default(),
+            styles: KStyle {
+                font_size: StyleProp::Value(45.0),
+                ..default()
+            },
+            computed_styles: Default::default(),
+            widget_name: ImageButtonProps::default().get_name(),
+        }
+    }
+}
+
+pub fn image_button_render(
+    In(entity): In<Entity>,
+    mut commands: Commands,
+    widget_context: Res<KayakWidgetContext>,
+    mut query: Query<(&mut ImageButtonProps, &mut ComputedStyles, &KStyle, &mut OnEvent)>,
+    button_state: Query<&ImageButtonState>
+) -> bool {
+    if let Ok((props, mut computed_styles, style, mut event)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(style)
+            .into();
+
+        let parent_id = Some(entity);
+        let mut image = props.image.clone();
+        let state_entity = widget_context.use_state(
+            // Bevy commands
+            &mut commands,
+            // The widget entity.
+            entity,
+            // The default starting values for the state.
+            ImageButtonState::default()
+        );
+        if let Ok(state) = button_state.get(state_entity) {
+            if props.selected {
+                image = props.selected_image.clone();
+            }
+            if state.hover {
+                image = props.hover_image.clone();
+            }
+        }
+        rsx!(
+            <NinePatchBundle
+                nine_patch={NinePatch {
+                    handle: image.clone(),
+                    border: Edge::all(0.0),
+                }}
+                on_event={OnEvent::new(
+                    move |
+                        In(entity): In<Entity>,
+                        mut commands: Commands,
+                        event: ResMut<KEvent>,
+                        mut q_state: Query<&mut ImageButtonState>,
+                    | {
+                        if let Ok(mut state) = q_state.get_mut(state_entity) {
+                            state.hover = false;
+                            if let EventType::Hover(_) = event.event_type {
+                                state.hover = true;
+                            }
+                        }
+                    },
+                )}
+            />
+        );
+    }
+    true
 }
