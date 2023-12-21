@@ -91,7 +91,7 @@ fn main() {
         .insert_resource(DayTimer::default())
         .insert_resource(ImportSelections::default())
 
-        .add_systems(Startup, (factory_setup, apply_deferred, hud_setup).chain())
+        .add_systems(Startup, (factory_setup, apply_deferred, ui_setup).chain())
         .add_systems(FixedUpdate, (
             (player_movement).run_if(not(in_state(PlayerState::Power))),
             move_entities

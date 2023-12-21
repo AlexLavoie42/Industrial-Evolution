@@ -84,6 +84,7 @@ pub fn night_ui_render(
     widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&mut NightUIProps, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    assets: Res<AssetServer>,
     day_state: Res<State<DayCycleState>>
 ) -> bool {
     if let Ok((mut props, mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
@@ -94,6 +95,17 @@ pub fn night_ui_render(
         .into();
         if day_state.get() == &DayCycleState::Night {
             let parent_id = Some(entity);
+
+            let next_day_menu_image = assets.load("Next Day Icon.png");
+
+            let next_day_button_click = OnEvent::new(
+                move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut next_day_state: ResMut<NextState<DayCycleState>> | {
+                    if let EventType::Click(_) = event.event_type {
+                        next_day_state.set(DayCycleState::Day);
+                    }
+                },
+            );
+
             rsx!(
                 <BackgroundBundle
                     styles={KStyle {
@@ -102,7 +114,32 @@ pub fn night_ui_render(
                     }}
                     children={base_children.clone()}
                     on_event={base_on_event.clone()}
-                />
+                >
+                    <DayCountTextBundle />
+                    <ImportsSelectionBundle />
+                    <ImageButtonBundle
+                        styles={KStyle {
+                            width: Units::Pixels(128.0).into(),
+                            height: Units::Pixels(64.0).into(),
+                            offset: Edge::new(
+                                Units::Stretch(1.0),
+                                Units::Pixels(0.0),
+                                Units::Stretch(1.0),
+                                Units::Stretch(1.0),
+                            ).into(),
+                            position_type: KPositionType::SelfDirected.into(),
+                            ..default()
+                        }}
+                        props={ImageButtonProps {
+                            image: next_day_menu_image.clone(),
+                            hover_image: next_day_menu_image.clone(),
+                            selected_image: next_day_menu_image.clone(),
+                        }}
+                        on_event={
+                            next_day_button_click
+                        }
+                    />
+                </BackgroundBundle>
             );
         } else {
             computed_styles.0.height = StyleProp::Value(Units::Pixels(0.0));

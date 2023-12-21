@@ -6,8 +6,8 @@
 - Main scene = Factory (prepare for scaling to multiple factories)
 
 - Items
-    - Goods - Can be sold but not bought
-    - Resources - Can be bought & sold
+    - Goods - Can be sold in bulk but buying is restricted?
+    - Resources - Can be bought & sold in bulk
     - Materials - Can't be bought or sold
 - Assemblies
     - Transform Resources into Goods
@@ -62,15 +62,27 @@
     - Lumber
     - Copper ore
     - Copper
+    - Iron ore
+    - Wraught Iron
+    - Steel
+    - Stainless Steel
+
 - Goods
     - Paper
+    - Books
     - Furnature
+    - Tools
+    - Pipes
+    - Wire
+
 - Assemblies
+    - Wood chipper
     - Pulp Mill
     - Paper Press
-    - Paper Drier
+    - Drying Rack
     - Lumber Mill
     - Woodworking shop
+
 - Worker
     - Path setting between assemblies
     - Interact with assemblies
@@ -94,6 +106,7 @@
     - Larger price gaps (base price - current price) increase the amount of market events in a particular direction
 - External Market events will be random / scripted to start
 - Selling or Buying will create a market event for that item
+- Simulating competition & have player interact (sabotage / cooperate)
 
 ### Imports
 - Automatically purchase, ship & store resources
@@ -149,6 +162,25 @@ Learnings:
     - End of day lets player relax.
     - Selecting resources to be bought for the next day. Unused resources incur storage fees.
     - Core loop is a cycle between intense factory production time crunch, and end of day relief. Gives players breathing room and time to plan.
+
+- Managing workers seems fun, lean into it
+    - Micro managing for greater efficiency
+        - More dynamic management (follow / copy player? One time tasks? )
+    - Training & skills
+    - Worker needs & happiness
+    - Always leave room for improvement
+        - Unlock new possibilies with worker skills. Force the player to rethink certain designs
+        - Multi tasking jobs. As skill increases worker gets smarter when selecting tasks.
+
+- Give the player more to do with their money
+    - Balance around player staying poor most of the game?
+    - Casino / gambling
+    - Houses / luxury? (Maybe give boosts to player?)
+    - Player skills?
+    - External investments
+        - Resource gathering (mining, forestry, etc.)
+        - Power generation
+        - Stocks?
 
 ## Random Thoughts
 
