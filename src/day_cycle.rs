@@ -1,3 +1,7 @@
+use std::cmp::Ordering;
+
+use bevy::reflect::Enum;
+
 use crate::*;
 
 pub const DAY_LENGTH_SECONDS : f32 = 60.0 * 2.0;
@@ -109,22 +113,33 @@ pub fn night_ui_render(
             rsx!(
                 <BackgroundBundle
                     styles={KStyle {
-                        background_color: StyleProp::<Color>::Value(Color::rgb_u8(31, 31, 35)),
+                        background_color: StyleProp::<Color>::Value(Color::rgb_u8(50, 58, 108)),
                         ..Default::default()
                     }}
                     children={base_children.clone()}
                     on_event={base_on_event.clone()}
                 >
-                    <DayCountTextBundle />
-                    <ImportsSelectionBundle />
+                    <DayCountTextBundle
+                        styles={KStyle {
+                            top: Units::Pixels(50.0).into(),
+                            left: Units::Pixels(50.0).into(),
+                            ..default()
+                        }}
+                    />
+                    <ImportsSelectionBundle
+                        styles={KStyle {
+                            left: Units::Pixels(50.0).into(),
+                            ..default()
+                        }}
+                    />
                     <ImageButtonBundle
                         styles={KStyle {
                             width: Units::Pixels(128.0).into(),
                             height: Units::Pixels(64.0).into(),
                             offset: Edge::new(
                                 Units::Stretch(1.0),
-                                Units::Pixels(0.0),
-                                Units::Stretch(1.0),
+                                Units::Pixels(25.0),
+                                Units::Stretch(0.45),
                                 Units::Stretch(1.0),
                             ).into(),
                             position_type: KPositionType::SelfDirected.into(),
@@ -235,6 +250,7 @@ pub fn imports_selection_render(
     widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    assets: Res<AssetServer>,
     economy: Res<Economy>,
 ) -> bool {
     if let Ok((mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
@@ -245,10 +261,33 @@ pub fn imports_selection_render(
         .into();
 
     let parent_id = Some(entity);
+    
+    let mut sorted_prices = economy.prices.iter().collect::<Vec<_>>();
+    sorted_prices.sort_by(
+        |a, b|{
+            match a.0 {
+                PurchasableItem::Resource(a_item) => {
+                    if let PurchasableItem::Resource(b_item) = b.0 {
+                        a_item.variant_name().cmp(&b_item.variant_name())
+                    } else {
+                        Ordering::Less
+                    }
+                }
+                PurchasableItem::Good(a_item) => {
+                    if let PurchasableItem::Good(b_item) = b.0 {
+                        a_item.variant_name().cmp(&b_item.variant_name())
+                    } else {
+                        Ordering::Greater
+                    }
+                }
+            }
+        }
+    );
+
     rsx!(
         <ElementBundle
             styles={KStyle {
-                background_color: StyleProp::<Color>::Value(Color::rgb_u8(31, 31, 35)),
+                background_color: StyleProp::<Color>::Value(Color::rgb_u8(65, 68, 90)),
                 ..Default::default()
             }}
             children={base_children.clone()}
@@ -261,22 +300,16 @@ pub fn imports_selection_render(
                 }}
             />
             {
-                for (item, price) in economy.prices.iter() {
+                for (item, price) in sorted_prices {
                     constructor!(
-                        <ImportSelectorBundle
-                            props={ImportSelector {
-                                item: item.clone(),
-                                price: price.current_price
-                            }}
-                            on_event={OnEvent::new(
-                                move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_imports: ResMut<ImportSelections>, props: Query<&ImportSelector> | {
-                                    if let EventType::Click(_) = event.event_type {
-                                        let Ok(selector) = props.get(entity) else { return; };
-                                        selected_imports.selected.push(selector.item.clone());
-                                    }
-                                },
-                            )}
-                        />
+                        <ElementBundle>
+                            <ImportSelectorBundle
+                                props={ImportSelector {
+                                    item: item.clone(),
+                                    price: price.current_price
+                                }}
+                            />
+                        </ElementBundle>
                     );
                 }
             }
@@ -348,6 +381,7 @@ pub fn import_selector_render(
     widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&ImportSelector, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    assets: Res<AssetServer>,
     imports_selections: Res<ImportSelections>,
 ) -> bool {
     if let Ok((props, mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
@@ -359,15 +393,76 @@ pub fn import_selector_render(
     
         let selected_count = imports_selections.selected.iter().filter(|item| *item == &props.item).count();
         let parent_id = Some(entity);
+        let item_name = match props.item {
+            PurchasableItem::Resource(item) => item.variant_name().to_string(),
+            PurchasableItem::Good(item) => item.variant_name().to_string(),
+        };
+
+        let add_button = assets.load("Add Icon.png");
+        let remove_button = assets.load("Remove Icon.png");
+
+        let item = props.item.clone();
+
         rsx!(
             <NinePatchBundle
                 styles={KStyle {
+                    layout_type: LayoutType::Row.into(),
                     ..default()
                 }}
             >
                 <TextWidgetBundle
                     text={TextProps {
-                        content: format!("{:?}: {:.2} || Selected: {:0} ", props.item, props.price, selected_count),
+                        content: format!("{:}: {:.2} || Selected: {:0} ", item_name, props.price, selected_count),
+                        ..Default::default()
+                    }}
+                />
+                <ImageButtonBundle
+                    styles={KStyle {
+                        width: Units::Pixels(32.0).into(),
+                        height: Units::Pixels(32.0).into(),
+                        top: Units::Stretch(0.25).into(),
+                        bottom: Units::Stretch(1.0).into(),
+                        left: Units::Pixels(10.0).into(),
+                        ..Default::default()
+                    }}
+
+                    on_event={OnEvent::new(
+                        move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_imports: ResMut<ImportSelections> | {
+                            if let EventType::Click(_) = event.event_type {
+                                selected_imports.selected.push(item.clone());
+                            }
+                        },
+                    )}
+                    props={ImageButtonProps {
+                        image: add_button.clone(),
+                        selected_image: add_button.clone(),
+                        hover_image: add_button.clone(),
+                        ..Default::default()
+                    }}
+                />
+                <ImageButtonBundle
+                    styles={KStyle {
+                        width: Units::Pixels(32.0).into(),
+                        height: Units::Pixels(32.0).into(),
+                        top: Units::Stretch(0.25).into(),
+                        left: Units::Pixels(15.0).into(),
+                        bottom: Units::Stretch(1.0).into(),
+                        ..Default::default()
+                    }}
+
+                    on_event={OnEvent::new(
+                        move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_imports: ResMut<ImportSelections>, props: Query<&ImportSelector> | {
+                            if let EventType::Click(_) = event.event_type {
+                                if let Some(index) = selected_imports.selected.iter().position(|i| i == &item) {
+                                    selected_imports.selected.remove(index);
+                                }
+                            }
+                        },
+                    )}
+                    props={ImageButtonProps {
+                        image: remove_button.clone(),
+                        selected_image: remove_button.clone(),
+                        hover_image: remove_button.clone(),
                         ..Default::default()
                     }}
                 />

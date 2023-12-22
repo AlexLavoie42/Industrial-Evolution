@@ -38,6 +38,7 @@ pub fn hud_container_render(
     mut query: Query<(&HUDContainerProps, &mut ComputedStyles, &KStyle, &KChildren)>,
     assets: Res<AssetServer>,
     day_cycle: Res<State<DayCycleState>>,
+    player_state: Res<State<PlayerState>>,
 ) -> bool {
     if let Ok((props, mut computed_styles, style, base_children)) = query.get_mut(entity) {
         *computed_styles = KStyle::default()
@@ -60,6 +61,12 @@ pub fn hud_container_render(
                         >
                             <PlayerMoneyHUDBundle/>
                             <ClockHUDBundle/>
+                            <PowerMinigameHUDBundle
+                                styles={KStyle {
+                                    top: Units::Stretch(40.0).into(),
+                                    ..default()
+                                }}
+                            />
                             <AssembliesHudBundle
                                 props={AssembliesHudProps {
                                     image: base_hud_menu_image.clone(),
@@ -259,6 +266,90 @@ pub fn clock_hud_render(
         }
         .with_style(style)
         .into();
+    }
+    true
+}
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct PowerMinigameHUDProps;
+impl Widget for PowerMinigameHUDProps {}
+
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct PowerMinigameHUDState {
+    pub frame: usize,
+    pub frame_time: f32
+}
+
+#[derive(Bundle)]
+pub struct PowerMinigameHUDBundle {
+    pub props: PowerMinigameHUDProps,
+    pub styles: KStyle,
+    pub state: PowerMinigameHUDState,
+    pub computed_styles: ComputedStyles,
+    pub widget_name: WidgetName,
+}
+impl Default for PowerMinigameHUDBundle {
+    fn default() -> Self {
+        Self {
+            props: Default::default(),
+            styles: KStyle {
+                ..default()
+            },
+            state: PowerMinigameHUDState { frame: 0, frame_time: 0.0 },
+            computed_styles: Default::default(),
+            widget_name: PowerMinigameHUDProps::default().get_name(),
+        }
+    }
+}
+
+pub fn power_minigame_hud_render(
+    In(entity): In<Entity>,
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    widget_context: Res<KayakWidgetContext>,
+    mut query: Query<(&mut PowerMinigameHUDProps, &mut ComputedStyles, &KStyle)>,
+    player_state: Res<State<PlayerState>>,
+    mut q_state: Query<&mut PowerMinigameHUDState>,
+    time: Res<Time>,
+) -> bool {
+    if let Ok((mut props, mut computed_styles, style)) = query.get_mut(entity) {
+        *computed_styles = KStyle {
+            ..Default::default()
+        }
+        .with_style(style)
+        .into();
+        if player_state.get() == &PlayerState::Power {
+            let parent_id = Some(entity);
+            
+            let state_entity = widget_context.use_state(
+                &mut commands,
+                entity,
+                PowerMinigameHUDState::default()    
+            );
+            let Ok(mut state) = q_state.get_mut(state_entity) else { return true };
+            if time.elapsed_seconds() > state.frame_time + 0.15 {
+                state.frame = (state.frame + 1) % 4;
+                state.frame_time = time.elapsed_seconds();
+            }
+
+            let space_animation = assets.load("Space animation-Sheet.png");
+
+            rsx!(
+                <TextureAtlasBundle
+                    styles={KStyle {
+                        width: Units::Pixels(256.0).into(),
+                        height: Units::Pixels(32.0).into(),
+                        right: Units::Stretch(1.0).into(),
+                        left: Units::Stretch(1.0).into(),
+                        ..default()
+                    }}
+                    atlas={TextureAtlasProps {
+                        handle: space_animation,
+                        position: Vec2 { x: (state.frame as f32 * 128.0), y: 0.0 },
+                        tile_size: Vec2 { x: 128.0, y: 16.0 },
+                    }}
+                />
+            );
+        }
     }
     true
 }

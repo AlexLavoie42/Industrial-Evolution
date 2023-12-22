@@ -26,6 +26,11 @@ pub fn ui_setup(
         player_money_hud_render,
     );
     widget_context.add_widget_system(
+        PowerMinigameHUDProps::default().get_name(),
+        widget_update_on_tick::<PowerMinigameHUDProps, EmptyState>,
+        power_minigame_hud_render,
+    );
+    widget_context.add_widget_system(
         ClockHUDProps::default().get_name(),
         widget_update_on_tick::<ClockHUDProps, EmptyState>,
         clock_hud_render,

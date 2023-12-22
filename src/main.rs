@@ -303,8 +303,8 @@ pub fn factory_setup(
             max_items: 2
         },
         production: {PlayerPowerProduction {
-            max_output: Power::Mechanical(60.0),
-            min_output: Power::Mechanical(5.0),
+            max_output: Power::Mechanical(28.0),
+            min_output: Power::Mechanical(16.0),
             count_timer: Timer::from_seconds(0.2, TimerMode::Repeating),
             input_count: 0,
             no_input_count: 0,
