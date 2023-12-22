@@ -25,6 +25,11 @@ impl ItemExportBundle {
     }
 }
 
+#[derive(Resource, Default)]
+pub struct SoldItems {
+    pub items: Vec<Entity>
+}
+
 impl DefaultWithSprites for ItemExportBundle {
     fn default_with_sprites(sprites: &SpriteStorage) -> Self {
         ItemExportBundle {
@@ -51,7 +56,8 @@ pub fn sell_export_items(
     mut economy: ResMut<Economy>,
     mut money: ResMut<PlayerMoney>,
     mut q_items: Query<&mut Item>,
-    mut q_depot: Query<(&ItemExport, &mut ItemContainer)>
+    mut q_depot: Query<(&ItemExport, &mut ItemContainer)>,
+    mut sold_items: ResMut<SoldItems>
 ) {
     for (depot, mut container) in q_depot.iter_mut() {
         let mut container_ref = container;
@@ -68,6 +74,7 @@ pub fn sell_export_items(
                     return true
                 }
             }
+            sold_items.items.push(*item_entity);
             println!("Selling item: {:?}", item_entity);
             money.add_money(price);
 

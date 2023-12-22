@@ -63,6 +63,7 @@ impl Plugin for ItemPlugin {
             //     input_toggle_import_mode
             // ).run_if(in_state(DayCycleState::Day)))
             .add_systems(OnEnter(DayCycleState::Day), (sell_export_items, item_imports_storage_fee, purchase_item_imports))
+            .insert_resource(SoldItems::default())
             // .add_systems(Update, (
             //     place_export.run_if(in_state(PlayerState::Export)),
             //     input_toggle_export_mode

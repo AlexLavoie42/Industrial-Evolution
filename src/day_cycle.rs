@@ -375,7 +375,6 @@ impl Default for ImportSelectorBundle {
     }
 }
 
-
 pub fn import_selector_render(
     In(entity): In<Entity>,
     widget_context: Res<KayakWidgetContext>,
