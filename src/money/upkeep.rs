@@ -11,34 +11,28 @@ impl Default for UpkeepTimer {
     }
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Reflect)]
 pub enum UpkeepSource {
     Factory,
     Worker,
-    
+    Living,
+    Storage
 }
 
 #[derive(Clone, Copy)]
-pub struct Upkeep (f32, UpkeepSource);
+pub struct Upkeep (pub f32, pub UpkeepSource);
 
 #[derive(Resource)]
 pub struct UpkeepTracker {
-    upkeep: Vec<Upkeep>,
-    total: f32
+    pub upkeep: Vec<Upkeep>
 }
 impl UpkeepTracker {
     pub fn new() -> Self {
         let mut upkeep = Self {
             upkeep: vec![
-                Upkeep (FACTORY_COST, UpkeepSource::Factory)
-            ],
-            total: 0.0
+            ]
         };
-        upkeep.update();
         upkeep
-    }
-    fn update(&mut self) {
-        self.total = self.upkeep.iter().map(|x| x.0).sum();
     }
     fn calculate_worker_upkeep(&mut self, workers: i32) {
         self.upkeep = self.upkeep.iter().filter(|x| x.1 != UpkeepSource::Worker).map(|x| *x).collect::<Vec<_>>();
@@ -48,10 +42,11 @@ impl UpkeepTracker {
     }
 }
 
-pub fn worker_upkeep(
+pub fn factory_upkeep(
     mut upkeep_tracker: ResMut<UpkeepTracker>,
     q_workers: Query<&Worker>,
 ) {
+    upkeep_tracker.upkeep.push(Upkeep(FACTORY_COST, UpkeepSource::Factory));
     upkeep_tracker.calculate_worker_upkeep(q_workers.iter().count() as i32);
 }
 
@@ -60,7 +55,7 @@ const LIVING_EXPENSE_BASE: f32 = 25.0;
 pub fn living_expenses(
     mut upkeep_tracker: ResMut<UpkeepTracker>,
 ) {
-    upkeep_tracker.upkeep.push(Upkeep(LIVING_EXPENSE_BASE, UpkeepSource::Worker));
+    upkeep_tracker.upkeep.push(Upkeep(LIVING_EXPENSE_BASE, UpkeepSource::Living));
 }
 
 pub fn upkeep_system(
@@ -69,8 +64,9 @@ pub fn upkeep_system(
     mut upkeep_tracker: ResMut<UpkeepTracker>,
     time: Res<Time>,
 ) {
-    upkeep_tracker.update();
-    if let Err(err) = player_money.try_remove_money(upkeep_tracker.total) {
+    let total = upkeep_tracker.upkeep.iter().map(|x| x.0).sum();
+    if let Err(err) = player_money.try_remove_money(total) {
         println!("Cant afford upkeep!");
     }
+    upkeep_tracker.upkeep.clear();
 }

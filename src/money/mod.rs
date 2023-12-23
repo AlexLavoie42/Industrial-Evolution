@@ -13,7 +13,7 @@ impl Plugin for MoneyPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(OnEnter(DayCycleState::Night), (market_forces, market_system))
-            .add_systems(OnEnter(DayCycleState::Night), (worker_upkeep, living_expenses))
+            .add_systems(OnEnter(DayCycleState::Night), (factory_upkeep, living_expenses))
             .add_systems(OnEnter(DayCycleState::Day), upkeep_system)
             .insert_resource(PlayerMoney {
                 amount: 2500.0
@@ -82,6 +82,18 @@ impl Default for AssemblyPrices {
 pub enum PurchasableItem {
     Good(GoodItem),
     Resource(ResourceItem)
+}
+
+impl PurchasableItem {
+    pub fn get_price(&self, economy: &Economy) -> Option<f32> {
+        economy.prices.get(self).map(|x| { x.current_price })
+    }
+    pub fn get_name(&self) -> &str { 
+        match self {
+            PurchasableItem::Good(x) => x.get_name(),
+            PurchasableItem::Resource(x) => x.get_name()
+        }
+    }
 }
 
 #[derive(Resource, Reflect)]

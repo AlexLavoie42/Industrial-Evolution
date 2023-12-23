@@ -27,7 +27,7 @@ impl ItemExportBundle {
 
 #[derive(Resource, Default)]
 pub struct SoldItems {
-    pub items: Vec<Entity>
+    pub items: Vec<(Item, f32)>
 }
 
 impl DefaultWithSprites for ItemExportBundle {
@@ -47,6 +47,24 @@ impl DefaultWithSprites for ItemExportBundle {
                 texture: sprites.exports.clone(),
                 ..default()
             }
+        }
+    }
+}
+
+pub fn calculate_sold_items(
+    mut q_items: Query<&mut Item>,
+    mut economy: ResMut<Economy>,
+    mut q_depot: Query<(&ItemExport, &mut ItemContainer)>,
+    mut sold_items: ResMut<SoldItems>
+) {
+    for (depot, mut container) in q_depot.iter_mut() {
+        let mut container_ref = container;
+        for item in container_ref.items.iter() {
+            let Some(item_entity) = item else { continue; };
+            let Ok(mut item) = q_items.get_mut(*item_entity) else { continue; };
+            
+            let Some(price) = item.get_price(&economy) else { continue; };
+            sold_items.items.push((item.clone(), price));
         }
     }
 }
@@ -74,13 +92,14 @@ pub fn sell_export_items(
                     return true
                 }
             }
-            sold_items.items.push(*item_entity);
+            sold_items.items.push((item.clone(), price));
             println!("Selling item: {:?}", item_entity);
             money.add_money(price);
 
             commands.entity(*item_entity).insert(DespawnLater);
             return false;
         });
+        // sold_items.items.clear();
     }
 }
 

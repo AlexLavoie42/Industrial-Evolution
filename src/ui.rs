@@ -76,6 +76,12 @@ pub fn ui_setup(
         widget_update_with_import_selection::<ImportSelector, EmptyState>,
         import_selector_render,
     );
+    widget_context.add_widget_system(
+        RevenueSummaryProps::default().get_name(),
+        widget_update_on_tick::<RevenueSummaryProps, EmptyState>,
+        render_revenue_summary,
+    );
+    
     
     let base_hud_menu_image = assets.load("Hud Menu-Thin.png");
 

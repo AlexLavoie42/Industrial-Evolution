@@ -1,4 +1,4 @@
-use bevy::ecs::system::EntityCommands;
+use bevy::{ecs::system::EntityCommands, reflect::Enum};
 
 use crate::*;
 
@@ -31,7 +31,11 @@ impl Default for WetPaperBundle {
     }
 }
 
-impl ItemType for MaterialItem {}
+impl ItemType for MaterialItem {
+    fn get_name(&self) -> &str {
+            self.variant_name()
+    }
+}
 
 impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for MaterialItem {
     fn spawn_bundle(

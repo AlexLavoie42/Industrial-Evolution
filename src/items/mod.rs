@@ -62,7 +62,8 @@ impl Plugin for ItemPlugin {
             //     place_import.run_if(in_state(PlayerState::Imports)),
             //     input_toggle_import_mode
             // ).run_if(in_state(DayCycleState::Day)))
-            .add_systems(OnEnter(DayCycleState::Day), (sell_export_items, item_imports_storage_fee, purchase_item_imports))
+            .add_systems(OnEnter(DayCycleState::Night), (sell_export_items, item_imports_storage_fee))
+            .add_systems(OnExit(DayCycleState::Night), (purchase_item_imports, |mut sold_items: ResMut<SoldItems>| sold_items.items.clear()))
             .insert_resource(SoldItems::default())
             // .add_systems(Update, (
             //     place_export.run_if(in_state(PlayerState::Export)),
@@ -81,7 +82,15 @@ pub enum Item {
     Material(MaterialItem)
 }
 
-impl ItemType for Item {}
+impl ItemType for Item {
+    fn get_name (&self) -> &str {
+        match self {
+            Item::Good(good) => good.get_name(),
+            Item::Resource(resource) => resource.get_name(),
+            Item::Material(material) => material.get_name(),
+        }
+    }
+}
 
 impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Item {
     fn spawn_bundle(
@@ -110,7 +119,9 @@ pub struct ItemBundle {
     pub sprite: SpriteBundle
 }
 
-pub trait ItemType {}
+pub trait ItemType {
+    fn get_name (&self) -> &str;
+}
 
 pub trait ItemSpawn<'a, 'w, 's>: Component {
     fn spawn_bundle(

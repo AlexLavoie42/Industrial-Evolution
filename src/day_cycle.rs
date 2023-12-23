@@ -132,6 +132,30 @@ pub fn night_ui_render(
                             ..default()
                         }}
                     />
+                    <PlayerMoneyHUDBundle
+                        styles={KStyle {
+                            position_type: KPositionType::SelfDirected.into(),
+                            offset: Edge::new(
+                                Units::Pixels(15.0),
+                                Units::Pixels(15.0),
+                                Units::Stretch(1.0),
+                                Units::Stretch(1.0),
+                            ).into(),
+                            ..default()
+                        }}
+                    />
+                    <RevenueSummaryBundle
+                        styles={KStyle {
+                            position_type: KPositionType::SelfDirected.into(),
+                            offset: Edge::new(
+                                Units::Stretch(0.35),
+                                Units::Stretch(0.0),
+                                Units::Stretch(1.0),
+                                Units::Stretch(1.0),
+                            ).into(),
+                            ..default()
+                        }}
+                    />
                     <ImageButtonBundle
                         styles={KStyle {
                             width: Units::Pixels(128.0).into(),
@@ -139,7 +163,7 @@ pub fn night_ui_render(
                             offset: Edge::new(
                                 Units::Stretch(1.0),
                                 Units::Pixels(25.0),
-                                Units::Stretch(0.45),
+                                Units::Pixels(25.0),
                                 Units::Stretch(1.0),
                             ).into(),
                             position_type: KPositionType::SelfDirected.into(),
@@ -466,6 +490,212 @@ pub fn import_selector_render(
                     }}
                 />
             </NinePatchBundle>
+        );
+    }
+    true
+}
+
+#[derive(Component, PartialEq, Clone, Copy, Default)]
+pub struct RevenueSummaryProps;
+impl Widget for RevenueSummaryProps {}
+
+#[derive(Bundle)]
+pub struct RevenueSummaryBundle {
+    pub props: RevenueSummaryProps,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub children: KChildren,
+    pub widget_name: WidgetName,
+}
+
+impl Default for RevenueSummaryBundle {
+    fn default() -> Self {
+        Self {
+            props: Default::default(),
+            styles: KStyle {
+                ..Default::default()
+            },
+            computed_styles: Default::default(),
+            children: Default::default(),
+            widget_name: RevenueSummaryProps::default().get_name(),
+        }
+    }
+}
+
+pub fn render_revenue_summary(
+    In(entity): In<Entity>,
+    mut commands: Commands,
+    mut query: Query<(&RevenueSummaryProps, &mut ComputedStyles, &KStyle, &KChildren)>,
+    widget_context: Res<KayakWidgetContext>,
+    upkeep: Res<UpkeepTracker>,
+    sold_items: Res<SoldItems>,
+    import_selections: Res<ImportSelections>,
+    economy: Res<Economy>,
+) -> bool {
+    if let Ok((props, mut computed_styles, base_style, base_children)) = query.get_mut(entity) {
+        *computed_styles = KStyle {
+            ..Default::default()
+        }
+        .with_style(base_style)
+        .into();
+
+        let parent_id = Some(entity);
+
+        let imports = import_selections.selected.iter()
+            .map(|item| (item.get_name(), item.get_price(&economy).unwrap_or(0.0), 1))
+            .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, (name, price, count)| {
+                if acc.iter().find(|x| x.0 == name).is_none() {
+                    acc.push((name, price, 1));
+                } else {
+                    let index = acc.iter().position(|x| x.0 == name).unwrap();
+                    acc[index].2 += 1;
+                    acc[index].1 += price;
+                }
+                acc
+            });
+        let imports_total = imports
+            .iter()
+            .fold(0.0, |acc, (_, price, _)| acc + price);
+
+
+        let folded_sold = sold_items.items
+            .iter()
+            .map(|(item, price)| (item.get_name(), price, 1))
+            .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, (item, price, count)| {
+                if acc.iter().find(|x| x.0 == item).is_none() {
+                    acc.push((item, *price, 1));
+                } else {
+                    let index = acc.iter().position(|x| x.0 == item).unwrap();
+                    acc[index].2 += 1;
+                    acc[index].1 += price;
+                }
+                acc
+            });
+
+        let folded_upkeep = upkeep.upkeep
+            .iter()
+            .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, Upkeep (price, source)| {
+                if acc.iter().find(|x| x.0 == source.variant_name()).is_none() {
+                    acc.push((source.variant_name(), *price, 1));
+                } else {
+                    let index = acc.iter().position(|x| x.0 == source.variant_name()).unwrap();
+                    acc[index].2 += 1;
+                    acc[index].1 += price;
+                }
+                acc
+            });
+
+        let total_sold = sold_items.items
+            .iter()
+            .fold(0.0, |acc, (_, price)| acc + price);
+
+        let total_upkeep = upkeep.upkeep
+            .iter()
+            .fold(0.0, |acc, Upkeep (price, _)| acc + price);
+
+        rsx!(
+            <ElementBundle>
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: "Profits:".to_string(),
+                        ..Default::default()
+                    }}
+                />
+                {
+                    for (item, price, count) in folded_sold {
+                        constructor!(
+                            <TextWidgetBundle
+                                text={TextProps {
+                                    content: format!("{:} x{:}: {:.2}", item, count, price),
+                                    ..default()
+                                }}
+                                styles={KStyle {
+                                    left: Units::Pixels(15.0).into(),
+                                    font_size: StyleProp::<f32>::Value(21.0),
+                                    ..Default::default()
+                                }}
+                            />
+                        );
+                    }
+                }
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("Total Profit: +${:.2}", total_sold),
+                        ..Default::default()
+                    }}
+                />
+
+                
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: "Expenses:".to_string(),
+                        ..Default::default()
+                    }}
+                />
+
+                {
+                    for (source, price, count) in folded_upkeep {
+                        constructor!(
+                            <TextWidgetBundle
+                                text={TextProps {
+                                    content: format!("{:} x{:}: -{:.2}", source, count, price),
+                                    ..default()
+                                }}
+                                styles={KStyle {
+                                    left: Units::Pixels(15.0).into(),
+                                    font_size: StyleProp::<f32>::Value(21.0),
+                                    ..Default::default()
+                                }}
+                            />
+                        );
+                    }
+                }
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("Total Expenses: -${:.2}", total_upkeep),
+                        ..Default::default()
+                    }}
+                />
+
+                
+                
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: "Imports:".to_string(),
+                        ..Default::default()
+                    }}
+                />
+                {
+                    for (item, price, count) in imports {
+                        constructor!(
+                            <TextWidgetBundle
+                                text={TextProps {
+                                    content: format!("{:} x{:}: -${:.2}", item, count, price),
+                                    ..default()
+                                }}
+                                styles={KStyle {
+                                    left: Units::Pixels(15.0).into(),
+                                    font_size: StyleProp::<f32>::Value(21.0),
+                                    ..Default::default()
+                                }}
+                            />
+                        );
+                        
+                    }
+                }
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("Total Purchases: -${:.2}", imports_total),
+                        ..Default::default()
+                    }}
+                />
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("Net Profit: {:.2}", total_sold - total_upkeep - imports_total),
+                        ..Default::default()
+                    }}
+                />
+            </ElementBundle>
         );
     }
     true

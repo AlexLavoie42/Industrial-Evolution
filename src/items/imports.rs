@@ -97,14 +97,10 @@ pub fn item_imports_storage_fee(
     mut upkeep_tracker: ResMut<UpkeepTracker>,
     mut q_imports: Query<&mut ItemContainer, With<ItemImport>>
 ) {
-    for mut container in q_imports.iter_mut() {
-        for mut item in container.items.iter_mut() {
+    for mut container in q_imports.iter() {
+        for item in container.items.iter() {
             if let Some(item_entity) = item {
-                if money.amount < STORAGE_FEE {
-                    println!("Player does not have enough money to pay storage fee");
-                    return;
-                }
-                money.amount -= STORAGE_FEE;
+                upkeep_tracker.upkeep.push(Upkeep (STORAGE_FEE, UpkeepSource::Storage));
             }
         }
     }
