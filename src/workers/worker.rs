@@ -42,7 +42,7 @@ impl DefaultWithSprites for WorkerBundle {
     fn default_with_sprites(sprites: &SpriteStorage) -> WorkerBundle {
         WorkerBundle {
             marker: Worker,
-            state: WorkerState::Paused,
+            state: WorkerState::Working,
             job: Job {
                 path: Vec::new(),
                 complexity: 0.0,

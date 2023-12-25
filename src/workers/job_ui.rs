@@ -1,3 +1,5 @@
+use bevy::reflect::Enum;
+
 use crate::*;
 
 #[derive(Component, Debug)]
@@ -134,4 +136,218 @@ impl Default for JobUIContainerBundle {
             widget_name: JobUIContainerProps::default().get_name(),
         }
     }
+}
+
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct WorkerMenuHUDProps;
+impl Widget for WorkerMenuHUDProps {}
+
+#[derive(Bundle)]
+pub struct WorkerMenuHUDBundle {
+    pub props: WorkerMenuHUDProps,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub widget_name: WidgetName,
+}
+impl Default for WorkerMenuHUDBundle {
+    fn default() -> Self {
+        Self {
+            props: Default::default(),
+            styles: KStyle {
+                ..default()
+            },
+            computed_styles: Default::default(),
+            widget_name: WorkerMenuHUDProps::default().get_name(),
+        }
+    }
+}
+
+pub fn worker_menu_hud_render(
+    In(entity): In<Entity>,
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    widget_context: Res<KayakWidgetContext>,
+    mut query: Query<(&mut WorkerMenuHUDProps, &mut ComputedStyles, &KStyle)>,
+    player_state: Res<State<PlayerState>>,
+    selected_worker: Res<SelectedWorker>,
+    mut q_jobs: Query<(&mut WorkerState, &Job)>,
+    time: Res<Time>,
+) -> bool {
+    if let Ok((mut props, mut computed_styles, style)) = query.get_mut(entity) {
+        *computed_styles = KStyle {
+            ..Default::default()
+        }
+        .with_style(style)
+        .into();
+        if player_state.get() == &PlayerState::Jobs {
+            let parent_id = Some(entity);
+
+            let background = assets.load("Worker Menu.png");
+
+            let Some(selected_worker) = selected_worker.selected else { return true };
+
+            let Ok((worker_state, job)) = q_jobs.get_mut(selected_worker) else { return true };
+
+            let current_job = job.current_job.unwrap_or_default();
+            let current_job_name = job.path.get(current_job)
+                .map_or("None", |job| job.action.variant_name());
+            rsx!(
+                <NinePatchBundle
+                    nine_patch={NinePatch {
+                        handle: background,
+                        ..default()
+                    }}
+                    on_event={
+                        OnEvent::new(
+                            move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut placement_state: ResMut<NextState<PlacementState>> | {
+                                if let EventType::Hover(_) = event.event_type {
+                                    placement_state.set(PlacementState::Blocked);
+                                }
+                                if let EventType::MouseOut(_) = event.event_type {
+                                    placement_state.set(PlacementState::Allowed);
+                                }
+                            }
+                        )
+                    }
+                >
+                    <ElementBundle 
+                        styles={KStyle {
+                            height: Units::Pixels(15.0).into(),       
+                            ..default()
+                        }}
+                    />
+                    <ElementBundle 
+                        styles={KStyle {
+                            layout_type: LayoutType::Row.into(),
+                            height: Units::Pixels(32.0).into(),
+                            ..default()
+                        }}    
+                    >
+                        <TextWidgetBundle
+                            text={TextProps {
+                                content: format!("Current Job: {:}: {:}", current_job, current_job_name),
+                                ..default()      
+                            }}
+                        />
+                        {
+                            if *worker_state == WorkerState::Paused {
+                                constructor!(
+                                    <NinePatchBundle
+                                        styles={KStyle {
+                                            width: Units::Pixels(32.0).into(),
+                                            height: Units::Pixels(32.0).into(),
+                                            ..default()
+                                        }}
+                                        nine_patch={NinePatch {
+                                            handle: assets.load("Start Icon.png"),
+                                            ..default()
+                                        }}
+                                        on_event={OnEvent::new(
+                                            |
+                                                entity: In<Entity>,
+                                                selected_worker: Res<SelectedWorker>,
+                                                mut q_workers: Query<&mut WorkerState>,
+                                                event: ResMut<KEvent>,
+                                                mut placement_state: ResMut<NextState<PlacementState>>,
+                                            | {
+                                                if let EventType::Click(_) = event.event_type {
+                                                    if let Some(selected_worker) = selected_worker.selected {
+                                                        if let Ok(mut worker) = q_workers.get_mut(selected_worker) {
+                                                            *worker = WorkerState::Working;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        )}
+                                    />
+                                );
+                            } else {
+                                constructor!(
+                                    <NinePatchBundle
+                                        styles={KStyle {
+                                            width: Units::Pixels(32.0).into(),
+                                            height: Units::Pixels(32.0).into(),
+                                            ..default()
+                                        }}
+                                        nine_patch={NinePatch {
+                                            handle: assets.load("Pause Icon.png"),
+                                            ..default()
+                                        }}
+                                        on_event={OnEvent::new(
+                                            |
+                                                entity: In<Entity>,
+                                                selected_worker: Res<SelectedWorker>,
+                                                mut q_workers: Query<&mut WorkerState>,
+                                                event: ResMut<KEvent>,
+                                                mut placement_state: ResMut<NextState<PlacementState>>,
+                                            | {
+                                                if let EventType::Click(_) = event.event_type {
+                                                    if let Some(selected_worker) = selected_worker.selected {
+                                                        if let Ok(mut worker) = q_workers.get_mut(selected_worker) {
+                                                            *worker = WorkerState::Paused;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        )}
+                                    />
+                                );
+                            }
+                        }
+                        <NinePatchBundle
+                            styles={KStyle {
+                                width: Units::Pixels(32.0).into(),
+                                height: Units::Pixels(32.0).into(),
+                                ..default()
+                            }}
+                            nine_patch={NinePatch {
+                                handle: assets.load("Skip Icon.png"),
+                                ..default()
+                            }}
+                            on_event={OnEvent::new(
+                                |
+                                    entity: In<Entity>,
+                                    selected_worker: Res<SelectedWorker>,
+                                    mut q_jobs: Query<&mut Job>,
+                                    event: ResMut<KEvent>,
+                                    mut placement_state: ResMut<NextState<PlacementState>>,
+                                | {
+                                    if let EventType::Click(_) = event.event_type {
+                                        if let Some(selected_worker) = selected_worker.selected {
+                                            if let Ok(mut job) = q_jobs.get_mut(selected_worker) {
+                                                let current_job = job.current_job.unwrap_or_default();
+                                                if let Some(active_job) = job.path.get_mut(current_job) {
+                                                    active_job.job_status = JobStatus::Completed;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            )}
+                        />
+                    </ElementBundle>
+                    {
+                        for job_path in job.path.iter() {
+                            constructor!(
+                                <TextWidgetBundle
+                                    text={TextProps {
+                                        content: job_path.action.variant_name().to_owned(),
+                                        ..default()
+                                    }}
+                                    styles={KStyle {
+                                        color: Color::rgb(0.0, 0.0, 0.0).into(),
+                                        font_size: StyleProp::Value(22.0),
+                                        left: StyleProp::Value(Units::Stretch(1.0)),
+                                        right: StyleProp::Value(Units::Stretch(1.0)),
+                                        ..default()
+                                    }}
+                                />
+                            );
+                        }
+                    }
+                </NinePatchBundle>
+            );
+        }
+    }
+    true
 }

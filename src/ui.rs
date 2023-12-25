@@ -16,6 +16,11 @@ pub fn ui_setup(
     widget_context.add_widget_data::<ImageButtonProps, EmptyState>();
 
     widget_context.add_widget_system(
+        HUDContainerProps::default().get_name(),
+        widget_update_with_day_state::<HUDContainerProps, EmptyState>,
+        hud_container_render,
+    );
+    widget_context.add_widget_system(
         // We are registering these systems with a specific WidgetName.
         PlayerMoneyHUDProps::default().get_name(),
         // widget_update auto diffs props and state.
@@ -52,14 +57,16 @@ pub fn ui_setup(
         assemblies_hud_render,
     );
     widget_context.add_widget_system(
+        WorkerMenuHUDProps::default().get_name(),
+        widget_update_on_tick::<WorkerMenuHUDProps, EmptyState>,
+        worker_menu_hud_render,
+    );
+
+
+    widget_context.add_widget_system(
         NightUIProps::default().get_name(),
         widget_update_with_day_state::<NightUIProps, EmptyState>,
         night_ui_render,
-    );
-    widget_context.add_widget_system(
-        HUDContainerProps::default().get_name(),
-        widget_update_with_day_state::<HUDContainerProps, EmptyState>,
-        hud_container_render,
     );
     widget_context.add_widget_system(
         DayCountText::default().get_name(),

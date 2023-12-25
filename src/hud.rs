@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use kayak_ui::prelude::kayak_font::{TextLayout, TextProperties};
 
 use crate::*;
@@ -105,6 +103,19 @@ pub fn hud_container_render(
                                     ..default()
                                 }}
                              />
+                             
+                            <WorkerMenuHUDBundle
+                                styles={KStyle {
+                                    position_type: KPositionType::SelfDirected.into(),
+                                    width: Units::Pixels(260.0).into(),
+                                    height: Units::Stretch(3.0).into(),
+                                    top: Units::Stretch(0.65).into(),
+                                    bottom: Units::Stretch(1.0).into(),
+                                    left: Units::Pixels(25.0).into(),
+                                    z_index: StyleProp::Value(100).into(),
+                                    ..default()
+                                }}
+                            />
                         </ElementBundle>
                     );
                 }}
@@ -269,6 +280,8 @@ pub fn clock_hud_render(
     }
     true
 }
+
+
 #[derive(Component, Clone, PartialEq, Default)]
 pub struct PowerMinigameHUDProps;
 impl Widget for PowerMinigameHUDProps {}
