@@ -195,15 +195,15 @@ pub fn player_pickup_item(
             if let Some((container, _, container_entity)) = near_container.as_mut() {
                 let Some(Some(child)) = children.map(|c| c.first()) else { return; };
                 let Ok((_, _, _, item_type)) = q_items.get(*child) else { return; };
+                let Ok((item, _, mut item_transform, item_type)) = q_items.get_mut(*child) else {
+                    if let Err(err) = container.remove_item(Some(*child)) {
+                        println!("Error : {err}");
+                    }
+                    return;
+                };
                 if let Ok(_) = container.add_item((Some(*child), Some(*item_type))) {
                     match player_container.remove_item(Some(*child)) {
                         Ok(_) => {
-                            let Ok((item, _, mut item_transform, item_type)) = q_items.get_mut(*child) else {
-                                if let Err(err) = container.remove_item(Some(*child)) {
-                                    println!("Error picking item back up: {err}");
-                                }
-                                return;
-                            };
                             commands.entity(player).remove_children(&[*child]);
                             commands.entity(*container_entity).push_children(&[*child]);
                             item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
@@ -222,7 +222,7 @@ pub fn player_pickup_item(
             if let Some((mut container, _, container_entity)) = near_io_container {
                 let Some(Some(child)) = children.map(|c| c.first()) else { return; };
                 let Ok((_, _, _, item_type)) = q_items.get(*child) else { return; };
-                if let Ok(_) = container.input.add_item((Some(*child), Some(*item_type))) {
+                if let Ok(_) = container.input.add_item((Some(*child), Some(*item_type)), commands, container_entity, Some(player), &mut transform) {
                     match player_container.remove_item(Some(*child)) {
                         Ok(_) => {
                             let Ok((item, _, mut item_transform, item_type)) = q_items.get_mut(*child) else {
@@ -265,11 +265,12 @@ pub fn player_pickup_item(
                     println!("Error removing item: {err}");
                 }
             }
+
+            let container_entity = item_container.map(|c| c.2).or(io_container.map(|c| c.2));
     
-            if let Ok(_) = player_container.add_item((Some(entity), Some(*item_type))) {
+            if let Ok(_) = player_container.add_item((Some(entity), Some(*item_type)), commands, player, container_entity, &mut transform) {
                 transform.translation.x = 16.0;
                 transform.translation.y = 8.0;
-                commands.entity(player).push_children(&[entity]);
                 return;
             }
         }

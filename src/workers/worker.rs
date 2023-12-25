@@ -195,14 +195,13 @@ pub fn worker_pick_up_item(
             continue;
         }
 
-        let Ok(_) = container.add_item((Some(ev.item), Some(*item_type))) else {
+        let Ok(_) = container.add_item((Some(ev.item), Some(*item_type)), commands, ev.worker, ev.container, &mut item_transform) else {
             if let Some(current_job_i) = job.current_job {
                 let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
                 current_job.job_status = JobStatus::Completed;
             }
             continue;
-        }; 
-        commands.entity(ev.worker).add_child(ev.item);
+        };
         item_transform.translation = Vec3::new(16.0, 8.0, item_transform.translation.z);
         println!("Picked up item {:?}", container);
         
@@ -255,17 +254,12 @@ pub fn worker_drop_item(
 
         let mut drop_item = |container: &mut ItemContainer, worker_container: &mut ItemContainer| {
             // TODO: Safe child push (check entity exists)
-            commands.entity(ev.worker).remove_children([ev.item].as_slice());
-            commands.entity(container_entity).push_children(&[ev.item]);
-            item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
             println!("Dropping item {:?} into {:?}", ev.item, container_entity);
             
-            if let Err(err) = container.add_item((Some(ev.item), Some(*item_type))) {
+            if let Err(err) = container.add_item((Some(ev.item), Some(*item_type)), commands, container_entity, Some(ev.worker), &mut item_transform) {
                 // TODO: Waiting?
                 job_error.set_warning(format!("Error adding item to container: {err}").as_str());
-                commands.entity(container_entity).remove_children([ev.item].as_slice());
-                commands.entity(ev.worker).push_children(&[ev.item]);
-                if let Err(err) = worker_container.add_item((Some(ev.item), Some(*item_type))) {
+                if let Err(err) = worker_container.add_item((Some(ev.item), Some(*item_type)), commands, container_entity, Some(ev.worker), &mut item_transform) {
                     job_error.set_error(format!("Error picking item back up: {err}").as_str());
                 }
             } else {

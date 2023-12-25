@@ -14,7 +14,14 @@ pub struct ItemStackBundle {
 }
 
 impl ItemContainer {
-    pub fn add_item(&mut self, item: (Option<Entity>, Option<Item>)) -> Result<(), &'static str> {
+    pub fn add_item(
+        &mut self,
+        item: (Option<Entity>, Option<Item>),
+        mut commands: Commands,
+        container_entity: Entity,
+        source_entity: Option<Entity>,
+        item_transform: &mut Transform
+    ) -> Result<(), &'static str> {
         if self.items.len() >= self.max_items {
             return Err("Maximum number of items reached");
         }
@@ -23,6 +30,13 @@ impl ItemContainer {
                 return Err("Invalid item type");
             }
         }
+        if let (Some(item_entity), _) = item {
+            if let Some(source_entity) = source_entity {
+                commands.entity(source_entity).remove_children([item_entity].as_slice());
+            }
+            commands.entity(container_entity).push_children(&[item_entity]);
+        }
+        item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
         Ok(self.items.push(item.0))
     }
 

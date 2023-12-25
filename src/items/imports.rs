@@ -1,4 +1,4 @@
-use bevy::sprite::Anchor;
+use bevy::{sprite::Anchor, ecs::world};
 
 use crate::*;
 
@@ -71,19 +71,20 @@ pub fn purchase_item_imports(
                     PurchasableItem::Good(item) => Item::Good(*item),
                     PurchasableItem::Resource(item) => Item::Resource(*item),
                 };
-                match container.add_item((Some(item_entity), Some(selected_item))) {
-                    Ok(_) => {
-                        commands.entity(import_entity).push_children(&[item_entity]);
-                        
-                        let Some(price) = selected_item.get_price(&economy) else { continue; };
-                        let Ok(_) = money.try_remove_money(price) else { continue; };
-                        let Ok(_) = selected_item.buy(&mut economy, 1) else { continue; };
-                    },
-                    Err(e) => {
-                        println!("Error adding item to container: {:?}", e);
-                        item_command.despawn_recursive();
+                commands.add(|world: &mut World| {
+                    let mut item_transform = world.get_mut::<Transform>(item_entity).unwrap();
+                    match container.add_item((Some(item_entity), Some(selected_item)), commands, import_entity, None, &mut item_transform) {
+                        Ok(_) => {
+                            let Some(price) = selected_item.get_price(&economy) else { return; };
+                            let Ok(_) = money.try_remove_money(price) else { return; };
+                            let Ok(_) = selected_item.buy(&mut economy, 1) else { return; };
+                        },
+                        Err(e) => {
+                            println!("Error adding item to container: {:?}", e);
+                            item_command.despawn_recursive();
+                        }
                     }
-                }
+                });
             }
         }
     }
