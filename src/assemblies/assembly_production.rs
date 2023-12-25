@@ -204,31 +204,21 @@ pub fn produce_goods(
         if let Some(assembly_output) = &assembly_output.0 {
             let mut output_entity_commands: bevy::ecs::system::EntityCommands<'_, '_, '_> = assembly_output.spawn_bundle(&mut commands);
             let output_entity = output_entity_commands.id();
-            commands.add(|world: &mut World| {
-                let mut item_transform = world.get_mut::<Transform>(output_entity).unwrap();
-                if let Ok(_) = assembly_items.output.add_item(
-                    (Some(output_entity), Some(*assembly_output)),
-                    commands,
-                    assembly_entity,
-                    None,
-                    &mut item_transform
-                ) {
-                    if let Ok(_) = assembly_items.input.remove_item(Some(input_entity)) {
-                        commands.entity(assembly_entity).remove_children(&[input_entity]);
-                        commands.entity(input_entity).insert(DespawnLater);
-                        commands.entity(assembly_entity).push_children(&[output_entity]);
-    
-                        finish_production();
-                    } else {
-                        output_entity_commands.despawn();
-                        if let Err(err) = assembly_items.output.remove_item(Some(output_entity)) {}
-                    }
+            if let Ok(_) = assembly_items.output.add_item((Some(output_entity), Some(*assembly_output))) {
+                if let Ok(_) = assembly_items.input.remove_item(Some(input_entity)) {
+                    commands.entity(assembly_entity).remove_children(&[input_entity]);
+                    commands.entity(input_entity).insert(DespawnLater);
+                    commands.entity(assembly_entity).push_children(&[output_entity]);
+
+                    finish_production();
                 } else {
                     output_entity_commands.despawn();
                     if let Err(err) = assembly_items.output.remove_item(Some(output_entity)) {}
                 }
-            })
-
+            } else {
+                output_entity_commands.despawn();
+                if let Err(err) = assembly_items.output.remove_item(Some(output_entity)) {}
+            }
         } else {
             if let Ok(_) = assembly_items.input.remove_item(Some(input_entity)) {
                 commands.entity(assembly_entity).remove_children(&[input_entity]);
