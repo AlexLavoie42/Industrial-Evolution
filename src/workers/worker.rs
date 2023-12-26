@@ -51,7 +51,7 @@ impl DefaultWithSprites for WorkerBundle {
             },
             job_error: JobError::new(),
             job_waiting: JobWaiting(false),
-            worker_items: ItemContainer { items: Vec::new(), max_items: 2, item_type: None },
+            worker_items: ItemContainer { items: Vec::new(), max_items: 2, item_type: None, ..Default::default() },
             production: PowerProduction {
                 power: Power::Mechanical(20.0),
                 output: None
@@ -203,7 +203,7 @@ pub fn worker_pick_up_item(
             continue;
         }; 
         commands.entity(ev.worker).add_child(ev.item);
-        item_transform.translation = Vec3::new(16.0, 8.0, item_transform.translation.z);
+        *item_transform = container.get_transform();
         println!("Picked up item {:?}", container);
         
         if let Some(container_entity) = ev.container {
@@ -257,7 +257,7 @@ pub fn worker_drop_item(
             // TODO: Safe child push (check entity exists)
             commands.entity(ev.worker).remove_children([ev.item].as_slice());
             commands.entity(container_entity).push_children(&[ev.item]);
-            item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
+            *item_transform = container.get_transform();
             println!("Dropping item {:?} into {:?}", ev.item, container_entity);
             
             if let Err(err) = container.add_item((Some(ev.item), Some(*item_type))) {

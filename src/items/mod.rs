@@ -62,6 +62,7 @@ impl Plugin for ItemPlugin {
             //     place_import.run_if(in_state(PlayerState::Imports)),
             //     input_toggle_import_mode
             // ).run_if(in_state(DayCycleState::Day)))
+            .add_systems(Update, move_container_items)
             .add_systems(OnEnter(DayCycleState::Night), (sell_export_items, item_imports_storage_fee))
             .add_systems(OnExit(DayCycleState::Night), (purchase_item_imports, |mut sold_items: ResMut<SoldItems>| sold_items.items.clear()))
             .insert_resource(SoldItems::default())
@@ -109,6 +110,24 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Item {
             }
         }
     }
+
+    fn spawn_bundle_with_transform(
+        &self,
+        commands: &'a mut Commands<'w, 's>,
+        transform: Transform
+    ) -> EntityCommands<'w, 's, 'a> {
+        match self {
+            Item::Good(good) => {
+                good.spawn_bundle_with_transform(commands, transform)
+            },
+            Item::Resource(resource) => {
+                resource.spawn_bundle_with_transform(commands, transform)
+            },
+            Item::Material(material) => {
+                material.spawn_bundle_with_transform(commands, transform)
+            }
+        }
+    }
 }
 
 impl Clickable for Item {}
@@ -127,5 +146,11 @@ pub trait ItemSpawn<'a, 'w, 's>: Component {
     fn spawn_bundle(
         &self,
         commands: &'a mut Commands<'w, 's>
+    ) -> EntityCommands<'w, 's, 'a>;
+
+    fn spawn_bundle_with_transform(
+        &self,
+        commands: &'a mut Commands<'w, 's>,
+        transform: Transform
     ) -> EntityCommands<'w, 's, 'a>;
 }

@@ -26,6 +26,29 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for ResourceItem {
             ResourceItem::Pulp => commands.spawn(PulpBundle::default())
         }
     }
+
+    fn spawn_bundle_with_transform(
+        &self,
+        commands: &'a mut Commands<'w, 's>,
+        transform: Transform
+    ) -> EntityCommands<'w, 's, 'a> {
+        match self {
+            ResourceItem::Wood => commands.spawn(WoodBundle {
+                sprite: SpriteBundle {
+                    transform,
+                    ..WoodBundle::default().sprite
+                },
+                ..default()
+            }),
+            ResourceItem::Pulp => commands.spawn(PulpBundle {
+                sprite: SpriteBundle {
+                    transform,
+                    ..PulpBundle::default().sprite
+                },
+                ..default()
+            })
+        }
+    }
 }
 
 #[derive(Bundle)]

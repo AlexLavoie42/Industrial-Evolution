@@ -48,4 +48,22 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for MaterialItem {
             }
         }
     }
+
+    fn spawn_bundle_with_transform(
+        &self,
+        commands: &'a mut Commands<'w, 's>,
+        transform: Transform
+    ) -> EntityCommands<'w, 's, 'a> {
+        match self {
+            MaterialItem::WetPaper => {
+                commands.spawn(WetPaperBundle {
+                    sprite: SpriteBundle {
+                        transform,
+                        ..WetPaperBundle::default().sprite
+                    },
+                    ..Default::default()
+                })
+            }
+        }
+    }
 }

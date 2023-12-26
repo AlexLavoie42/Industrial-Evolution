@@ -37,7 +37,10 @@ impl DefaultWithSprites for ItemExportBundle {
             items: ItemContainer {
                 items: Vec::new(),
                 item_type: None,
-                max_items: 100
+                max_items: 64,
+                start_transform: Transform::from_xyz(-58.0, 26.0, 4.0),
+                width: 8,
+                ..Default::default()
             },
             sprite: SpriteBundle {
                 sprite: Sprite {

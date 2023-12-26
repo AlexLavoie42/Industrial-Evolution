@@ -4,7 +4,21 @@ use crate::*;
 pub struct ItemContainer {
     pub items: Vec<Option<Entity>>,
     pub max_items: usize,
-    pub item_type: Option<Item>
+    pub item_type: Option<Item>,
+    pub start_transform: Transform,
+    pub width: i32,
+}
+impl Default for ItemContainer {
+    fn default() -> Self {
+        ItemContainer {
+            items: Vec::new(),
+            max_items: 1,
+            item_type: None,
+            start_transform: Transform::default(),
+            width: 1,
+        }
+
+    }
 }
 
 pub struct ItemStackBundle {
@@ -51,6 +65,58 @@ impl ItemContainer {
 
     pub fn get_items(&self) -> &[Option<Entity>] {
         &self.items
+    }
+
+    pub fn get_transform(&self) -> Transform {
+        let mut y = 0;
+        let mut x = 0;
+        for i in 1..self.items.len() {
+            if i % self.width as usize == 0 {
+                y += 1;
+                x = 0;
+            } else {
+                x += 1;
+            }
+        }
+        Transform::from_xyz(
+            self.start_transform.translation.x + x as f32 * 16.0,
+            self.start_transform.translation.y - y as f32 * 16.0,
+            2.0
+        )
+        
+    }
+
+    pub fn get_transform_at_index(&self, index: usize) -> Transform {
+        let mut y = 0;
+        let mut x = 0;
+
+        for i in 0..index {
+            if i > 0 && i % self.width as usize == 0 {
+                y += 1;
+                x = 0;
+            } else {
+                x += 1;
+            }
+        }
+        Transform::from_xyz(
+            self.start_transform.translation.x + x as f32 * 16.0,
+            self.start_transform.translation.y - y as f32 * 16.0,
+            2.0
+        )
+    }
+}
+
+pub fn move_container_items(
+    mut q_containers: Query<&ItemContainer>,
+    mut q_items: Query<&mut Transform, With<Item>>,
+) {
+    for container in q_containers.iter() {
+        for (i, item) in container.items.iter().enumerate() {
+            if let Some(entity) = item {
+                let Ok(mut transform) = q_items.get_mut(*entity) else { continue };
+                *transform = container.get_transform_at_index(i);
+            }
+        }
     }
 }
 

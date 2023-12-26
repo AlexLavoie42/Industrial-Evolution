@@ -24,6 +24,22 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for GoodItem {
             GoodItem::Paper => commands.spawn(PaperBundle::default())
         }
     }
+
+    fn spawn_bundle_with_transform(
+        &self,
+        commands: &'a mut Commands<'w, 's>,
+        transform: Transform
+    ) -> EntityCommands<'w, 's, 'a> {
+        match self {
+            GoodItem::Paper => commands.spawn(PaperBundle {
+                sprite: SpriteBundle {
+                    transform,
+                    ..PaperBundle::default().sprite
+                },
+                ..Default::default()
+            })
+        }
+    }
 }
 
 #[derive(Bundle)]

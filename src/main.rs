@@ -300,7 +300,9 @@ pub fn factory_setup(
         container: ItemContainer { 
             items: Vec::new(),
             item_type: None,
-            max_items: 2
+            max_items: 2,
+            start_transform: Transform::from_xyz(-16.0, 8.0, 6.0),
+            ..default()
         },
         production: {PlayerPowerProduction {
             max_output: Power::Mechanical(28.0),
@@ -326,17 +328,28 @@ pub fn factory_setup(
 
 pub fn reset_factory(
     mut commands: Commands,
-    mut q_workers: Query<(&mut Transform, &mut Job), (With<Worker>, Without<Player>)>,
-    mut q_player: Query<&mut Transform, (With<Player>, Without<Worker>)>,
+    mut q_workers: Query<(&mut Transform, &mut Job, &mut ItemContainer, &Children, Entity), (With<Worker>, Without<Player>)>,
+    mut q_player: Query<(&mut Transform, &mut ItemContainer, Entity), (With<Player>, Without<Worker>)>,
     mut player_state: ResMut<NextState<PlayerState>>,
 ) {
-    let mut player = q_player.get_single_mut().unwrap();
+    let (mut player, mut container, entity) = q_player.get_single_mut().unwrap();
+    // commands.entity(entity).remove_children(children);
+    container.items.clear();
+
     player.translation.x = 0.0;
     player.translation.y = 0.0;
 
     player_state.set(PlayerState::None);
 
-    for (mut worker_transform, mut worker_job) in q_workers.iter_mut() {
+    for (mut worker_transform, mut worker_job, mut container, children, entity) in q_workers.iter_mut() {
+        commands.entity(entity).remove_children(children);
+        container.items.clear();
+
+        for mut point in worker_job.path.iter_mut() {
+            point.job_status = JobStatus::Active;
+        }
+        worker_job.current_job = None;
+        
         worker_transform.translation.x = 0.0;
         worker_transform.translation.y = 0.0;
     }

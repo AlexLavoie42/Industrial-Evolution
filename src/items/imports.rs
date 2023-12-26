@@ -35,7 +35,9 @@ impl DefaultWithSprites for ItemImportBundle {
             container: ItemContainer {
                 items: Vec::new(),
                 item_type: None,
-                max_items: 100
+                max_items: 64,
+                start_transform: Transform::from_xyz(-58.0, 26.0, 4.0),
+                width: 8
             },
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -61,9 +63,10 @@ pub fn purchase_item_imports(
     for (import_entity, mut container) in q_imports.iter_mut() {
         if container.items.len() < container.max_items {
             for selection in selected_imports.selected.iter() {
+                let transform = container.get_transform();
                 let mut item_command = match selection {
-                    PurchasableItem::Good(item) => item.spawn_bundle(&mut commands),
-                    PurchasableItem::Resource(item) => item.spawn_bundle(&mut commands)
+                    PurchasableItem::Good(item) => item.spawn_bundle_with_transform(&mut commands, transform),
+                    PurchasableItem::Resource(item) => item.spawn_bundle_with_transform(&mut commands, transform)
                 };
                 let item_entity = item_command.id();
 

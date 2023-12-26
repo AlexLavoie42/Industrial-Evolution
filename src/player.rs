@@ -206,7 +206,7 @@ pub fn player_pickup_item(
                             };
                             commands.entity(player).remove_children(&[*child]);
                             commands.entity(*container_entity).push_children(&[*child]);
-                            item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
+                            *item_transform = container.get_transform();
                             return;
                         },
                         Err(_) => {
@@ -233,7 +233,7 @@ pub fn player_pickup_item(
                             };
                             commands.entity(player).remove_children(&[*child]);
                             commands.entity(container_entity).push_children(&[*child]);
-                            item_transform.translation = Vec3::new(0.0, 0.0, item_transform.translation.z);
+                            *item_transform = container.input.get_transform();
                             return;
                         },
                         Err(_) => {

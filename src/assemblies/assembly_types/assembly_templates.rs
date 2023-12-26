@@ -69,12 +69,18 @@ impl DefaultWithSprites for PulpMillBundle {
                 input: ItemContainer {
                     items: Vec::new(),
                     item_type: Some(Item::Resource(ResourceItem::Wood)),
-                    max_items: 5
+                    max_items: 4,
+                    start_transform: Transform::from_xyz(-26.0, 26.0, 2.0),
+                    width: 4,
+                    ..Default::default()
                 },
                 output: ItemContainer {
                     items: Vec::new(),
                     item_type: None,
-                    max_items: 3
+                    max_items: 4,
+                    start_transform: Transform::from_xyz(-26.0, -26.0, 2.0),
+                    width: 4,
+                    ..Default::default()
                 }
             },
             solid: SolidEntity,
@@ -118,12 +124,18 @@ impl DefaultWithSprites for PaperPressBundle {
                 input: ItemContainer {
                     items: Vec::new(),
                     item_type: Some(Item::Resource(ResourceItem::Pulp)),
-                    max_items: 5
+                    max_items: 4,
+                    start_transform: Transform::from_xyz(-26.0, 26.0, 2.0),
+                    width: 4,
+                    ..Default::default()
                 },
                 output: ItemContainer {
                     items: Vec::new(),
                     item_type: None,
-                    max_items: 3
+                    max_items: 4,
+                    start_transform: Transform::from_xyz(-26.0, 0.0, 2.0),
+                    width: 4,
+                    ..Default::default()
                 }
             },
             solid: SolidEntity,
@@ -160,12 +172,18 @@ impl DefaultWithSprites for PaperDrierBundle {
                 input: ItemContainer {
                     items: Vec::new(),
                     item_type: Some(Item::Material(MaterialItem::WetPaper)),
-                    max_items: 25
+                    max_items: 25,
+                    start_transform: Transform::from_xyz(-26.0, 26.0, 2.0),
+                    width: 2,
+                    ..Default::default()
                 },
                 output: ItemContainer {
                     items: Vec::new(),
                     item_type: None,
-                    max_items: 2
+                    max_items: 4,
+                    start_transform: Transform::from_xyz(-26.0, -26.0, 2.0),
+                    width: 4,
+                    ..Default::default()
                 }
             },
             solid: SolidEntity,
