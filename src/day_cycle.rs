@@ -404,6 +404,7 @@ pub fn import_selector_render(
     widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&ImportSelector, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    economy: Res<Economy>,
     assets: Res<AssetServer>,
     imports_selections: Res<ImportSelections>,
 ) -> bool {
@@ -426,70 +427,130 @@ pub fn import_selector_render(
 
         let item = props.item.clone();
 
+        let supply = item.get_supply(&economy).unwrap_or(0.0).floor() > selected_count as f32;
+
+        let add_selection = OnEvent::new(
+            move |
+                In(entity): In<Entity>,
+                event: ResMut<KEvent>,
+                mut selected_imports: ResMut<ImportSelections>,
+                economy: Res<Economy>
+            | {
+                if let EventType::Click(_) = event.event_type {
+                    if supply {
+                        selected_imports.selected.push(item.clone());
+                    } else {
+                        println!("Not enough supply");
+                    }
+                }
+            },
+        );
+        let remove_selection = OnEvent::new(
+            move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_imports: ResMut<ImportSelections>, props: Query<&ImportSelector> | {
+                if let EventType::Click(_) = event.event_type {
+                    if let Some(index) = selected_imports.selected.iter().position(|i| i == &item) {
+                        selected_imports.selected.remove(index);
+                    }
+                }
+            },
+        );
+
         rsx!(
-            <NinePatchBundle
-                styles={KStyle {
-                    layout_type: LayoutType::Row.into(),
-                    ..default()
-                }}
-            >
-                <TextWidgetBundle
-                    text={TextProps {
-                        content: format!("{:}: {:.2} || Selected: {:0} ", item_name, props.price, selected_count),
-                        ..Default::default()
-                    }}
-                />
-                <ImageButtonBundle
+            <ElementBundle>
+                <NinePatchBundle
                     styles={KStyle {
-                        width: Units::Pixels(32.0).into(),
-                        height: Units::Pixels(32.0).into(),
-                        top: Units::Stretch(0.25).into(),
-                        bottom: Units::Stretch(1.0).into(),
-                        left: Units::Pixels(10.0).into(),
-                        ..Default::default()
+                        layout_type: LayoutType::Row.into(),
+                        ..default()
                     }}
+                >
+                    <TextWidgetBundle
+                        text={TextProps {
+                            content: format!("{:}: {:.2}", item_name, props.price),
+                            ..Default::default()
+                        }}
+                        styles={KStyle {
+                            color: if supply {
+                                Color::WHITE.into()
+                            } else {
+                                Color::RED.into()
+                            },
+                            width: Units::Pixels(300.0).into(),
+                            font_size: StyleProp::<f32>::Value(48.0),
+                            ..Default::default()
+                        }}
+                    />
+                    <TextWidgetBundle
+                        text={TextProps {
+                            content: format!("| {:0} ", selected_count),
+                            ..Default::default()
+                        }}
+                        styles={KStyle {
+                            color: if supply {
+                                Color::WHITE.into()
+                            } else {
+                                Color::RED.into()
+                            },
+                            width: Units::Pixels(75.0).into(),
+                            font_size: StyleProp::<f32>::Value(48.0),
+                            ..Default::default()
+                        }}
+                    />
+                    
+                    <ImageButtonBundle
+                        styles={KStyle {
+                            width: Units::Pixels(32.0).into(),
+                            height: Units::Pixels(32.0).into(),
+                            top: Units::Stretch(0.25).into(),
+                            bottom: Units::Stretch(1.0).into(),
+                            left: Units::Pixels(10.0).into(),
+                            ..Default::default()
+                        }}
 
-                    on_event={OnEvent::new(
-                        move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_imports: ResMut<ImportSelections> | {
-                            if let EventType::Click(_) = event.event_type {
-                                selected_imports.selected.push(item.clone());
-                            }
-                        },
-                    )}
-                    props={ImageButtonProps {
-                        image: add_button.clone(),
-                        selected_image: add_button.clone(),
-                        hover_image: add_button.clone(),
-                        ..Default::default()
-                    }}
-                />
-                <ImageButtonBundle
-                    styles={KStyle {
-                        width: Units::Pixels(32.0).into(),
-                        height: Units::Pixels(32.0).into(),
-                        top: Units::Stretch(0.25).into(),
-                        left: Units::Pixels(15.0).into(),
-                        bottom: Units::Stretch(1.0).into(),
-                        ..Default::default()
-                    }}
+                        on_event={add_selection}
+                        props={ImageButtonProps {
+                            image: add_button.clone(),
+                            selected_image: add_button.clone(),
+                            hover_image: add_button.clone(),
+                            ..Default::default()
+                        }}
+                    />
+                    <ImageButtonBundle
+                        styles={KStyle {
+                            width: Units::Pixels(32.0).into(),
+                            height: Units::Pixels(32.0).into(),
+                            top: Units::Stretch(0.25).into(),
+                            left: Units::Pixels(15.0).into(),
+                            bottom: Units::Stretch(1.0).into(),
+                            ..Default::default()
+                        }}
 
-                    on_event={OnEvent::new(
-                        move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_imports: ResMut<ImportSelections>, props: Query<&ImportSelector> | {
-                            if let EventType::Click(_) = event.event_type {
-                                if let Some(index) = selected_imports.selected.iter().position(|i| i == &item) {
-                                    selected_imports.selected.remove(index);
-                                }
-                            }
-                        },
-                    )}
-                    props={ImageButtonProps {
-                        image: remove_button.clone(),
-                        selected_image: remove_button.clone(),
-                        hover_image: remove_button.clone(),
-                        ..Default::default()
-                    }}
-                />
-            </NinePatchBundle>
+                        on_event={remove_selection}
+                        props={ImageButtonProps {
+                            image: remove_button.clone(),
+                            selected_image: remove_button.clone(),
+                            hover_image: remove_button.clone(),
+                            ..Default::default()
+                        }}
+                    />
+                </NinePatchBundle>
+                
+                {
+                    if !supply {
+                        constructor!(
+                            <TextWidgetBundle
+                                text={TextProps {
+                                    content: "Not enough supply".to_string(),
+                                    ..Default::default()
+                                }}
+                                styles={KStyle {
+                                    color: Color::RED.into(),
+                                    ..Default::default()
+                                }}
+                            />
+                        );
+                    }
+                }
+            </ElementBundle>
         );
     }
     true

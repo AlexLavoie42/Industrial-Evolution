@@ -88,6 +88,12 @@ impl PurchasableItem {
     pub fn get_price(&self, economy: &Economy) -> Option<f32> {
         economy.prices.get(self).map(|x| { x.current_price })
     }
+    pub fn get_supply(&self, economy: &Economy) -> Option<f32> {
+        economy.prices.get(self).map(|x| { x.supply })
+    }
+    pub fn get_demand(&self, economy: &Economy) -> Option<f32> {
+        economy.prices.get(self).map(|x| { x.demand })
+    }
     pub fn get_name(&self) -> &str { 
         match self {
             PurchasableItem::Good(x) => x.get_name(),

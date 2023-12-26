@@ -182,6 +182,10 @@ pub fn image_button_render(
                     handle: image.clone(),
                     border: Edge::all(0.0),
                 }}
+                styles={KStyle {
+                    cursor: KCursorIcon(CursorIcon::Hand).into(),
+                    ..default()
+                }}
                 on_event={OnEvent::new(
                     move |
                         In(entity): In<Entity>,
