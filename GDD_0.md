@@ -190,6 +190,15 @@ Learnings:
     - Stops the player from just idling to make money
     - Use economy to force players into multi step production
 
+- Night time is 1/2 the game. Using a boring UI will kill the game.
+    - Turn the night UI into an interactable area
+    - Give just profits UI as a transition
+    - House where you interact with items to select living costs & orders
+    - Hire workers at night
+    - Check market stats (supply & demand, price over time)
+    - Order assemblies at night? Place from inventory?
+    - Research?
+
 ## Random Thoughts
 
 - Assembly by-products

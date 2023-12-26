@@ -300,7 +300,7 @@ pub fn factory_setup(
         container: ItemContainer { 
             items: Vec::new(),
             item_type: None,
-            max_items: 2,
+            max_items: 1,
             start_transform: Transform::from_xyz(-16.0, 8.0, 6.0),
             ..default()
         },

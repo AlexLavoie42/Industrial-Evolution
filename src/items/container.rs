@@ -90,8 +90,8 @@ impl ItemContainer {
         let mut y = 0;
         let mut x = 0;
 
-        for i in 0..index {
-            if i > 0 && i % self.width as usize == 0 {
+        for i in 1..index+1 {
+            if i % self.width as usize == 0 {
                 y += 1;
                 x = 0;
             } else {
