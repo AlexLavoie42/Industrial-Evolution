@@ -1,4 +1,7 @@
+use std::ops::Range;
+
 use bevy::utils::HashMap;
+use bevy_inspector_egui::{InspectorOptions, inspector_options::ReflectInspectorOptions};
 
 use crate::*;
 
@@ -55,10 +58,19 @@ pub trait Money {
 #[derive(Reflect)]
 pub struct EconomyPrice {
     pub current_price: f32,
+    // Price that is considered baseline and should fluctuate around this value
     pub base_price: f32,
+    // How much supply is considered baseline
+    pub base_supply: f32,
+    // How much is currently available to purchase. When this is higher than base price will trend down
     pub supply: f32,
+    // How much demand is considered baseline
+    pub base_demand: f32,
+    // How much is currently demanded. When this is lower than base price will trend up
     pub demand: f32,
+    // How often should more demand be added
     pub demand_weight: f32,
+    // How often should more supply be added
     pub supply_weight: f32
 }
 
@@ -94,7 +106,7 @@ impl PurchasableItem {
     pub fn get_demand(&self, economy: &Economy) -> Option<f32> {
         economy.prices.get(self).map(|x| { x.demand })
     }
-    pub fn get_name(&self) -> &str { 
+    pub fn get_name(&self) -> &str {
         match self {
             PurchasableItem::Good(x) => x.get_name(),
             PurchasableItem::Resource(x) => x.get_name()
@@ -102,7 +114,8 @@ impl PurchasableItem {
     }
 }
 
-#[derive(Resource, Reflect)]
+#[derive(Resource, Reflect, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
 pub struct Economy {
     pub prices: HashMap<PurchasableItem, EconomyPrice>
 }
@@ -111,9 +124,36 @@ impl Default for Economy {
     fn default() -> Self {
         Self {
             prices: HashMap::from([
-                (PurchasableItem::Resource(ResourceItem::Wood), EconomyPrice { current_price: 3.0, base_price: 3.0, supply: 50.0, demand: 1.0, demand_weight: 0.8, supply_weight: 1.4 }),
-                (PurchasableItem::Resource(ResourceItem::Pulp), EconomyPrice { current_price: 5.0, base_price: 5.0, supply: 0.0, demand: 10.0, demand_weight: 1.1, supply_weight: 0.9 }),
-                (PurchasableItem::Good(GoodItem::Paper), EconomyPrice { current_price: 10.0, base_price: 10.0, supply: 0.0, demand: 40.0,  demand_weight: 1.35, supply_weight: 0.75 }),
+                (PurchasableItem::Resource(ResourceItem::Wood), EconomyPrice {
+                    current_price: 3.0,
+                    base_price: 3.0,
+                    base_supply: 50.0,
+                    supply: 50.0,
+                    base_demand: 1.0,
+                    demand: 1.0,
+                    demand_weight: 0.8,
+                    supply_weight: 1.4
+                }),
+                (PurchasableItem::Resource(ResourceItem::Pulp), EconomyPrice {
+                    current_price: 5.0,
+                    base_price: 5.0,
+                    base_supply: 3.0,
+                    supply: 10.0,
+                    base_demand: 10.0,
+                    demand: 10.0,
+                    demand_weight: 1.1,
+                    supply_weight: 0.9
+                }),
+                (PurchasableItem::Good(GoodItem::Paper), EconomyPrice {
+                    current_price: 10.0,
+                    base_price: 10.0,
+                    base_supply: 0.0,
+                    supply: 0.0,
+                    base_demand: 40.0,
+                    demand: 40.0,
+                    demand_weight: 1.15,
+                    supply_weight: 0.85
+                }),
             ])
         }
     }
@@ -147,7 +187,6 @@ impl Purchasable for Item {
             return Err("Not enough supply");
         }
         price.supply -= amount as f32;
-        price.demand += amount as f32;
 
         Ok(())
     }
@@ -164,7 +203,6 @@ impl Purchasable for Item {
         }
 
         price.supply += amount as f32;
-        price.demand -= amount as f32;
 
         Ok(())
     }
@@ -178,9 +216,10 @@ impl Default for MarketTimer {
     }
 }
 
-const MARKET_FORCE: f32 = 2.0;
-const PRICE_INCREASE_MULT: f32 = 1.1;
-const PRICE_DECREASE_MULT: f32 = 0.9;
+// TODO: Per item
+const MARKET_FORCE: f32 = 1.25;
+const PRICE_INCREASE_MULT: Range<f32> = 1.01..1.03;
+const PRICE_DECREASE_MULT: Range<f32> = 0.97..0.995;
 fn market_system(
     mut economy: ResMut<Economy>,
     time: Res<Time>,
@@ -188,16 +227,23 @@ fn market_system(
 ) {
     let mut rng = thread_rng();
     for (item, price) in economy.prices.iter_mut() {
+        let supply = price.supply - price.base_supply;
+        let demand = price.demand - price.base_demand;
         let price_gap = price.current_price / price.base_price;
-        let supply_gap = price.demand / price.supply;
+        let supply_gap = demand / supply;
+        if item == &PurchasableItem::Good(GoodItem::Paper) {
+            println!("{} {} {} {}", supply, demand, price_gap, supply_gap);
+        }
 
         if price_gap < supply_gap {
-            price.current_price *= PRICE_INCREASE_MULT * rng.gen_range(1.0..1.2);
+            price.current_price *= rng.gen_range(PRICE_INCREASE_MULT);
         } else if price_gap > supply_gap {
-            price.current_price *= PRICE_DECREASE_MULT * rng.gen_range(1.0..1.2);
+            price.current_price *= rng.gen_range(PRICE_DECREASE_MULT);
         }
     }
 }
+
+const SELL_PERCENTAGE: f32 = 0.45;
 
 fn market_forces(
     mut economy: ResMut<Economy>,
@@ -206,27 +252,25 @@ fn market_forces(
 ) {
     let mut rng = thread_rng();
     for (item, price) in economy.prices.iter_mut() {
-        let price_gap = price.current_price / price.base_price;
-        if price.supply == 0.0 {
-            price.supply += MARKET_FORCE * price_gap;
-        }
-        if price.demand == 0.0 {
-            price.demand += MARKET_FORCE * price_gap;
-        }
-        if price.demand > 1000.0 && price.supply > 1000.0 {
-            price.demand /= 100.0;
-            price.supply /= 100.0;
+        let price_gap = (price.current_price / price.base_price).max(price.base_price / price.current_price);
 
-            price.demand = price.demand.round();
-            price.supply = price.supply.round();
+        let supply = price.supply - price.base_supply;
+        let demand = price.demand - price.base_demand;
+        // TODO: Min max values for supply & demand
+
+        let weighted_supply = supply * price.demand_weight;
+        let weighted_demand = demand * price.supply_weight;
+        if weighted_supply >= weighted_demand {
+            price.demand += MARKET_FORCE * price_gap * price.demand_weight;
         }
-        let weighted_supply = rng.gen_range(price.supply*0.8..price.supply);
-        let weighted_demand = rng.gen_range(price.demand*0.8..price.demand);
-        if weighted_demand > weighted_supply {
-            price.supply += MARKET_FORCE * price_gap;
+        if weighted_supply < weighted_demand {
+            price.supply += MARKET_FORCE * price_gap * price.supply_weight;
         }
-        if weighted_demand <= weighted_supply {
-            price.demand += MARKET_FORCE * price_gap;
+        
+        if price.supply > 1.0 && price.demand > 1.0 {
+            let sold = (supply).min(price.demand * SELL_PERCENTAGE).floor();
+            price.supply -= sold;
+            price.demand -= sold;
         }
     }
 }
