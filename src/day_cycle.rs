@@ -590,6 +590,7 @@ pub fn render_revenue_summary(
     widget_context: Res<KayakWidgetContext>,
     upkeep: Res<UpkeepTracker>,
     sold_items: Res<SoldItems>,
+    unsold_items: Res<UnsoldItems>,
     import_selections: Res<ImportSelections>,
     economy: Res<Economy>,
 ) -> bool {
@@ -620,6 +621,20 @@ pub fn render_revenue_summary(
 
 
         let folded_sold = sold_items.items
+            .iter()
+            .map(|(item, price)| (item.get_name(), price, 1))
+            .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, (item, price, count)| {
+                if acc.iter().find(|x| x.0 == item).is_none() {
+                    acc.push((item, *price, 1));
+                } else {
+                    let index = acc.iter().position(|x| x.0 == item).unwrap();
+                    acc[index].2 += 1;
+                    acc[index].1 += price;
+                }
+                acc
+            });
+
+        let folded_unsold = unsold_items.items
             .iter()
             .map(|(item, price)| (item.get_name(), price, 1))
             .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, (item, price, count)| {
@@ -677,6 +692,26 @@ pub fn render_revenue_summary(
                                 }}
                             />
                         );
+                    }
+                    if unsold_items.items.len() > 0 {
+                        constructor!(
+                            <TextWidgetBundle
+                                text={TextProps {
+                                    content: "Unsold Items (No demand):".to_string(),
+                                    ..default()
+                                }}
+                            />
+                        );
+                        for (item, _, count) in folded_unsold {
+                            constructor!(
+                                <TextWidgetBundle
+                                    text={TextProps {
+                                        content: format!("{:} x{:}", item, count),
+                                        ..default()
+                                    }}
+                                />
+                            );
+                        }
                     }
                 }
                 <TextWidgetBundle

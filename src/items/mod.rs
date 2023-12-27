@@ -66,6 +66,7 @@ impl Plugin for ItemPlugin {
             .add_systems(OnEnter(DayCycleState::Night), (sell_export_items, item_imports_storage_fee))
             .add_systems(OnExit(DayCycleState::Night), (purchase_item_imports, |mut sold_items: ResMut<SoldItems>| sold_items.items.clear()))
             .insert_resource(SoldItems::default())
+            .insert_resource(UnsoldItems::default())
             // .add_systems(Update, (
             //     place_export.run_if(in_state(PlayerState::Export)),
             //     input_toggle_export_mode
