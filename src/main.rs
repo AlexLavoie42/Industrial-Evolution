@@ -324,12 +324,6 @@ pub fn factory_setup(
     let input_entity = commands.spawn(input_bundle).id();
 
     commands.spawn(ItemExportBundle::from_translation(vec3(-14.0 * TILE_SIZE.x, -16.0 * TILE_SIZE.y, -1.0), &sprites)).push_children(&[input_entity]);
-
-    //TESTING
-
-    for _ in 0..100{
-        GoodItem::Paper.spawn_bundle(&mut commands);
-    }
 }
 
 pub fn reset_factory(

@@ -30,6 +30,11 @@ pub struct SoldItems {
     pub items: Vec<(Item, f32)>
 }
 
+#[derive(Resource, Default)]
+pub struct UnsoldItems {
+    pub items: Vec<(Item, f32)>
+}
+
 impl DefaultWithSprites for ItemExportBundle {
     fn default_with_sprites(sprites: &SpriteStorage) -> Self {
         ItemExportBundle {
@@ -54,31 +59,14 @@ impl DefaultWithSprites for ItemExportBundle {
     }
 }
 
-pub fn calculate_sold_items(
-    mut q_items: Query<&mut Item>,
-    mut economy: ResMut<Economy>,
-    mut q_depot: Query<(&ItemExport, &mut ItemContainer)>,
-    mut sold_items: ResMut<SoldItems>
-) {
-    for (depot, mut container) in q_depot.iter_mut() {
-        let mut container_ref = container;
-        for item in container_ref.items.iter() {
-            let Some(item_entity) = item else { continue; };
-            let Ok(mut item) = q_items.get_mut(*item_entity) else { continue; };
-            
-            let Some(price) = item.get_price(&economy) else { continue; };
-            sold_items.items.push((item.clone(), price));
-        }
-    }
-}
-
 pub fn sell_export_items(
     mut commands: Commands,
     mut economy: ResMut<Economy>,
     mut money: ResMut<PlayerMoney>,
     mut q_items: Query<&mut Item>,
     mut q_depot: Query<(&ItemExport, &mut ItemContainer)>,
-    mut sold_items: ResMut<SoldItems>
+    mut sold_items: ResMut<SoldItems>,
+    mut unsold_items: ResMut<UnsoldItems>
 ) {
     for (depot, mut container) in q_depot.iter_mut() {
         let mut container_ref = container;
@@ -88,12 +76,10 @@ pub fn sell_export_items(
             
             let Some(price) = item.get_price(&economy) else { return true; };
 
-            match item.sell(&mut economy, 1) {
-                Ok(_) => {},
-                Err(e) => {
-                    println!("{:?}", e);
-                    return true
-                }
+            if let Err(e) = item.sell(&mut economy, 1) {
+                println!("{:?}", e);
+                unsold_items.items.push((item.clone(), price));
+                return true
             }
             sold_items.items.push((item.clone(), price));
             println!("Selling item: {:?}", item_entity);
