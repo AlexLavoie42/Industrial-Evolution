@@ -199,6 +199,11 @@ Learnings:
     - Order assemblies at night? Place from inventory?
     - Research?
 
+- Running out of resources is dumb
+    - Order more during day
+        - Delay?
+        - Extra cost?
+
 ## Random Thoughts
 
 - Assembly by-products

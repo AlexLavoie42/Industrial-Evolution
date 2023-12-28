@@ -59,7 +59,7 @@ macro_rules! make_assembly_types {
         }
         impl Default for AssemblyType {
             fn default() -> Self {
-                AssemblyType::PulpMill
+                AssemblyType::WoodChipper
             }
         }
         
@@ -129,7 +129,8 @@ macro_rules! make_assembly_types {
 }
 
 make_assembly_types!(
-    (PulpMill, PulpMillBundle),
-    (PaperPress, PaperPressBundle),
-    (PaperDrier, PaperDrierBundle)
+    (WoodChipper, WoodChipperBundle),
+    (PulpMachine, PulpMachineBundle),
+    (PaperMachine, PaperMachineBundle),
+    (SawMill, SawMillBundle)
 );

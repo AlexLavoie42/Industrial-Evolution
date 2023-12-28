@@ -27,12 +27,14 @@ impl Plugin for AssembliesPlugin {
                 }
             )
             // TODO: Macro
-            .add_systems(Update, show_hover_ghost::<PulpMillBundle>)
-            .add_systems(Update, show_hover_ghost::<PaperPressBundle>)
-            .add_systems(Update, show_hover_ghost::<PaperDrierBundle>)
-            .add_event::<ShowHoverGhost::<PulpMillBundle>>()
-            .add_event::<ShowHoverGhost::<PaperPressBundle>>()
-            .add_event::<ShowHoverGhost::<PaperDrierBundle>>()
+            .add_systems(Update, show_hover_ghost::<WoodChipperBundle>)
+            .add_systems(Update, show_hover_ghost::<PulpMachineBundle>)
+            .add_systems(Update, show_hover_ghost::<PaperMachineBundle>)
+            .add_systems(Update, show_hover_ghost::<SawMillBundle>)
+            .add_event::<ShowHoverGhost::<WoodChipperBundle>>()
+            .add_event::<ShowHoverGhost::<PulpMachineBundle>>()
+            .add_event::<ShowHoverGhost::<PaperMachineBundle>>()
+            .add_event::<ShowHoverGhost::<SawMillBundle>>()
             .add_systems(Update,
             (
                     (place_assembly).run_if(in_state(PlayerState::Assemblies)).run_if(in_state(PlacementState::Allowed)),

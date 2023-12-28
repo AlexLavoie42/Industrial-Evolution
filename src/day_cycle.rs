@@ -4,7 +4,7 @@ use bevy::reflect::Enum;
 
 use crate::*;
 
-pub const DAY_LENGTH_SECONDS : f32 = 60.0 * 2.0;
+pub const DAY_LENGTH_SECONDS : f32 = 60.0 * 3.5;
 
 #[derive(States, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum DayCycleState {
@@ -475,7 +475,7 @@ pub fn import_selector_render(
                                 Color::RED.into()
                             },
                             width: Units::Pixels(300.0).into(),
-                            font_size: StyleProp::<f32>::Value(48.0),
+                            font_size: StyleProp::<f32>::Value(32.0),
                             ..Default::default()
                         }}
                     />
@@ -491,7 +491,7 @@ pub fn import_selector_render(
                                 Color::RED.into()
                             },
                             width: Units::Pixels(75.0).into(),
-                            font_size: StyleProp::<f32>::Value(48.0),
+                            font_size: StyleProp::<f32>::Value(32.0),
                             ..Default::default()
                         }}
                     />
@@ -700,6 +700,11 @@ pub fn render_revenue_summary(
                                     content: "Unsold Items (No demand):".to_string(),
                                     ..default()
                                 }}
+                                styles={KStyle {
+                                    font_size: StyleProp::<f32>::Value(32.0),
+                                    color: Color::RED.into(),
+                                    ..default()
+                                }}
                             />
                         );
                         for (item, _, count) in folded_unsold {
@@ -707,6 +712,11 @@ pub fn render_revenue_summary(
                                 <TextWidgetBundle
                                     text={TextProps {
                                         content: format!("{:} x{:}", item, count),
+                                        ..default()
+                                    }}
+                                    styles={KStyle {
+                                        font_size: StyleProp::<f32>::Value(21.0),
+                                        color: Color::RED.into(),
                                         ..default()
                                     }}
                                 />

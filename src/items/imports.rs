@@ -93,12 +93,10 @@ pub fn purchase_item_imports(
     selected_imports.selected.clear();
 }
 
-pub const STORAGE_FEE: f32 = 5.0;
-
 pub fn item_imports_storage_fee(
     mut money: ResMut<PlayerMoney>,
     mut upkeep_tracker: ResMut<UpkeepTracker>,
-    mut q_imports: Query<&mut ItemContainer, With<ItemImport>>
+    mut q_imports: Query<&mut ItemContainer, (With<ItemImport>, With<ItemExport>)>
 ) {
     for mut container in q_imports.iter() {
         for item in container.items.iter() {

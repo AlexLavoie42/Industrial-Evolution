@@ -68,14 +68,19 @@ pub fn sell_export_items(
     mut sold_items: ResMut<SoldItems>,
     mut unsold_items: ResMut<UnsoldItems>
 ) {
-    for (depot, mut container) in q_depot.iter_mut() {
+    for (export, mut container) in q_depot.iter_mut() {
         let mut container_ref = container;
+        let mut sold = 0;
         container_ref.items.retain(|item_entity| {
             let Some(item_entity) = item_entity else { return true; };
             let Ok(mut item) = q_items.get_mut(*item_entity) else { return true; };
-            
             let Some(price) = item.get_price(&economy) else { return true; };
 
+            let Some(demand) = item.get_demand(&economy) else { return true; };
+            if demand <= sold as f32 { 
+                unsold_items.items.push((item.clone(), price));
+                return true;
+            }
             if let Err(e) = item.sell(&mut economy, 1) {
                 println!("{:?}", e);
                 unsold_items.items.push((item.clone(), price));
@@ -84,6 +89,7 @@ pub fn sell_export_items(
             sold_items.items.push((item.clone(), price));
             println!("Selling item: {:?}", item_entity);
             money.add_money(price);
+            sold += 1;
 
             commands.entity(*item_entity).insert(DespawnLater);
             return false;

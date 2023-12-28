@@ -10,6 +10,13 @@ use rand::{thread_rng, Rng};
 mod upkeep;
 pub use upkeep::*;
 
+// TODO: Per item
+const MARKET_FORCE: f32 = 1.25;
+const PRICE_INCREASE_MULT: Range<f32> = 1.01..1.03;
+const PRICE_DECREASE_MULT: Range<f32> = 0.97..0.995;
+
+const MARKET_SELL_PERCENTAGE: f32 = 0.45;
+
 pub struct MoneyPlugin;
 
 impl Plugin for MoneyPlugin {
@@ -19,7 +26,7 @@ impl Plugin for MoneyPlugin {
             .add_systems(OnEnter(DayCycleState::Night), (factory_upkeep, living_expenses))
             .add_systems(OnEnter(DayCycleState::Day), upkeep_system)
             .insert_resource(PlayerMoney {
-                amount: 2500.0
+                amount: 600.0
             })
             .insert_resource(MarketTimer::default())
             .insert_resource(Economy::default())
@@ -83,8 +90,9 @@ impl Default for AssemblyPrices {
     fn default() -> Self {
         Self {
             prices: HashMap::from([
-                (AssemblyType::PulpMill, 500.0),
-                (AssemblyType::PaperPress, 1000.0)
+                (AssemblyType::WoodChipper, 50.0),
+                (AssemblyType::PulpMachine, 150.0),
+                (AssemblyType::PaperMachine, 100.0)
             ])
         }
     }
@@ -125,8 +133,8 @@ impl Default for Economy {
         Self {
             prices: HashMap::from([
                 (PurchasableItem::Resource(ResourceItem::Wood), EconomyPrice {
-                    current_price: 3.0,
-                    base_price: 3.0,
+                    current_price: 0.75,
+                    base_price: 0.75,
                     base_supply: 50.0,
                     supply: 50.0,
                     base_demand: 1.0,
@@ -134,19 +142,19 @@ impl Default for Economy {
                     demand_weight: 0.8,
                     supply_weight: 1.4
                 }),
-                (PurchasableItem::Resource(ResourceItem::Pulp), EconomyPrice {
-                    current_price: 5.0,
-                    base_price: 5.0,
+                (PurchasableItem::Resource(ResourceItem::WoodChips), EconomyPrice {
+                    current_price: 4.0,
+                    base_price: 2.75,
                     base_supply: 3.0,
-                    supply: 10.0,
-                    base_demand: 10.0,
+                    supply: 4.0,
+                    base_demand: 4.0,
                     demand: 10.0,
-                    demand_weight: 1.1,
-                    supply_weight: 0.9
+                    demand_weight: 0.9,
+                    supply_weight: 1.0
                 }),
                 (PurchasableItem::Good(GoodItem::Paper), EconomyPrice {
-                    current_price: 10.0,
-                    base_price: 10.0,
+                    current_price: 8.5,
+                    base_price: 12.75,
                     base_supply: 0.0,
                     supply: 0.0,
                     base_demand: 40.0,
@@ -154,6 +162,16 @@ impl Default for Economy {
                     demand_weight: 1.15,
                     supply_weight: 0.85
                 }),
+                (PurchasableItem::Resource(ResourceItem::Lumber), EconomyPrice {
+                    current_price: 5.0,
+                    base_price: 3.75,
+                    base_supply: 3.0,
+                    supply: 6.0,
+                    base_demand: 16.0,
+                    demand: 30.0,
+                    demand_weight: 1.0,
+                    supply_weight: 1.0
+                })
             ])
         }
     }
@@ -163,6 +181,8 @@ pub trait Purchasable {
     fn get_price(&self, economy: &Economy) -> Option<f32>;
     fn buy(&mut self, economy: &mut Economy, amount: i32) -> Result<(), &'static str>;
     fn sell(&mut self, economy: &mut Economy, amount: i32) -> Result<(), &'static str>;
+    fn get_supply(&self, economy: &Economy) -> Option<f32>;
+    fn get_demand(&self, economy: &Economy) -> Option<f32>;
 }
 
 impl Purchasable for Item {
@@ -206,6 +226,28 @@ impl Purchasable for Item {
 
         Ok(())
     }
+    fn get_supply(&self, economy: &Economy) -> Option<f32> {
+        let purchasable = match self {
+            Item::Good(good) => Some(PurchasableItem::Good(*good)),
+            Item::Resource(resource) => Some(PurchasableItem::Resource(*resource)),
+            Item::Material(material) => None
+        };
+        let Some(purchasable) = purchasable else { return None; };
+        let Some(price) = economy.prices.get(&purchasable) else { return None; };
+
+        Some(price.supply)
+    }
+    fn get_demand(&self, economy: &Economy) -> Option<f32> {
+        let purchasable = match self {
+            Item::Good(good) => Some(PurchasableItem::Good(*good)),
+            Item::Resource(resource) => Some(PurchasableItem::Resource(*resource)),
+            Item::Material(_) => None
+        };
+        let Some(purchasable) = purchasable else { return None; };
+        let Some(price) = economy.prices.get(&purchasable) else { return None; };
+
+        Some(price.demand)
+    }
 }
 
 #[derive(Resource)]
@@ -216,10 +258,6 @@ impl Default for MarketTimer {
     }
 }
 
-// TODO: Per item
-const MARKET_FORCE: f32 = 1.25;
-const PRICE_INCREASE_MULT: Range<f32> = 1.01..1.03;
-const PRICE_DECREASE_MULT: Range<f32> = 0.97..0.995;
 fn market_system(
     mut economy: ResMut<Economy>,
     time: Res<Time>,
@@ -242,8 +280,6 @@ fn market_system(
         }
     }
 }
-
-const SELL_PERCENTAGE: f32 = 0.45;
 
 fn market_forces(
     mut economy: ResMut<Economy>,
@@ -268,7 +304,7 @@ fn market_forces(
         }
         
         if price.supply > 1.0 && price.demand > 1.0 {
-            let sold = (supply).min(price.demand * SELL_PERCENTAGE).floor();
+            let sold = (supply).min(price.demand * MARKET_SELL_PERCENTAGE).floor();
             price.supply -= sold;
             price.demand -= sold;
         }

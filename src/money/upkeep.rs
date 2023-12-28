@@ -1,7 +1,13 @@
 use crate::*;
 
-const FACTORY_COST: f32 = 75.0;
+const FACTORY_COST: f32 = 3.5;
 const DAY_TIMER: f32 = 6.5 * 60.0;
+
+const LIVING_EXPENSE_BASE: f32 = 0.25;
+
+pub const STORAGE_FEE: f32 = 0.05;
+
+pub const WORKER_UPKEEP: f32 = 0.3;
 
 #[derive(Resource)]
 pub struct UpkeepTimer(Timer);
@@ -49,8 +55,6 @@ pub fn factory_upkeep(
     upkeep_tracker.upkeep.push(Upkeep(FACTORY_COST, UpkeepSource::Factory));
     upkeep_tracker.calculate_worker_upkeep(q_workers.iter().count() as i32);
 }
-
-const LIVING_EXPENSE_BASE: f32 = 25.0;
 
 pub fn living_expenses(
     mut upkeep_tracker: ResMut<UpkeepTracker>,

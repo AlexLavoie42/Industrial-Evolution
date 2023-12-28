@@ -4,20 +4,20 @@ use crate::*;
 
 #[derive(Component, Clone, Copy, PartialEq, Eq, Debug, Reflect, Hash)]
 pub enum MaterialItem {
-    WetPaper
+    WoodPulp
 }
 
 #[derive(Bundle)]
-pub struct WetPaperBundle {
+pub struct WoodPulpBundle {
     pub item: Item,
     pub material: MaterialItem,
     pub sprite: SpriteBundle
 }
-impl Default for WetPaperBundle {
-    fn default() -> WetPaperBundle {
-        WetPaperBundle {
-            item: Item::Material(MaterialItem::WetPaper),
-            material: MaterialItem::WetPaper,
+impl Default for WoodPulpBundle {
+    fn default() -> WoodPulpBundle {
+        WoodPulpBundle {
+            item: Item::Material(MaterialItem::WoodPulp),
+            material: MaterialItem::WoodPulp,
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::ANTIQUE_WHITE,
@@ -43,8 +43,8 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for MaterialItem {
         commands: &'a mut Commands<'w, 's>
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
-            MaterialItem::WetPaper => {
-                commands.spawn(WetPaperBundle::default())
+            MaterialItem::WoodPulp => {
+                commands.spawn(WoodPulpBundle::default())
             }
         }
     }
@@ -55,11 +55,11 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for MaterialItem {
         transform: Transform
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
-            MaterialItem::WetPaper => {
-                commands.spawn(WetPaperBundle {
+            MaterialItem::WoodPulp => {
+                commands.spawn(WoodPulpBundle {
                     sprite: SpriteBundle {
                         transform,
-                        ..WetPaperBundle::default().sprite
+                        ..WoodPulpBundle::default().sprite
                     },
                     ..Default::default()
                 })

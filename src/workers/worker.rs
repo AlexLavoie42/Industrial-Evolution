@@ -1,5 +1,8 @@
 use crate::*;
 
+// TODO: Dynamic prices? Skill?
+pub const WORKER_PRICE: f32 = 5.0;
+
 #[derive(Component, Debug, Reflect)]
 pub struct PowerProduction {
     pub power: Power,
@@ -71,10 +74,6 @@ impl DefaultWithSprites for WorkerBundle {
         }
     }
 }
-
-// TODO: Dynamic prices? Skill?
-pub const WORKER_PRICE: f32 = 50.0;
-pub const WORKER_UPKEEP: f32 = 5.0;
 
 pub fn place_worker(
     mut commands: Commands,

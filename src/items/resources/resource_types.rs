@@ -30,24 +30,53 @@ impl Default for WoodBundle {
 }
 
 #[derive(Component)]
-pub struct Pulp;
+pub struct WoodChips;
 
 #[derive(Bundle)]
-pub struct PulpBundle {
+pub struct WoodChipsBundle {
     pub item: Item,
     pub resource: ResourceItem,
     pub sprite: SpriteBundle,
-    pub marker: Pulp
+    pub marker: WoodChips
 }
-impl Default for PulpBundle {
+impl Default for WoodChipsBundle {
     fn default() -> Self {
-        PulpBundle {
-            marker: Pulp,
-            item: Item::Resource(ResourceItem::Pulp),
-            resource: ResourceItem::Pulp,
+        WoodChipsBundle {
+            marker: WoodChips,
+            item: Item::Resource(ResourceItem::WoodChips),
+            resource: ResourceItem::WoodChips,
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::OLIVE,
+                    custom_size: Some(Vec2::new(8.0, 8.0)),
+                    ..default()
+                },
+                transform: Transform::from_xyz(0.0, 0.0, 6.0),
+                ..default()
+            }
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct Lumber;
+
+#[derive(Bundle)]
+pub struct LumberBundle {
+    pub item: Item,
+    pub resource: ResourceItem,
+    pub sprite: SpriteBundle,
+    pub marker: Lumber
+}
+impl Default for LumberBundle {
+    fn default() -> Self {
+        LumberBundle {
+            marker: Lumber,
+            item: Item::Resource(ResourceItem::Lumber),
+            resource: ResourceItem::Lumber,
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::rgb_u8(161, 159, 124),
                     custom_size: Some(Vec2::new(8.0, 8.0)),
                     ..default()
                 },

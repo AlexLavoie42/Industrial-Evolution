@@ -4,10 +4,12 @@ mod resource_types;
 use bevy::{ecs::system::EntityCommands, reflect::Enum};
 pub use resource_types::*;
 
+// TODO: Macro
 #[derive(Component, PartialEq, Debug, Reflect, Eq, Hash, Clone, Copy)]
 pub enum ResourceItem {
     Wood,
-    Pulp
+    WoodChips,
+    Lumber
 }
 
 impl ItemType for ResourceItem {
@@ -23,7 +25,8 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for ResourceItem {
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
             ResourceItem::Wood => commands.spawn(WoodBundle::default()),
-            ResourceItem::Pulp => commands.spawn(PulpBundle::default())
+            ResourceItem::WoodChips => commands.spawn(WoodChipsBundle::default()),
+            ResourceItem::Lumber => commands.spawn(LumberBundle::default())
         }
     }
 
@@ -40,10 +43,17 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for ResourceItem {
                 },
                 ..default()
             }),
-            ResourceItem::Pulp => commands.spawn(PulpBundle {
+            ResourceItem::WoodChips => commands.spawn(WoodChipsBundle {
                 sprite: SpriteBundle {
                     transform,
-                    ..PulpBundle::default().sprite
+                    ..WoodChipsBundle::default().sprite
+                },
+                ..default()
+            }),
+            ResourceItem::Lumber => commands.spawn(LumberBundle {
+                sprite: SpriteBundle {
+                    transform,
+                    ..LumberBundle::default().sprite
                 },
                 ..default()
             })

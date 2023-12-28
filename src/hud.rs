@@ -633,7 +633,7 @@ pub fn assemblies_hud_render(
             let pulp_mill_button_click = OnEvent::new(
                 move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut selected_assembly: ResMut<SelectedAssembly> | {
                     if let EventType::Click(_) = event.event_type {
-                        selected_assembly.selected = AssemblyType::PulpMill;
+                        selected_assembly.selected = AssemblyType::WoodChipper;
                     }
                 },
             );
@@ -641,14 +641,14 @@ pub fn assemblies_hud_render(
             let paper_press_button_click = OnEvent::new(
                 move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut selected_assembly: ResMut<SelectedAssembly> | {
                     if let EventType::Click(_) = event.event_type {
-                        selected_assembly.selected = AssemblyType::PaperPress;
+                        selected_assembly.selected = AssemblyType::PulpMachine;
                     }
                 },
             );
             let paper_drier_button_click = OnEvent::new(
                 move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut selected_assembly: ResMut<SelectedAssembly> | {
                     if let EventType::Click(_) = event.event_type {
-                        selected_assembly.selected = AssemblyType::PaperDrier;
+                        selected_assembly.selected = AssemblyType::PaperMachine;
                     }
                 },
             );
