@@ -68,8 +68,10 @@ impl Plugin for WorkerPlugin {
             .register_type::<MoveToTile>()
             .register_type::<JobError>()
             .register_type::<PowerProduction>()
+            .register_type::<ItemJobLock>()
             .insert_resource(SelectedWorker {
                 selected: None
-            });
+            })
+            .insert_resource(ItemJobLock::default());
     }
 }

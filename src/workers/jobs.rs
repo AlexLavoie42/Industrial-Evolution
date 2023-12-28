@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use crate::*;
+use bevy_inspector_egui::{inspector_options::ReflectInspectorOptions, InspectorOptions};
 use workers::worker::*;
 
 #[derive(Debug, Reflect, PartialEq, Clone)]
@@ -192,12 +193,19 @@ pub fn worker_iterate_jobs(
     }
 }
 
+#[derive(Resource, Default, Reflect, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
+pub struct ItemJobLock {
+    pub items: Vec<Entity>,
+}
+
 pub fn worker_do_job(
     time: Res<Time>,
     mut q_jobs: Query<(&mut Job, Entity, &Transform), With<Worker>>,
     q_tilemap: Query<(&Transform, &TilemapSize, &TilemapGridSize, &TilemapType)>,
     mut q_item_containers: Query<&mut ItemContainer>,
     mut q_assembly_containers: Query<&mut ItemIOContainer>,
+    mut locked_items: ResMut<ItemJobLock>,
     mut ev_assembly_power: EventWriter<AssemblyPowerInput>,
     mut ev_item_pickup: EventWriter<WorkerPickUpItemEvent>,
     mut ev_item_drop: EventWriter<WorkerDropItemEvent>
@@ -242,6 +250,11 @@ pub fn worker_do_job(
                         current_job.job_status = JobStatus::Completed;
                     },
                     JobAction::Pickup { item } => {
+                        if locked_items.items.contains(&item) {
+                            continue;
+                        }
+
+                        locked_items.items.push(item);
                         ev_item_pickup.send(WorkerPickUpItemEvent {
                             item,
                             worker: worker_entity,
@@ -252,8 +265,17 @@ pub fn worker_do_job(
                     JobAction::ContainerPickup { container, pickup_amount } => {
                         if let Ok(item_container) = q_item_containers.get_mut(container) {
                             // TODO: Grab any available item or configurable?
-                            if let Some(Some(item)) = item_container.items.last() {
-                                println!("status {:?}", current_job.job_status);
+                            if let Some(Some(item)) = item_container.items.iter()
+                            .filter(|i| {
+                                if let Some(i) = i {
+                                    !locked_items.items.contains(i)
+                                } else {
+                                    false
+                                }
+                            })
+                            .last() {
+                                println!("Picking up item {:?}", item);
+                                locked_items.items.push(*item);
                                 ev_item_pickup.send(WorkerPickUpItemEvent {
                                     item: *item,
                                     worker: worker_entity,
@@ -262,7 +284,16 @@ pub fn worker_do_job(
                                 });
                             }
                         } else if let Ok(assembly_container) = q_assembly_containers.get_mut(container) {
-                            if let Some(Some(item)) = assembly_container.output.items.last() {
+                            if let Some(Some(item)) = assembly_container.output.items.iter()
+                            .filter(|i| {
+                                if let Some(i) = i {
+                                    !locked_items.items.contains(i)
+                                } else {
+                                    false
+                                }
+                            })
+                            .last() {
+                                locked_items.items.push(*item);
                                 ev_item_pickup.send(WorkerPickUpItemEvent {
                                     item: *item,
                                     worker: worker_entity,

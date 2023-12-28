@@ -51,7 +51,7 @@ impl DefaultWithSprites for WorkerBundle {
             },
             job_error: JobError::new(),
             job_waiting: JobWaiting(false),
-            worker_items: ItemContainer { items: Vec::new(), max_items: 2, item_type: None, ..Default::default() },
+            worker_items: ItemContainer { items: Vec::new(), max_items: 1, item_type: None, ..Default::default() },
             production: PowerProduction {
                 power: Power::Mechanical(20.0),
                 output: None
@@ -157,6 +157,7 @@ pub struct WorkerPickUpItemEvent {
     pub container: Option<Entity>
 }
 
+// TODO: Refactor with event callbacks & one-shot systems
 pub fn worker_pick_up_item(
     mut commands: Commands,
     mut q_item_transforms: Query<(&mut Transform, &GlobalTransform, &Item), (With<Item>, Without<Worker>)>,
@@ -164,21 +165,53 @@ pub fn worker_pick_up_item(
     mut q_io_item_containers: Query<&mut ItemIOContainer>,
     mut q_item_containers: Query<&mut ItemContainer, Without<Worker>>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &TilemapType, &Transform), (Without<Worker>, Without<Item>)>,
-    mut ev_pick_up: EventReader<WorkerPickUpItemEvent>
+    mut ev_pick_up: EventReader<WorkerPickUpItemEvent>,
+    mut locked_items: ResMut<ItemJobLock>,
 ) {
     for ev in ev_pick_up.iter() {
-        // TODO: Lock each item to avoid a race condition with multiple workers
-        let Ok((mut container, worker_transform, mut job, mut job_error))
-            = q_worker_item_container.get_mut(ev.worker) else { continue };
-        let Ok((mut item_transform, item_g_transform, item_type)) = q_item_transforms.get_mut(ev.item) else {
-            job_error.set_warning("Item not found");
+        if locked_items.items.iter().filter(|i| **i == ev.item).count() > 1 {
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                println!("Locked item {}", pos);
+                locked_items.items.remove(pos);
+            }
+        }
+        let Ok((
+            mut worker_container, 
+            worker_transform, 
+            mut job, 
+            mut job_error
+        )) = q_worker_item_container.get_mut(ev.worker) else {
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                locked_items.items.remove(pos);
+            }
             continue;
         };
-        if container.items.iter().any(|i| *i == Some(ev.item)) {
+        let Ok((
+            mut item_transform,
+            item_g_transform,
+            item_type
+        )) = q_item_transforms.get_mut(ev.item) else {
+            job_error.set_warning("Item not found");
+
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                locked_items.items.remove(pos);
+            }
+            continue;
+        };
+        if worker_container.items.iter().any(|i| *i == Some(ev.item)) {
             if let Some(current_job_i) = job.current_job {
-                let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
+                let Some(current_job) = job.path.get_mut(current_job_i) else {
+                    if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                        locked_items.items.remove(pos);
+                    }
+                    continue;
+                };
                 current_job.job_status = JobStatus::Completed;
                 job_error.clear_error();
+            }
+            
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                locked_items.items.remove(pos);
             }
             continue;
         }
@@ -186,25 +219,48 @@ pub fn worker_pick_up_item(
         let (map_size, grid_size, map_type, map_transform) = q_tilemap.single();
 
         let worker_world_pos = get_world_pos(Vec2 { x: worker_transform.translation().x, y: worker_transform.translation().y }, map_transform);
-        let Some(worker_tile_pos) = TilePos::from_world_pos(&worker_world_pos, map_size, grid_size, map_type) else { continue; };
+        let Some(worker_tile_pos) = TilePos::from_world_pos(&worker_world_pos, map_size, grid_size, map_type) else {
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                locked_items.items.remove(pos);
+            }
+            continue;
+        };
         if !is_near_tile(worker_tile_pos, ev.tile_pos, map_size) {
             if let Some(current_job_i) = job.current_job {
-                let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
+                let Some(current_job) = job.path.get_mut(current_job_i) else {
+                    if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                        locked_items.items.remove(pos);
+                    }
+                    continue;
+                };
                 current_job.job_status = JobStatus::Active;
+            }
+            
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                locked_items.items.remove(pos);
             }
             continue;
         }
 
-        let Ok(_) = container.add_item((Some(ev.item), Some(*item_type))) else {
+        let Ok(_) = worker_container.add_item((Some(ev.item), Some(*item_type))) else {
             if let Some(current_job_i) = job.current_job {
-                let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
+                let Some(current_job) = job.path.get_mut(current_job_i) else {
+                    if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                        locked_items.items.remove(pos);
+                    }
+                    continue;
+                };
                 current_job.job_status = JobStatus::Completed;
+            }
+                        
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                locked_items.items.remove(pos);
             }
             continue;
         }; 
         commands.entity(ev.worker).add_child(ev.item);
-        *item_transform = container.get_transform();
-        println!("Picked up item {:?}", container);
+        *item_transform = worker_container.get_transform();
+        println!("Picked up item {:?}", worker_container);
         
         if let Some(container_entity) = ev.container {
             if let Ok(mut container) = q_item_containers.get_mut(container_entity) {
@@ -214,9 +270,17 @@ pub fn worker_pick_up_item(
             }
         }
         if let Some(current_job_i) = job.current_job {
-            let Some(current_job) = job.path.get_mut(current_job_i) else { continue; };
+            let Some(current_job) = job.path.get_mut(current_job_i) else {
+                if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                    locked_items.items.remove(pos);
+                }
+                continue;
+            };
             current_job.job_status = JobStatus::Completed;
             job_error.clear_error();
+        }
+        if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+            locked_items.items.remove(pos);
         }
     }
 }
@@ -228,6 +292,7 @@ pub struct WorkerDropItemEvent {
     pub container: Option<Entity>,
 }
 
+// TODO: Refactor with event callbacks & one-shot systems
 pub fn worker_drop_item(
     mut commands: Commands,
     mut q_item_transforms: Query<(&mut Transform, &Item)>,
