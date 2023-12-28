@@ -203,6 +203,15 @@ Learnings:
     - Order more during day
         - Delay?
         - Extra cost?
+    - Balance
+        - Slow down production of goods
+            - Each good production should involve solving a small puzzle. Worker should just make this easier.
+        - Balance order sizes
+            - Min order size / batches?
+            - Import & export container sizes
+    - Rework ordering
+        - Different phases of day? Import shipments get staggered over time
+        - Auto purchase?
 
 ## Random Thoughts
 
