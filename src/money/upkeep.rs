@@ -74,3 +74,18 @@ pub fn upkeep_system(
     }
     upkeep_tracker.upkeep.clear();
 }
+
+pub fn item_storage_fee(
+    mut money: ResMut<PlayerMoney>,
+    mut upkeep_tracker: ResMut<UpkeepTracker>,
+    mut q_import_containers: Query<&mut ItemContainer, (With<ItemImport>, Without<ItemExport>)>,
+    mut q_export_containers: Query<&mut ItemContainer, (With<ItemExport>, Without<ItemImport>)>
+) {
+    for mut container in q_import_containers.iter().chain(q_export_containers.iter()) {
+        for item in container.items.iter() {
+            if let Some(item_entity) = item {
+                upkeep_tracker.upkeep.push(Upkeep (STORAGE_FEE, UpkeepSource::Storage));
+            }
+        }
+    }
+}

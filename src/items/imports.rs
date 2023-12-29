@@ -93,20 +93,6 @@ pub fn purchase_item_imports(
     selected_imports.selected.clear();
 }
 
-pub fn item_imports_storage_fee(
-    mut money: ResMut<PlayerMoney>,
-    mut upkeep_tracker: ResMut<UpkeepTracker>,
-    mut q_imports: Query<&mut ItemContainer, (With<ItemImport>, With<ItemExport>)>
-) {
-    for mut container in q_imports.iter() {
-        for item in container.items.iter() {
-            if let Some(item_entity) = item {
-                upkeep_tracker.upkeep.push(Upkeep (STORAGE_FEE, UpkeepSource::Storage));
-            }
-        }
-    }
-}
-
 pub fn input_toggle_place_import_mode(
     input: Res<Input<KeyCode>>,
     state: Res<State<PlayerState>>,

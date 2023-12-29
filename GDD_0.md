@@ -171,6 +171,20 @@ Learnings:
     - Always leave room for improvement
         - Unlock new possibilies with worker skills. Force the player to rethink certain designs
         - Multi tasking jobs. As skill increases worker gets smarter when selecting tasks.
+            - Player manually multi tasking (Override job)? Challenging to do in a fun way
+    - Smarter workers or more complex programming?
+        - If smart lean into complexity limitations.
+            - Stamina? Limit power production
+            - Force player into cycling workers over time
+            - Separate jobs from workers?
+                - Lets you easily swap out workers
+                - Workers can start as more manual point & click. Jobs become a new game mechanic.
+            - Use complexity to force many workers
+                - Workers colliding leads to efficiency loss & chance of injury
+            - Encourage conveyor belts that limit worker movement but are more reliable.
+
+        - Other direction is pivot into programming game
+            - Workers act more like robots, might not fit theme
 
 - Give the player more to do with their money
     - Balance around player staying poor most of the game?
@@ -189,6 +203,10 @@ Learnings:
 - Economy should revolve around forcing player to shift production often
     - Stops the player from just idling to make money
     - Use economy to force players into multi step production
+    - Avoid making player delete existing assemblies. Instead try to incorporate old designs.
+        - Where to store items?
+        - Moving workers between productions needs to be easy / fun
+            - Keep old jobs as unassigned. Make it so you can easily assign / reassign workers to new / old jobs.
 
 - Night time is 1/2 the game. Using a boring UI will kill the game.
     - Turn the night UI into an interactable area
@@ -206,6 +224,13 @@ Learnings:
     - Balance
         - Slow down production of goods
             - Each good production should involve solving a small puzzle. Worker should just make this easier.
+                - Complex production chains? Need roadblocks to make it harder.
+                    - Blocking worker movement
+                    - Combining input items? 
+                    - Worker collisions slowing them down / injury?
+                - Use single item inventory as challenge.
+                    - Give penalty for dropping items?
+                    - 
         - Balance order sizes
             - Min order size / batches?
             - Import & export container sizes
