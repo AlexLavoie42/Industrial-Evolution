@@ -26,7 +26,7 @@ impl Plugin for MoneyPlugin {
             .add_systems(OnEnter(DayCycleState::Night), (factory_upkeep, living_expenses, item_storage_fee.after(sell_export_items)))
             .add_systems(OnEnter(DayCycleState::Day), upkeep_system)
             .insert_resource(PlayerMoney {
-                amount: 600.0
+                amount: 400.0
             })
             .insert_resource(MarketTimer::default())
             .insert_resource(Economy::default())
@@ -90,9 +90,10 @@ impl Default for AssemblyPrices {
     fn default() -> Self {
         Self {
             prices: HashMap::from([
-                (AssemblyType::WoodChipper, 50.0),
-                (AssemblyType::PulpMachine, 150.0),
-                (AssemblyType::PaperMachine, 100.0)
+                (AssemblyType::SawMill, 100.0),
+                (AssemblyType::WoodChipper, 150.0),
+                (AssemblyType::PulpMachine, 200.0),
+                (AssemblyType::PaperMachine, 250.0)
             ])
         }
     }
@@ -157,18 +158,18 @@ impl Default for Economy {
                     base_price: 12.75,
                     base_supply: 0.0,
                     supply: 0.0,
-                    base_demand: 40.0,
+                    base_demand: 60.0,
                     demand: 40.0,
-                    demand_weight: 1.15,
+                    demand_weight: 1.25,
                     supply_weight: 0.85
                 }),
                 (PurchasableItem::Resource(ResourceItem::Lumber), EconomyPrice {
-                    current_price: 5.0,
-                    base_price: 3.75,
+                    current_price: 10.0,
+                    base_price: 5.75,
                     base_supply: 3.0,
                     supply: 6.0,
                     base_demand: 16.0,
-                    demand: 30.0,
+                    demand: 40.0,
                     demand_weight: 1.0,
                     supply_weight: 1.0
                 })

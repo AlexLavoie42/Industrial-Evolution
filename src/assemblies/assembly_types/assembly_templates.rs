@@ -62,7 +62,7 @@ impl DefaultWithSprites for WoodChipperBundle {
             power: AssemblyPower {
                 current_power: Power::Mechanical(0.0),
                 max_power: 45.0,
-                power_cost: 10.0,
+                power_cost: 16.0,
                 powering_entities: Vec::new()
             },
             assembly_items: ItemIOContainer {
@@ -210,7 +210,8 @@ impl DefaultWithSprites for PaperMachineBundle {
 make_assembly_bundle!(SawMillBundle,
     input: AssemblyInput,
     output: AssemblyOutput,
-    timer: AssemblyTimer
+    timer: AssemblyTimer,
+    power: AssemblyPower
 );
 impl DefaultWithSprites for SawMillBundle {
     fn default_with_sprites(sprites: &SpriteStorage) -> Self {
@@ -222,6 +223,12 @@ impl DefaultWithSprites for SawMillBundle {
             timer: AssemblyTimer {
                 timer: Timer::from_seconds(5.0, TimerMode::Repeating),
                 item: None
+            },
+            power: AssemblyPower {
+                current_power: Power::Mechanical(0.0),
+                max_power: 45.0,
+                power_cost: 10.0,
+                powering_entities: Vec::new()
             },
             assembly_items: ItemIOContainer {
                 input: ItemContainer {
@@ -248,7 +255,7 @@ impl DefaultWithSprites for SawMillBundle {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
                     ..default()
                 },
-                texture: sprites.paper_drier.clone(),
+                texture: sprites.pulp_mill.clone(),
                 ..AssemblyBundle::default().sprite
             }
         }

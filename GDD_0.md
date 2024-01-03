@@ -249,6 +249,7 @@ Learnings:
 
 - Different classes of Items? Could provide unique challenges. e.g. illegal, volatile, etc
 
+- Worker upkeep per hour. Not punished as hard for ending the day early.
 
 ## Story / Feelings Ideas
 

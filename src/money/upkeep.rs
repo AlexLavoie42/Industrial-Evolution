@@ -1,13 +1,12 @@
 use crate::*;
 
-const FACTORY_COST: f32 = 3.5;
 const DAY_TIMER: f32 = 6.5 * 60.0;
 
+const FACTORY_COST: f32 = 4.5;
 const LIVING_EXPENSE_BASE: f32 = 0.25;
 
 pub const STORAGE_FEE: f32 = 0.05;
-
-pub const WORKER_UPKEEP: f32 = 0.3;
+pub const WORKER_UPKEEP: f32 = 0.6;
 
 #[derive(Resource)]
 pub struct UpkeepTimer(Timer);

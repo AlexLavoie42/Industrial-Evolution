@@ -70,7 +70,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // .add_plugins(WorldInspectorPlugin::default())
-        .add_plugins(ResourceInspectorPlugin::<Economy>::default())
+        // .add_plugins(ResourceInspectorPlugin::<Economy>::default())
         .add_plugins(TilemapPlugin)
         .add_plugins((KayakContextPlugin, KayakWidgets))
 

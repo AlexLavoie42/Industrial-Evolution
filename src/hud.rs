@@ -652,6 +652,13 @@ pub fn assemblies_hud_render(
                     }
                 },
             );
+            let saw_mill_button_click = OnEvent::new(
+                move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut selected_assembly: ResMut<SelectedAssembly> | {
+                    if let EventType::Click(_) = event.event_type {
+                        selected_assembly.selected = AssemblyType::SawMill;
+                    }
+                },
+            );
 
             let pulp_mill_menu_image = assets.load("Pulp Mill Icon.png");
             let paper_press_menu_image = assets.load("Paper Press Icon.png");
@@ -732,6 +739,28 @@ pub fn assemblies_hud_render(
                     }}
                     on_event={
                         paper_drier_button_click
+                    }
+                />
+                <ImageButtonBundle
+                    props={ImageButtonProps {
+                        image: pulp_mill_menu_image.clone(),
+                        hover_image: pulp_mill_menu_image.clone(),
+                        selected_image: pulp_mill_menu_image.clone(),
+                        ..default()
+                    }}
+                    styles={KStyle {
+                        width: Units::Pixels(64.0).into(),
+                        height: Units::Pixels(64.0).into(),
+                        offset: Edge::new(
+                            Units::Stretch(1.0),
+                            Units::Pixels(0.0),
+                            Units::Stretch(1.0),
+                            Units::Pixels(25.0),
+                        ).into(),
+                        ..default()
+                    }}
+                    on_event={
+                        saw_mill_button_click
                     }
                 />
             </NinePatchBundle>

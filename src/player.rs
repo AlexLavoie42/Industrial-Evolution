@@ -353,9 +353,9 @@ pub fn activate_power_mode_on_click(
     }
 }
 
-const POWER_DECREASE_MULT: f32 = 0.40;
+const POWER_DECREASE_MULT: f32 = 0.65;
 const POWER_DECREASE_BASE: usize = 7; 
-const INCREASE_CURVE_MULT: f32 = 0.07;
+const INCREASE_CURVE_MULT: f32 = 0.09;
 const NO_INPUT_MULT: f32 = 3.0;
 
 pub fn player_power_assembly(
