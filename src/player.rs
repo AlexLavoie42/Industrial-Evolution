@@ -190,34 +190,7 @@ pub fn player_pickup_item(
         let io_container_dist = near_io_container.as_ref().map(|c| Vec3::distance(c.1.translation, player_transform.translation));
         let item_dist = near_item.as_ref().map(|i| Vec3::distance(i.1.translation(), player_transform.translation));
 
-        if near_container.is_some() && !player_container.items.is_empty() {
-            println!("Dropping item in container");
-            if let Some((container, _, container_entity)) = near_container.as_mut() {
-                let Some(Some(child)) = children.map(|c| c.first()) else { return; };
-                let Ok((_, _, _, item_type)) = q_items.get(*child) else { return; };
-                if let Ok(_) = container.add_item((Some(*child), Some(*item_type))) {
-                    match player_container.remove_item(Some(*child)) {
-                        Ok(_) => {
-                            let Ok((item, _, mut item_transform, item_type)) = q_items.get_mut(*child) else {
-                                if let Err(err) = container.remove_item(Some(*child)) {
-                                    println!("Error picking item back up: {err}");
-                                }
-                                return;
-                            };
-                            commands.entity(player).remove_children(&[*child]);
-                            commands.entity(*container_entity).push_children(&[*child]);
-                            *item_transform = container.get_transform();
-                            return;
-                        },
-                        Err(_) => {
-                            if let Err(err) = container.remove_item(Some(*child)) {
-                                println!("Error picking item back up: {err}");
-                            }
-                        }
-                    }
-                }
-            }
-        } else if near_io_container.is_some() && !player_container.items.is_empty() {
+        if near_io_container.is_some() && !player_container.items.is_empty() && (container_dist.is_none() || io_container_dist.unwrap() < container_dist.unwrap()) {
             println!("Dropping item in IO container");
             if let Some((mut container, _, container_entity)) = near_io_container {
                 let Some(Some(child)) = children.map(|c| c.first()) else { return; };
@@ -238,6 +211,33 @@ pub fn player_pickup_item(
                         },
                         Err(_) => {
                             if let Err(err) = container.input.remove_item(Some(*child)) {
+                                println!("Error picking item back up: {err}");
+                            }
+                        }
+                    }
+                }
+            }
+        } else if near_container.is_some() && !player_container.items.is_empty() {
+            println!("Dropping item in container");
+            if let Some((container, _, container_entity)) = near_container.as_mut() {
+                let Some(Some(child)) = children.map(|c| c.first()) else { return; };
+                let Ok((_, _, _, item_type)) = q_items.get(*child) else { return; };
+                if let Ok(_) = container.add_item((Some(*child), Some(*item_type))) {
+                    match player_container.remove_item(Some(*child)) {
+                        Ok(_) => {
+                            let Ok((item, _, mut item_transform, item_type)) = q_items.get_mut(*child) else {
+                                if let Err(err) = container.remove_item(Some(*child)) {
+                                    println!("Error picking item back up: {err}");
+                                }
+                                return;
+                            };
+                            commands.entity(player).remove_children(&[*child]);
+                            commands.entity(*container_entity).push_children(&[*child]);
+                            *item_transform = container.get_transform();
+                            return;
+                        },
+                        Err(_) => {
+                            if let Err(err) = container.remove_item(Some(*child)) {
                                 println!("Error picking item back up: {err}");
                             }
                         }

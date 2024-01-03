@@ -315,12 +315,14 @@ pub fn factory_setup(
 
     let mut output_bundle = ContainerOutputSelectorBundle::new(asset_server.clone());
     output_bundle.sprite.transform.translation = Vec3::new(0.0, -42.0, 1.0);
+    output_bundle.sprite.transform.rotation = Quat::from_rotation_z(std::f32::consts::PI);
     let output_entity = commands.spawn(output_bundle).id();
     commands.spawn(ItemImportBundle::from_translation(vec3(4.0 * TILE_SIZE.x, 8.0 * TILE_SIZE.y, -1.0), &sprites))
         .push_children(&[output_entity]);
 
     let mut input_bundle = ContainerInputSelectorBundle::new(asset_server.clone());
     input_bundle.sprite.transform.translation = Vec3::new(0.0, 42.0, 1.0);
+    input_bundle.sprite.transform.rotation = Quat::from_rotation_z(std::f32::consts::PI);
     let input_entity = commands.spawn(input_bundle).id();
 
     commands.spawn(ItemExportBundle::from_translation(vec3(-14.0 * TILE_SIZE.x, -16.0 * TILE_SIZE.y, -1.0), &sprites)).push_children(&[input_entity]);

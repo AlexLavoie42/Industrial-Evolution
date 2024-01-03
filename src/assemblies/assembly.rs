@@ -98,11 +98,13 @@ pub fn place_assembly(
         }
         let mut output_bundle = ContainerOutputSelectorBundle::new(asset_server.clone());
 
-        output_bundle.sprite.transform.translation = Vec3::new(0.0, (size.y as f32) * TILE_SIZE.y, 1.0);
+        output_bundle.sprite.transform.translation = Vec3::new(-(size.x as f32) * TILE_SIZE.x, 0.0, 1.0);
+        output_bundle.sprite.transform.rotation = Quat::from_rotation_z(std::f32::consts::PI / 2.0);
         let output_entity = commands.spawn(output_bundle).id();
 
         let mut input_bundle = ContainerInputSelectorBundle::new(asset_server.clone());
-        input_bundle.sprite.transform.translation = Vec3::new(0.0, -(size.y as f32) * TILE_SIZE.y, 1.0);
+        input_bundle.sprite.transform.translation = Vec3::new((size.x as f32) * TILE_SIZE.x, 0.0, 1.0);
+        input_bundle.sprite.transform.rotation = Quat::from_rotation_z(std::f32::consts::PI / 2.0);
         let input_entity: Entity = commands.spawn(input_bundle).id();
         selected_assembly.selected.spawn_bundle(&mut commands, &sprites, pos).push_children(&[input_entity, output_entity]);
     }

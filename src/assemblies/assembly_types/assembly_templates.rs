@@ -139,7 +139,7 @@ impl DefaultWithSprites for PulpMachineBundle {
                 }
             },
             solid: SolidEntity,
-            tile_size: EntityTileSize(IVec2::new(2, 2)),
+            tile_size: EntityTileSize(IVec2::new(4, 4)),
             sprite: SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
@@ -194,7 +194,7 @@ impl DefaultWithSprites for PaperMachineBundle {
                 }
             },
             solid: SolidEntity,
-            tile_size: EntityTileSize(IVec2::new(2, 2)),
+            tile_size: EntityTileSize(IVec2::new(4, 4)),
             sprite: SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
@@ -249,7 +249,7 @@ impl DefaultWithSprites for SawMillBundle {
                 }
             },
             solid: SolidEntity,
-            tile_size: EntityTileSize(IVec2::new(2, 2)),
+            tile_size: EntityTileSize(IVec2::new(4, 4)),
             sprite: SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
