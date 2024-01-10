@@ -618,7 +618,8 @@ pub fn assemblies_hud_render(
     mut commands: Commands,
     mut query: Query<(&mut AssembliesHudProps, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
     assets: Res<AssetServer>,
-    player_state: Res<State<PlayerState>>
+    player_state: Res<State<PlayerState>>,
+    assembly_prices: Res<AssemblyPrices>,
 ) -> bool {
     if let Ok((mut props, mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
         *computed_styles = KStyle {
@@ -630,7 +631,7 @@ pub fn assemblies_hud_render(
         if player_state.get() == &PlayerState::Assemblies {
             let parent_id = Some(entity);
 
-            let pulp_mill_button_click = OnEvent::new(
+            let wood_chipper_button_click = OnEvent::new(
                 move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut selected_assembly: ResMut<SelectedAssembly> | {
                     if let EventType::Click(_) = event.event_type {
                         selected_assembly.selected = AssemblyType::WoodChipper;
@@ -638,14 +639,14 @@ pub fn assemblies_hud_render(
                 },
             );
 
-            let paper_press_button_click = OnEvent::new(
+            let pulp_machine_button_click = OnEvent::new(
                 move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut selected_assembly: ResMut<SelectedAssembly> | {
                     if let EventType::Click(_) = event.event_type {
                         selected_assembly.selected = AssemblyType::PulpMachine;
                     }
                 },
             );
-            let paper_drier_button_click = OnEvent::new(
+            let paper_machine_button_click = OnEvent::new(
                 move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut selected_assembly: ResMut<SelectedAssembly> | {
                     if let EventType::Click(_) = event.event_type {
                         selected_assembly.selected = AssemblyType::PaperMachine;
@@ -660,9 +661,21 @@ pub fn assemblies_hud_render(
                 },
             );
 
-            let pulp_mill_menu_image = assets.load("Pulp Mill Icon.png");
-            let paper_press_menu_image = assets.load("Paper Press Icon.png");
-            let paper_drier_menu_image = assets.load("Paper Drier Icon.png");
+            let saw_mill_menu_image = assets.load("Saw Mill Icon.png");
+            let saw_mill_menu_image_hover = assets.load("Saw Mill Icon Hover.png");
+            let saw_mill_menu_image_selected = assets.load("Saw Mill Icon Selected.png");
+
+            let wood_chipper_menu_image = assets.load("Wood Chipper Icon.png");
+            let wood_chipper_menu_image_hover = assets.load("Wood Chipper Icon Hover.png");
+            let wood_chipper_menu_image_selected = assets.load("Wood Chipper Icon Selected.png");
+
+            let pulp_machine_menu_image = assets.load("Pulp Machine Icon.png");
+            let pulp_machine_menu_image_hover = assets.load("Pulp Machine Icon Hover.png");
+            let pulp_machine_menu_image_selected = assets.load("Pulp Machine Icon Selected.png");
+
+            let paper_machine_menu_image = assets.load("Paper Machine Icon.png");
+            let paper_machine_menu_image_hover = assets.load("Paper Machine Icon Hover.png");
+            let paper_machine_menu_image_selected = assets.load("Paper Machine Icon Selected.png");
 
             rsx!(
             <NinePatchBundle
@@ -676,80 +689,13 @@ pub fn assemblies_hud_render(
             >
                 <ImageButtonBundle
                     props={ImageButtonProps {
-                        image: pulp_mill_menu_image.clone(),
-                        hover_image: pulp_mill_menu_image.clone(),
-                        selected_image: pulp_mill_menu_image.clone(),
+                        image: saw_mill_menu_image.clone(),
+                        hover_image: saw_mill_menu_image_hover.clone(),
+                        selected_image: saw_mill_menu_image_selected.clone(),
                         ..default()
                     }}
                     styles={KStyle {
-                        width: Units::Pixels(64.0).into(),
-                        height: Units::Pixels(64.0).into(),
-                        offset: Edge::new(
-                            Units::Stretch(1.0),
-                            Units::Pixels(0.0),
-                            Units::Stretch(1.0),
-                            Units::Pixels(25.0),
-                        ).into(),
-                    
-                        ..default()
-                    }}
-                    on_event={
-                        pulp_mill_button_click
-                    }
-                />
-                <ImageButtonBundle
-                    props={ImageButtonProps {
-                        image: paper_press_menu_image.clone(),
-                        hover_image: paper_press_menu_image.clone(),
-                        selected_image: paper_press_menu_image.clone(),
-                        ..default()
-                    }}
-                    styles={KStyle {
-                        width: Units::Pixels(64.0).into(),
-                        height: Units::Pixels(64.0).into(),
-                        offset: Edge::new(
-                            Units::Stretch(1.0),
-                            Units::Pixels(0.0),
-                            Units::Stretch(1.0),
-                            Units::Pixels(25.0),
-                        ).into(),
-                        ..default()
-                    }}
-                    on_event={
-                        paper_press_button_click
-                    }
-                />
-                <ImageButtonBundle
-                    props={ImageButtonProps {
-                        image: paper_drier_menu_image.clone(),
-                        hover_image: paper_drier_menu_image.clone(),
-                        selected_image: paper_drier_menu_image.clone(),
-                        ..default()
-                    }}
-                    styles={KStyle {
-                        width: Units::Pixels(64.0).into(),
-                        height: Units::Pixels(64.0).into(),
-                        offset: Edge::new(
-                            Units::Stretch(1.0),
-                            Units::Pixels(0.0),
-                            Units::Stretch(1.0),
-                            Units::Pixels(25.0),
-                        ).into(),
-                        ..default()
-                    }}
-                    on_event={
-                        paper_drier_button_click
-                    }
-                />
-                <ImageButtonBundle
-                    props={ImageButtonProps {
-                        image: pulp_mill_menu_image.clone(),
-                        hover_image: pulp_mill_menu_image.clone(),
-                        selected_image: pulp_mill_menu_image.clone(),
-                        ..default()
-                    }}
-                    styles={KStyle {
-                        width: Units::Pixels(64.0).into(),
+                        width: Units::Pixels(128.0).into(),
                         height: Units::Pixels(64.0).into(),
                         offset: Edge::new(
                             Units::Stretch(1.0),
@@ -762,6 +708,128 @@ pub fn assemblies_hud_render(
                     on_event={
                         saw_mill_button_click
                     }
+                />
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("${:.2}", assembly_prices.prices.get(&AssemblyType::SawMill).unwrap_or(&0.0)),
+                        ..default()
+                    }}
+                    styles={KStyle {
+                        width: Units::Stretch(0.0).into(),
+                        left: Units::Pixels(-100.0).into(),
+                        top: Units::Pixels(4.0).into(),
+                        font_size: StyleProp::Value(21.0),
+                        ..Default::default()
+                    }}
+                />
+
+                <ImageButtonBundle
+                    props={ImageButtonProps {
+                        image: wood_chipper_menu_image.clone(),
+                        hover_image: wood_chipper_menu_image_hover.clone(),
+                        selected_image: wood_chipper_menu_image_selected.clone(),
+                        ..default()
+                    }}
+                    styles={KStyle {
+                        width: Units::Pixels(128.0).into(),
+                        height: Units::Pixels(64.0).into(),
+                        offset: Edge::new(
+                            Units::Stretch(1.0),
+                            Units::Pixels(0.0),
+                            Units::Stretch(1.0),
+                            Units::Pixels(125.0),
+                        ).into(),
+                    
+                        ..default()
+                    }}
+                    on_event={
+                        wood_chipper_button_click
+                    }
+                />
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("${:.2}", assembly_prices.prices.get(&AssemblyType::WoodChipper).unwrap_or(&0.0)),
+                        ..default()
+                    }}
+                    styles={KStyle {
+                        width: Units::Stretch(0.0).into(),
+                        left: Units::Pixels(-100.0).into(),
+                        top: Units::Pixels(4.0).into(),
+                        font_size: StyleProp::Value(21.0),
+                        ..Default::default()
+                    }}
+                />
+
+                <ImageButtonBundle
+                    props={ImageButtonProps {
+                        image: pulp_machine_menu_image.clone(),
+                        hover_image: pulp_machine_menu_image_hover.clone(),
+                        selected_image: pulp_machine_menu_image_selected.clone(),
+                        ..default()
+                    }}
+                    styles={KStyle {
+                        width: Units::Pixels(128.0).into(),
+                        height: Units::Pixels(64.0).into(),
+                        offset: Edge::new(
+                            Units::Stretch(1.0),
+                            Units::Pixels(0.0),
+                            Units::Stretch(1.0),
+                            Units::Pixels(125.0),
+                        ).into(),
+                        ..default()
+                    }}
+                    on_event={
+                        pulp_machine_button_click
+                    }
+                />
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("${:.2}", assembly_prices.prices.get(&AssemblyType::PulpMachine).unwrap_or(&0.0)),
+                        ..default()
+                    }}
+                    styles={KStyle {
+                        width: Units::Stretch(0.0).into(),
+                        left: Units::Pixels(-100.0).into(),
+                        top: Units::Pixels(4.0).into(),
+                        font_size: StyleProp::Value(21.0),
+                        ..Default::default()
+                    }}
+                />
+
+                <ImageButtonBundle
+                    props={ImageButtonProps {
+                        image: paper_machine_menu_image.clone(),
+                        hover_image: paper_machine_menu_image_hover.clone(),
+                        selected_image: paper_machine_menu_image_selected.clone(),
+                        ..default()
+                    }}
+                    styles={KStyle {
+                        width: Units::Pixels(128.0).into(),
+                        height: Units::Pixels(64.0).into(),
+                        offset: Edge::new(
+                            Units::Stretch(1.0),
+                            Units::Pixels(0.0),
+                            Units::Stretch(1.0),
+                            Units::Pixels(125.0),
+                        ).into(),
+                        ..default()
+                    }}
+                    on_event={
+                        paper_machine_button_click
+                    }
+                />
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: format!("${:.2}", assembly_prices.prices.get(&AssemblyType::PaperMachine).unwrap_or(&0.0)),
+                        ..default()
+                    }}
+                    styles={KStyle {
+                        width: Units::Stretch(0.0).into(),
+                        left: Units::Pixels(-100.0).into(),
+                        top: Units::Pixels(4.0).into(),
+                        font_size: StyleProp::Value(21.0),
+                        ..Default::default()
+                    }}
                 />
             </NinePatchBundle>
             );

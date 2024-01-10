@@ -90,7 +90,7 @@ impl DefaultWithSprites for WoodChipperBundle {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
                     ..Default::default()
                 },
-                texture: sprites.pulp_mill.clone(),
+                texture: sprites.wood_chipper.clone(),
                 ..AssemblyBundle::default().sprite
             }
         }
@@ -145,7 +145,7 @@ impl DefaultWithSprites for PulpMachineBundle {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
                     ..default()
                 },
-                texture: sprites.paper_press.clone(),
+                texture: sprites.pulp_machine.clone(),
                 ..AssemblyBundle::default().sprite
             }
         }
@@ -200,7 +200,7 @@ impl DefaultWithSprites for PaperMachineBundle {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
                     ..default()
                 },
-                texture: sprites.paper_drier.clone(),
+                texture: sprites.paper_machine.clone(),
                 ..AssemblyBundle::default().sprite
             }
         }
@@ -255,7 +255,7 @@ impl DefaultWithSprites for SawMillBundle {
                     custom_size: Some(Vec2::new(64.0, 64.0)),
                     ..default()
                 },
-                texture: sprites.pulp_mill.clone(),
+                texture: sprites.saw_mill.clone(),
                 ..AssemblyBundle::default().sprite
             }
         }

@@ -9,8 +9,9 @@ pub const DAY_LENGTH_SECONDS : f32 = 60.0 * 3.5;
 #[derive(States, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum DayCycleState {
     Day,
+    Night,
     #[default]
-    Night
+    Opening
 }
 
 #[derive(Resource)]
@@ -89,7 +90,9 @@ pub fn night_ui_render(
     mut commands: Commands,
     mut query: Query<(&mut NightUIProps, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
     assets: Res<AssetServer>,
-    day_state: Res<State<DayCycleState>>
+    day_state: Res<State<DayCycleState>>,
+    import_selections: Res<ImportSelections>,
+    q_imports: Query<&ItemContainer, With<ItemImport>>,
 ) -> bool {
     if let Ok((mut props, mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
         *computed_styles = KStyle {
@@ -103,12 +106,24 @@ pub fn night_ui_render(
             let next_day_menu_image = assets.load("Next Day Icon.png");
 
             let next_day_button_click = OnEvent::new(
-                move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut next_day_state: ResMut<NextState<DayCycleState>> | {
+                move |
+                    In(_entity): In<Entity>, 
+                    event: ResMut<KEvent>, 
+                    mut next_day_state: ResMut<NextState<DayCycleState>>,
+                    import_selections: Res<ImportSelections>,
+                    q_imports: Query<&ItemContainer, With<ItemImport>>,
+                | {
                     if let EventType::Click(_) = event.event_type {
+                        let import_item_count = q_imports.iter().map(|i| i.items.len()).sum::<usize>();
+                        if import_selections.selected.is_empty() && import_item_count == 0 {
+                            return;
+                        }
                         next_day_state.set(DayCycleState::Day);
                     }
                 },
             );
+
+            let import_item_count = q_imports.iter().map(|i| i.items.len()).sum::<usize>();
 
             rsx!(
                 <BackgroundBundle
@@ -173,12 +188,36 @@ pub fn night_ui_render(
                             image: next_day_menu_image.clone(),
                             hover_image: next_day_menu_image.clone(),
                             selected_image: next_day_menu_image.clone(),
+                            disabled: import_selections.selected.is_empty() && import_item_count == 0,
                             ..default()
                         }}
                         on_event={
                             next_day_button_click
                         }
                     />
+                    {
+                        if import_selections.selected.is_empty() && import_item_count == 0 {
+                            constructor!(
+                                <TextWidgetBundle
+                                    text={TextProps {
+                                        content: "No resources left!".to_string(),
+                                        ..Default::default()
+                                    }}
+                                    styles={KStyle {
+                                        position_type: KPositionType::SelfDirected.into(),
+                                        offset: Edge::new(
+                                            Units::Stretch(1.0),
+                                            Units::Pixels(15.0),
+                                            Units::Pixels(25.0),
+                                            Units::Stretch(1.0),
+                                        ).into(),
+                                        color: Color::RED.into(),
+                                        ..default()
+                                    }}
+                                />
+                            );
+                        }
+                    }
                 </BackgroundBundle>
             );
         } else {

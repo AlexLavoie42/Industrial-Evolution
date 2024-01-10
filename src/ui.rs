@@ -65,7 +65,7 @@ pub fn ui_setup(
 
     widget_context.add_widget_system(
         NightUIProps::default().get_name(),
-        widget_update_with_day_state::<NightUIProps, EmptyState>,
+        widget_update_on_tick::<NightUIProps, EmptyState>,
         night_ui_render,
     );
     widget_context.add_widget_system(
@@ -113,6 +113,7 @@ pub struct ImageButtonProps {
     pub hover_image: Handle<Image>,
     pub selected_image: Handle<Image>,
     pub selected: bool,
+    pub disabled: bool,
 }
 impl Widget for ImageButtonProps {}
 
@@ -183,7 +184,7 @@ pub fn image_button_render(
                     border: Edge::all(0.0),
                 }}
                 styles={KStyle {
-                    cursor: KCursorIcon(CursorIcon::Hand).into(),
+                    cursor: if props.disabled {KCursorIcon(CursorIcon::Default).into()} else {KCursorIcon(CursorIcon::Hand).into()},
                     ..default()
                 }}
                 on_event={OnEvent::new(

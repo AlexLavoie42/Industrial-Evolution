@@ -44,6 +44,12 @@ use hud::*;
 mod day_cycle;
 use day_cycle::*;
 
+mod opening;
+use opening::*;
+
+mod tutorial;
+use tutorial::*;
+
 const GRID_SIZE: TilemapSize = TilemapSize { x: 70, y: 70 };
 const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
 
@@ -123,14 +129,7 @@ fn main() {
         .add_systems(PreUpdate, (set_mouse_pos_res, set_mouse_tile_res))
         .insert_resource(MousePos(Vec2::ZERO))
         .insert_resource(MouseTile(TilePos::new(0, 0)))
-        .insert_resource(SpriteStorage {
-            workers: vec![],
-            pulp_mill: Handle::default(),
-            paper_press: Handle::default(),
-            paper_drier: Handle::default(),
-            imports: Handle::default(),
-            exports: Handle::default(),
-        })
+        .insert_resource(SpriteStorage::default())
         .run();
 }
 
@@ -196,12 +195,21 @@ pub fn input_reset_player_mode(
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct SpriteStorage {
     pub workers: Vec<Handle<TextureAtlas>>,
-    pub pulp_mill: Handle<Image>,
-    pub paper_press: Handle<Image>,
-    pub paper_drier: Handle<Image>,
+    pub pulp_machine: Handle<Image>,
+    pub pulp_machine_hover: Handle<Image>,
+    pub pulp_machine_selected: Handle<Image>,
+    pub paper_machine: Handle<Image>,
+    pub paper_machine_hover: Handle<Image>,
+    pub paper_machine_selected: Handle<Image>,
+    pub saw_mill: Handle<Image>,
+    pub saw_mill_hover: Handle<Image>,
+    pub saw_mill_selected: Handle<Image>,
+    pub wood_chipper: Handle<Image>,
+    pub wood_chipper_hover: Handle<Image>,
+    pub wood_chipper_selected: Handle<Image>,
     pub imports: Handle<Image>,
     pub exports: Handle<Image>,
 }
@@ -225,9 +233,18 @@ pub fn factory_setup(
         sprites.workers.push(texture_atlas_handle.clone());
     }
 
-    sprites.pulp_mill = asset_server.load("Pulp Mill Icon.png");
-    sprites.paper_press = asset_server.load("Paper Press Icon.png");
-    sprites.paper_drier = asset_server.load("Paper Drier Icon.png");
+    sprites.pulp_machine = asset_server.load("Pulp Machine Icon.png");
+    sprites.pulp_machine_hover = asset_server.load("Pulp Machine Icon Hover.png");
+    sprites.pulp_machine_selected = asset_server.load("Pulp Machine Icon Selected.png");
+    sprites.paper_machine = asset_server.load("Paper Machine Icon.png");
+    sprites.paper_machine_hover = asset_server.load("Paper Machine Icon Hover.png");
+    sprites.paper_machine_selected = asset_server.load("Paper Machine Icon Selected.png");
+    sprites.saw_mill = asset_server.load("Saw Mill Icon.png");
+    sprites.saw_mill_hover = asset_server.load("Saw Mill Icon Hover.png");
+    sprites.saw_mill_selected = asset_server.load("Saw Mill Icon Selected.png");
+    sprites.wood_chipper = asset_server.load("Wood Chipper Icon.png");
+    sprites.wood_chipper_hover = asset_server.load("Wood Chipper Icon Hover.png");
+    sprites.wood_chipper_selected = asset_server.load("Wood Chipper Icon Selected.png");
 
     sprites.imports = asset_server.load("Imports.png");
     sprites.exports = asset_server.load("Exports.png");
