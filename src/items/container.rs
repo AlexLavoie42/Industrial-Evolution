@@ -120,6 +120,20 @@ pub fn move_container_items(
     }
 }
 
+pub fn add_container_items(
+    mut commands: Commands,
+    mut q_containers: Query<(Entity, &mut ItemContainer, &Children)>,
+) {
+    for (container_entity, container, children) in q_containers.iter_mut() {
+        for item in container.items.iter() {
+            let Some(item) = item else { continue };
+            if !children.contains(item) {
+                commands.entity(container_entity).push_children(&[*item]);
+            }
+        }
+    }
+}
+
 #[derive(Component, Debug, Reflect)]
 pub struct ItemIOContainer {
     pub input: ItemContainer,

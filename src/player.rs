@@ -206,7 +206,7 @@ pub fn player_pickup_item(
                             };
                             commands.entity(player).remove_children(&[*child]);
                             commands.entity(container_entity).push_children(&[*child]);
-                            *item_transform = container.input.get_transform();
+                            // *item_transform = container.input.get_transform();
                             return;
                         },
                         Err(_) => {
@@ -256,17 +256,19 @@ pub fn player_pickup_item(
             let item_container = q_containers.iter_mut().find(|c| c.0.items.contains(&Some(entity)));
             let io_container = q_io_containers.iter_mut().find(|c| c.0.output.items.contains(&Some(entity)));
     
-            if let Some((mut item_container, _, _)) = item_container {
-                if let Err(err) = item_container.remove_item(Some(entity)) {
-                    println!("Error removing item: {err}");
-                }
-            } else if let Some((mut io_container, _, _)) = io_container {
-                if let Err(err) = io_container.output.remove_item(Some(entity)) {
-                    println!("Error removing item: {err}");
-                }
-            }
-    
+
             if let Ok(_) = player_container.add_item((Some(entity), Some(*item_type))) {
+                if let Some((mut item_container, _, _)) = item_container {
+                    if let Err(err) = item_container.remove_item(Some(entity)) {
+                        println!("Error removing item: {err}");
+                        return;
+                    }
+                } else if let Some((mut io_container, _, _)) = io_container {
+                    if let Err(err) = io_container.output.remove_item(Some(entity)) {
+                        println!("Error removing item: {err}");
+                        return;
+                    }
+                }
                 transform.translation.x = 16.0;
                 transform.translation.y = 8.0;
                 commands.entity(player).push_children(&[entity]);
@@ -299,7 +301,6 @@ pub fn player_drop_item(
                 if let Ok(mut transform) = item_transforms.get_mut(*child) {
                     transform.translation = Vec3::new(player_transform.translation.x, player_transform.translation.y, transform.translation.z);
                 }
-                return;
             },
             Err(err) => {
                 println!("Error dropping item: {err}");

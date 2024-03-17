@@ -22,6 +22,7 @@ impl Default for OpeningDialogue {
                 "Unfortunately the factory has been abandoned for a while.".to_string(),
                 "However, it seems there is still a working saw mill.".to_string(),
                 "You can start making some money by ordering some wood and producing some lumber.".to_string(),
+                "I have purchased some wood for you to get started. Good luck!".to_string(),
             ],
             index: 0,
         }
@@ -38,7 +39,7 @@ pub fn cycle_opening_dialogue(
         if opening_dialogue.index < opening_dialogue.text.len() - 1 {
             opening_dialogue.index += 1;
         } else {
-            day_state.set(DayCycleState::Night);
+            day_state.set(DayCycleState::Day);
         }
     }
 }

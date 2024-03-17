@@ -335,7 +335,19 @@ pub fn factory_setup(
     output_bundle.sprite.transform.translation = Vec3::new(0.0, -42.0, 1.0);
     output_bundle.sprite.transform.rotation = Quat::from_rotation_z(std::f32::consts::PI);
     let output_entity = commands.spawn(output_bundle).id();
-    commands.spawn(ItemImportBundle::from_translation(vec3(4.0 * TILE_SIZE.x, 8.0 * TILE_SIZE.y, -1.0), &sprites))
+    let mut item_imports = ItemImportBundle::from_translation(vec3(4.0 * TILE_SIZE.x, 8.0 * TILE_SIZE.y, -1.0), &sprites);
+    for _ in 0..5 {
+        if let Err(_) = item_imports.container.add_item(
+            (
+                Some(Item::Resource(ResourceItem::Wood).spawn_bundle(&mut commands).id()),
+                Some(Item::Resource(ResourceItem::Wood))
+            )
+        ) {
+            println!("Failed to add starting wood");
+            break;
+        }
+    }
+    commands.spawn(item_imports)
         .push_children(&[output_entity]);
 
     let mut input_bundle = ContainerInputSelectorBundle::new(asset_server.clone());

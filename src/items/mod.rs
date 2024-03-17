@@ -62,7 +62,7 @@ impl Plugin for ItemPlugin {
             //     place_import.run_if(in_state(PlayerState::Imports)),
             //     input_toggle_import_mode
             // ).run_if(in_state(DayCycleState::Day)))
-            .add_systems(Update, move_container_items)
+            .add_systems(Update, (move_container_items, add_container_items))
             .add_systems(OnEnter(DayCycleState::Night), (sell_export_items))
             .add_systems(OnExit(DayCycleState::Night), (purchase_item_imports, |mut sold_items: ResMut<SoldItems>| sold_items.items.clear()))
             .insert_resource(SoldItems::default())
