@@ -1,4 +1,4 @@
-use bevy::ecs::{world::WorldCell, system::SystemState};
+use bevy::{core_pipeline::core_2d::graph::input, ecs::system::{SystemId, SystemState}};
 
 use crate::*;
 
@@ -6,14 +6,15 @@ pub struct TutorialPlugin;
 impl Plugin for TutorialPlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_systems(Startup, register_tutorial)
             .add_systems(Update, tutorial_system)
-            .insert_non_send_resource(TutorialState::default());
+            .insert_resource(MovementTimer(0.0));
     }
 }
 
 pub struct TutorialStep {
     pub dialogue: String,
-    pub action: TutorialAction,
+    pub action: SystemId,
 }
 
 #[derive(Resource)]
@@ -23,51 +24,460 @@ pub struct TutorialState {
     pub steps: Vec<TutorialStep>,
 }
 
-pub fn tutorial_system(
+pub fn register_tutorial(
     mut world: &mut World,
-) {
-    let finished = {
-        check_action_finished(&mut world)
-    };
 
-    if finished {
-        increment_step_system(&mut world);
+) {
+    let tut_state = TutorialState::new(&mut world);
+    world.insert_resource(tut_state);
+}
+
+pub fn tutorial_system(
+    mut tut_state: ResMut<TutorialState>,
+    mut commands: Commands,
+) {
+    if tut_state.enabled {
+        let Some(step) = tut_state.steps.get(tut_state.step as usize) else {
+            print!("Reached end of tutorial");
+            tut_state.enabled = false;
+            return;
+        };
+        commands.run_system(step.action);
     }
 }
-pub enum TutorialAction {
-    Movement,
-}
-impl Default for TutorialState {
-    fn default() -> Self {
+
+impl TutorialState {
+    fn new(world: &mut World) -> Self {
         Self {
             enabled: true,
             step: 0,
             steps: vec![
                 TutorialStep {
-                    dialogue: "Move your character with WASD".to_string(),
-                    action: TutorialAction::Movement,
+                    dialogue: "Move your character with WASD.\nYou can adjust the camera level with the scroll wheel".to_string(),
+                    action: world.register_system(check_movement),
+                },
+                TutorialStep {
+                    dialogue: "Lets start with building a saw mill.\nFirst click on \"Assemblies\"".to_string(),
+                    action: world.register_system(
+                        |
+                            player_state: Res<State<PlayerState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *player_state.get() == PlayerState::Assemblies {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "Next click on \"Saw Mill\".\nYou can then click on the ground to place one".to_string(),
+                    action: world.register_system(
+                        |
+                            q_assemblies: Query<&AssemblyType, With<Assembly>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            let assemblies = q_assemblies.iter().collect::<Vec<_>>();
+                            if assemblies.len() > 0 && assemblies.contains(&&AssemblyType::SawMill) {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "Press \"Escape\" to exit building mode.".to_string(),
+                    action: world.register_system(
+                        |
+                            player_state: Res<State<PlayerState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *player_state.get() == PlayerState::None {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "Now grab some wood and get working!
+                    \nYou can find the wood in your imports section
+                    \nPress \"F\" to pickup items. You will pick up items that are closest to the mouse cursor.".to_string(),
+                    action: world.register_system(
+                        |
+                            q_player: Query<&ItemContainer, With<Player>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            let player_container = q_player.single();
+
+                            if player_container.items.len() > 0 {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "Now approach the saw mill and press \"F\" to place the wood inside.".to_string(),
+                    action: world.register_system(
+                        |
+                            q_assemblies: Query<(&ItemIOContainer, &AssemblyType), With<Assembly>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            let assemblies = q_assemblies.iter().filter(|x| x.1 == &AssemblyType::SawMill).collect::<Vec<_>>();
+                            for (assembly_container, _) in assemblies {
+                                if assembly_container.input.items.len() > 0 {
+                                    increment_step_system(tut_state);
+                                    break;
+                                }
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "Now click on the saw mill to start manually cutting.".to_string(),
+                    action: world.register_system(
+                        |
+                            player_state: Res<State<PlayerState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *player_state.get() == PlayerState::Power {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "Keep using the saw mill until it is finished.
+                    \nTry pressing the space bar quickly.
+                    \nThe faster you press the space bar, the faster you will produce!".to_string(),
+                    action: world.register_system(
+                        |
+                            q_assemblies: Query<(&ItemIOContainer, &AssemblyType), With<Assembly>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            let assemblies = q_assemblies.iter().filter(|x| x.1 == &AssemblyType::SawMill).collect::<Vec<_>>();
+                            for (assembly_container, _) in assemblies {
+                                if assembly_container.output.items.len() > 0 {
+                                    increment_step_system(tut_state);
+                                    break;
+                                }
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "The saw mill has finished cutting all the wood!
+                    \nPress \"Escape\" to leave the saw mill".to_string(),
+                    action: world.register_system(
+                        |
+                            player_state: Res<State<PlayerState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *player_state.get() != PlayerState::Power {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "Now that you have some lumber, pick it up from the saw mill.
+                    \nPress \"F\" while standing near the saw mill to pickup the lumber.".to_string(),
+                    action: world.register_system(
+                        |
+                            q_player: Query<&ItemContainer, With<Player>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            let player_container = q_player.single();
+
+                            if player_container.items.len() > 0 {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "Place the lumber in the exports area to be sold at the end of the day.
+                    \nPress \"F\" while standing near the exports area to place the lumber.".to_string(),
+                    action: world.register_system(
+                        |
+                            q_exports: Query<&ItemContainer, With<ItemExport>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            let exports_container = q_exports.single();
+                            if exports_container.items.len() > 0 {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "You wont be able to produce much on your own.
+                    \nYou should hire somebody to do it for you!
+                    \nClick on \"Workers\"".to_string(),
+                    action: world.register_system(
+                        |
+                            player_state: Res<State<PlayerState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *player_state.get() == PlayerState::Workers {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    )
+                },
+                TutorialStep {
+                    dialogue: "Now click on the ground to place a worker.
+                    \nEach worker costs $5 to hire, and will cost you 60¢ each day in salary.".to_string(),
+                    action: world.register_system(
+                        |
+                            q_workers: Query<&Worker>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if q_workers.iter().count() > 0 {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "Press \"Escape\" to exit hiring mode.".to_string(),
+                    action: world.register_system(
+                        |
+                            player_state: Res<State<PlayerState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *player_state.get() == PlayerState::None {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "Now click on the worker so you can tell them what to do.".to_string(),
+                    action: world.register_system(
+                        |
+                            player_state: Res<State<PlayerState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            // if *player_state.get() != PlayerState::None {
+                            //     tut_state.step -= 1;
+                            // }
+                            if *player_state.get() == PlayerState::Jobs {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "Click anywhere on the screen to tell the worker what to do.
+                    \nClicking on red arrows will instruct the worker to pick up items.
+                    \nClick on the red arrow under the export area to instruct the worker to pickup wood.
+                    \nRight clicking on a green box will delete the instruction.".to_string(),
+                    action: world.register_system(
+                        |
+                            selected_worker: Res<SelectedWorker>,
+                            q_jobs: Query<&Job>,
+                            mut tut_state: ResMut<TutorialState>,
+                        | {
+                            if selected_worker.selected.is_none() {
+                                return;
+                            }
+                            let Some(job) = q_jobs.get(selected_worker.selected.unwrap()).ok() else { 
+                                tut_state.step -= 1;
+                                return; 
+                            };
+                            if job.path.len() == 1 && matches!(job.path[0].action, JobAction::ContainerPickup { .. }) {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "Clicking on green arrows will instruct the worker to drop items.
+                    \nClick on the green arrow above the saw mill to instruct the worker to drop the wood.
+                    \nRight clicking on a green box will delete the instruction.".to_string(),
+                    action: world.register_system(
+                        |
+                            selected_worker: Res<SelectedWorker>,
+                            q_jobs: Query<&Job>,
+                            mut tut_state: ResMut<TutorialState>,
+                        | {
+                            if selected_worker.selected.is_none() {
+                                return;
+                            }
+                            let Some(job) = q_jobs.get(selected_worker.selected.unwrap()).ok() else { 
+                                return; 
+                            };
+                            if job.path.len() == 2 && matches!(job.path[0].action, JobAction::ContainerPickup { .. }) && matches!(job.path[1].action, JobAction::Drop { .. }) {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "Clicking on an assembly will instruct the worker to power it.
+                    \nClick on the saw mill to instruct the worker to power it.
+                    \nRight clicking on a green box will delete the instruction.".to_string(),
+                    action: world.register_system(
+                        |
+                            selected_worker: Res<SelectedWorker>,
+                            q_jobs: Query<&Job>,
+                            mut tut_state: ResMut<TutorialState>,
+                        | {
+                            if selected_worker.selected.is_none() {
+                                return;
+                            }
+                            let Some(job) = q_jobs.get(selected_worker.selected.unwrap()).ok() else { 
+                                return; 
+                            };
+                            if job.path.len() == 3 && matches!(job.path[0].action, JobAction::ContainerPickup { .. }) && matches!(job.path[1].action, JobAction::Drop { .. }) {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "Great work! Your worker should now be producing the lumber for you.
+                    \nPress \"Escape\" to exit".to_string(),
+                    action: world.register_system(
+                        |
+                            player_state: Res<State<PlayerState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *player_state.get() == PlayerState::None {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "You seem to be getting the hang of this!
+                    \nOnce you are ready, click on \"End Day\" to end your day.
+                    \nKeep in mind you will be charged a storage fee for any items left in your factory!".to_string(),
+                    action: world.register_system(
+                        |
+                            day_cycle: Res<State<DayCycleState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *day_cycle.get() == DayCycleState::Night {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
+                },
+                TutorialStep {
+                    dialogue: "Purchase some wood for tomorrow. Click on the \"+\" next to wood.".to_string(),
+                    action: world.register_system(
+                        |
+                            day_cycle: Res<State<DayCycleState>>,
+                            tut_state: ResMut<TutorialState>,
+                        | {
+                            if *day_cycle.get() == DayCycleState::Day {
+                                increment_step_system(tut_state)
+                            }
+                        }
+                    ),
                 },
             ],
         }
     }
 }
-pub fn check_action_finished(world: &mut World) -> bool {
-    let state = world.get_resource::<TutorialState>().unwrap();
-    let action = &state.steps.get(state.step as usize).unwrap().action;
-    match action {
-        TutorialAction::Movement => {
-            let mut movement: SystemState<
-                Query<&Movement, With<Player>>
-            > = SystemState::new(world);
 
-            movement.get(world).single().speed_x > 0.0 || movement.get(world).single().speed_y > 0.0
-        },
+pub fn increment_step_system(
+    mut tut_state: ResMut<TutorialState>,
+) {
+    if tut_state.step < tut_state.steps.len() as u8 - 1 {
+        tut_state.step += 1;
+    } else {
+        tut_state.enabled = false;
     }
 }
 
-pub fn increment_step_system(world_cell: &mut World) {
-    let mut state = world_cell.get_non_send_resource_mut::<TutorialState>().unwrap();
-    state.step += 1;
+const MOVEMENT_TIME: f32 = 1.3;
+#[derive(Resource)]
+pub struct MovementTimer(pub f32);
+pub fn check_movement(
+    player: Query<&Movement, With<Player>>,
+    time: Res<Time>,
+    tut_state: ResMut<TutorialState>,
+    mut movement_timer: ResMut<MovementTimer>,
+) {
+    let Some(input) = player.single().input else { return };
+    if (input.x == 0.0) && (input.y == 0.0) {
+        return;
+    }
+    movement_timer.0 += time.delta_seconds();
+    if movement_timer.0 > MOVEMENT_TIME {
+        increment_step_system(tut_state)
+    }
 }
 
 
+#[derive(Component, Clone, PartialEq, Default)]
+pub struct TutorialProps;
+impl Widget for TutorialProps {}
+
+#[derive(Bundle)]
+pub struct TutorialBundle {
+    pub props: TutorialProps,
+    pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
+    pub on_event: OnEvent,
+    pub widget_name: WidgetName,
+}
+impl Default for TutorialBundle {
+    fn default() -> Self {
+        Self {
+            on_event: OnEvent::default(),
+            props: Default::default(),
+            styles: KStyle {
+                font_size: StyleProp::Value(45.0),
+                ..default()
+            },
+            computed_styles: Default::default(),
+            widget_name: TutorialProps::default().get_name(),
+        }
+    }
+}
+
+pub fn tutorial_dialogue_render(
+    In(entity): In<Entity>,
+    mut commands: Commands,
+    widget_context: Res<KayakWidgetContext>,
+    mut query: Query<(&mut TutorialProps, &mut ComputedStyles, &KStyle, &mut OnEvent)>,
+    tutorial_state: Res<TutorialState>,
+    day_cycle: Res<State<DayCycleState>>,
+) -> bool {
+    if let Ok((props, mut computed_styles, style, mut event)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(style)
+            .into();
+        computed_styles.0.height = Units::Pixels(0.0).into();
+        computed_styles.0.width = Units::Pixels(0.0).into();
+        computed_styles.0.padding_top = Units::Pixels(64.0).into();
+        computed_styles.0.padding_left = Units::Pixels(32.0).into();
+        if tutorial_state.enabled == false || *day_cycle.get() == DayCycleState::Opening {
+            return true;
+        }
+
+        let parent_id = Some(entity);
+        let Some(step) = tutorial_state.steps.get(tutorial_state.step as usize) else {
+            return true;
+        };
+        computed_styles.0.color = StyleProp::Value(Color::rgb(0.0, 0.0, 0.0));
+        if day_cycle.get() == &DayCycleState::Night {
+            computed_styles.0.color = StyleProp::Value(Color::rgb(1.0, 1.0, 1.0));
+        }
+        rsx!(
+            <DialogueBundle
+                props={DialogueProps {
+                    dialogue: step.dialogue.clone(),
+                }}
+                styles={KStyle {
+                    z_index: StyleProp::Value(1000),
+                    font_size: StyleProp::Value(40.0),
+                    line_height: StyleProp::Value(30.0),
+                    ..default()
+                }}
+            />
+        );
+    }
+    true
+}

@@ -50,7 +50,7 @@ use opening::*;
 mod tutorial;
 use tutorial::*;
 
-const GRID_SIZE: TilemapSize = TilemapSize { x: 70, y: 70 };
+const GRID_SIZE: TilemapSize = TilemapSize { x: 180, y: 180 };
 const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
@@ -85,6 +85,7 @@ fn main() {
         .add_plugins(ItemPlugin)
         .add_plugins(MoneyPlugin)
         .add_plugins(OpeningPlugin)
+        .add_plugins(TutorialPlugin)
 
         .add_systems(Update, day_timer_system.run_if(in_state(DayCycleState::Day)))
         .add_systems(OnEnter(DayCycleState::Night), (

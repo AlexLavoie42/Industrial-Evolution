@@ -19,9 +19,8 @@ impl Default for OpeningDialogue {
         Self {
             text: vec![
                 "Congratulations. You have inherited a factory from your late grandfather as well as a small amount of cash.".to_string(),
-                "Unfortunately the factory has been abandoned for a while.".to_string(),
-                "However, it seems there is still a working saw mill.".to_string(),
-                "You can start making some money by ordering some wood and producing some lumber.".to_string(),
+                "Unfortunately the factory has been abandoned for a while. There doesnt seem to be any equipment left.".to_string(),
+                "Luckily you should have enough money to purchase a new saw mill.".to_string(),
                 "I have purchased some wood for you to get started. Good luck!".to_string(),
             ],
             index: 0,
@@ -113,6 +112,13 @@ pub fn opening_dialogue_render(
                         props={DialogueProps {
                             dialogue: opening_dialogue.text[opening_dialogue.index].clone()
                         }}
+                        styles={KStyle {
+                            font_size: StyleProp::Value(64.0),
+                            padding_top: Units::Pixels(128.0).into(),
+                            // padding_left: Units::Pixels(32.0).into(),
+                            // padding_right: Units::Pixels(32.0).into(),
+                            ..default()
+                        }}
                     />
                 // </NinePatchBundle>
             </BackgroundBundle>
@@ -162,7 +168,6 @@ pub fn dialogue_render(
             .into();
 
         let parent_id = Some(entity);
-
         rsx!(
             <TextWidgetBundle
                 text={TextProps {

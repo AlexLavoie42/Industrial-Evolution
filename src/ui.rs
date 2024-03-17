@@ -98,6 +98,11 @@ pub fn ui_setup(
         widget_update_on_tick::<DialogueProps, EmptyState>,
         dialogue_render,
     );
+    widget_context.add_widget_system(
+        TutorialProps::default().get_name(),
+        widget_update_on_tick::<TutorialProps, EmptyState>,
+        tutorial_dialogue_render,
+    );
     
     
     let base_hud_menu_image = assets.load("Hud Menu-Thin.png");
@@ -106,6 +111,7 @@ pub fn ui_setup(
     rsx! {
         <KayakAppBundle>
             <HUDContainerBundle />
+            <TutorialBundle />
             <NightUIBundle
                 props={NightUIProps {
                     image: base_hud_menu_image.clone(),

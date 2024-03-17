@@ -163,7 +163,7 @@ pub fn night_ui_render(
                         styles={KStyle {
                             position_type: KPositionType::SelfDirected.into(),
                             offset: Edge::new(
-                                Units::Stretch(0.35),
+                                Units::Stretch(0.65),
                                 Units::Stretch(0.0),
                                 Units::Stretch(1.0),
                                 Units::Stretch(1.0),
