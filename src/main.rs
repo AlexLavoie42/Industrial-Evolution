@@ -1,6 +1,6 @@
 use std::{cmp::{min, max}, time::Duration};
 
-use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}, time::common_conditions::{on_fixed_timer, on_timer}};
+use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}, time::common_conditions::{on_timer}};
 use bevy_ecs_tilemap::{prelude::*, helpers::{hex_grid::neighbors, square_grid::neighbors::Neighbors}};
 use pathfinding::prelude::astar;
 use bevy_inspector_egui::quick::{WorldInspectorPlugin, StateInspectorPlugin};
@@ -84,6 +84,7 @@ fn main() {
         .add_plugins(WorkerPlugin)
         .add_plugins(ItemPlugin)
         .add_plugins(MoneyPlugin)
+        .add_plugins(OpeningPlugin)
 
         .add_systems(Update, day_timer_system.run_if(in_state(DayCycleState::Day)))
         .add_systems(OnEnter(DayCycleState::Night), (

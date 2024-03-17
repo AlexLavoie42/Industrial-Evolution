@@ -5,7 +5,7 @@ impl Plugin for OpeningPlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<OpeningDialogue>()
-            .add_systems(Update, cycle_opening_dialogue);
+            .add_systems(Update, cycle_opening_dialogue.run_if(in_state(DayCycleState::Opening)));
     }
 }
 
@@ -80,7 +80,7 @@ pub fn opening_dialogue_render(
     mut commands: Commands,
     widget_context: Res<KayakWidgetContext>,
     mut query: Query<(&mut OpeningDialogueProps, &mut ComputedStyles, &KStyle, &mut OnEvent)>,
-    day_state: State<DayCycleState>,
+    day_state: Res<State<DayCycleState>>,
     opening_dialogue: Res<OpeningDialogue>,
     
 ) -> bool {
@@ -99,20 +99,21 @@ pub fn opening_dialogue_render(
         rsx!(
             <BackgroundBundle
                 styles={KStyle {
+                    background_color: StyleProp::<Color>::Value(Color::rgb_u8(50, 58, 108)),
                     ..default()
                 }}
             >
-                <NinePatchBundle
-                    styles={KStyle {
-                        ..default()
-                    }}
-                >
+                // <NinePatchBundle
+                //     styles={KStyle {
+                //         ..default()
+                //     }}
+                // >
                     <DialogueBundle
                         props={DialogueProps {
                             dialogue: opening_dialogue.text[opening_dialogue.index].clone()
                         }}
                     />
-                </NinePatchBundle>
+                // </NinePatchBundle>
             </BackgroundBundle>
         );
     }

@@ -88,6 +88,16 @@ pub fn ui_setup(
         widget_update_on_tick::<RevenueSummaryProps, EmptyState>,
         render_revenue_summary,
     );
+    widget_context.add_widget_system(
+        OpeningDialogueProps::default().get_name(),
+        widget_update_on_tick::<OpeningDialogueProps, EmptyState>,
+        opening_dialogue_render,
+    );
+    widget_context.add_widget_system(
+        DialogueProps::default().get_name(),
+        widget_update_on_tick::<DialogueProps, EmptyState>,
+        dialogue_render,
+    );
     
     
     let base_hud_menu_image = assets.load("Hud Menu-Thin.png");
@@ -101,6 +111,7 @@ pub fn ui_setup(
                     image: base_hud_menu_image.clone(),
                 }}
             />
+            <OpeningDialogueBundle />
         </KayakAppBundle>
     };
 

@@ -496,8 +496,9 @@ pub fn import_selector_render(
 
         rsx!(
             <ElementBundle>
-                <NinePatchBundle
+                <BackgroundBundle
                     styles={KStyle {
+                        background_color: StyleProp::<Color>::Value(Color::rgb_u8(50, 58, 108)),
                         layout_type: LayoutType::Row.into(),
                         ..default()
                     }}
@@ -571,7 +572,7 @@ pub fn import_selector_render(
                             ..Default::default()
                         }}
                     />
-                </NinePatchBundle>
+                </BackgroundBundle>
                 
                 {
                     if !supply {

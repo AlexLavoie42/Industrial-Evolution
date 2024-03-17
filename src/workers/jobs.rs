@@ -193,7 +193,7 @@ pub fn worker_iterate_jobs(
     }
 }
 
-#[derive(Resource, Default, Reflect, InspectorOptions)]
+#[derive(Resource, Reflect, Default, InspectorOptions)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ItemJobLock {
     pub items: Vec<Entity>,
