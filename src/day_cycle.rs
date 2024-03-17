@@ -11,7 +11,8 @@ pub enum DayCycleState {
     Day,
     Night,
     #[default]
-    Opening
+    Opening,
+    Bankrupt
 }
 
 #[derive(Resource)]

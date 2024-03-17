@@ -32,7 +32,7 @@ impl Default for AssemblyProgressBarBaseBundle {
                     custom_size: Some(Vec2::new(100.0, 15.0)),
                     ..default()
                 },
-                transform: Transform::from_xyz(0.0, 0.0, 25.0),
+                transform: Transform::from_xyz(0.0, 47.0, 25.0),
                 ..default()
             }
         }

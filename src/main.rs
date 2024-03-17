@@ -50,6 +50,9 @@ use opening::*;
 mod tutorial;
 use tutorial::*;
 
+mod bankrupt;
+use bankrupt::*;
+
 const GRID_SIZE: TilemapSize = TilemapSize { x: 180, y: 180 };
 const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16.0, y: 16.0 };
 
@@ -86,6 +89,7 @@ fn main() {
         .add_plugins(MoneyPlugin)
         .add_plugins(OpeningPlugin)
         .add_plugins(TutorialPlugin)
+        .add_plugins(BankruptPlugin)
 
         .add_systems(Update, day_timer_system.run_if(in_state(DayCycleState::Day)))
         .add_systems(OnEnter(DayCycleState::Night), (

@@ -66,10 +66,12 @@ pub fn upkeep_system(
     mut market_timer: ResMut<UpkeepTimer>,
     mut upkeep_tracker: ResMut<UpkeepTracker>,
     time: Res<Time>,
+    mut day_cycle: ResMut<NextState<DayCycleState>>,
 ) {
     let total = upkeep_tracker.upkeep.iter().map(|x| x.0).sum();
     if let Err(err) = player_money.try_remove_money(total) {
         println!("Cant afford upkeep!");
+        day_cycle.set(DayCycleState::Bankrupt);
     }
     upkeep_tracker.upkeep.clear();
 }

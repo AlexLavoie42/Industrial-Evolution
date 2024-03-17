@@ -11,7 +11,7 @@ pub struct SelectedAssembly {
 impl Default for SelectedAssembly {
     fn default() -> Self {
         SelectedAssembly {
-            selected: AssemblyType::WoodChipper
+            selected: AssemblyType::SawMill
         }
     }
 }

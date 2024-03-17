@@ -93,7 +93,7 @@ pub fn job_mode_creation(
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
         let (tilemap_size, grid_size, map_transform, map_type) = q_tilemap.get_single().unwrap();
-        let click_evs: Vec<&MouseCollisionEvent> = mouse_collision.iter().collect();
+        let click_evs: Vec<&MouseCollisionEvent> = mouse_collision.read().collect();
         let Some(worker_entity) = selected_worker.selected else { return; };
         let Ok((mut job, power_production)) = q_worker.get_mut(worker_entity) else { return; };
         if let Some(ev) = click_evs.first() {

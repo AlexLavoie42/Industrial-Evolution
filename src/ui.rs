@@ -103,6 +103,11 @@ pub fn ui_setup(
         widget_update_on_tick::<TutorialProps, EmptyState>,
         tutorial_dialogue_render,
     );
+    widget_context.add_widget_system(
+        BankruptDialogueProps::default().get_name(),
+        widget_update_on_tick::<BankruptDialogueProps, EmptyState>,
+        bankrupt_dialogue_render,
+    );
     
     
     let base_hud_menu_image = assets.load("Hud Menu-Thin.png");
@@ -118,6 +123,7 @@ pub fn ui_setup(
                 }}
             />
             <OpeningDialogueBundle />
+            <BankruptDialogueBundle />
         </KayakAppBundle>
     };
 
