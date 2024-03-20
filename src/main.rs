@@ -1,6 +1,7 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::{cmp::{min, max}, time::Duration};
 
-use bevy::{prelude::*, window::PrimaryWindow, math::vec3, sprite::collide_aabb::{self, Collision}, time::common_conditions::{on_timer}};
+use bevy::{asset::AssetMetaCheck, math::vec3, prelude::*, sprite::collide_aabb::{self, Collision}, time::common_conditions::on_timer, window::PrimaryWindow};
 use bevy_ecs_tilemap::{prelude::*, helpers::{hex_grid::neighbors, square_grid::neighbors::Neighbors}};
 use pathfinding::prelude::astar;
 use bevy_inspector_egui::quick::{WorldInspectorPlugin, StateInspectorPlugin};
@@ -77,6 +78,7 @@ pub enum PlacementState {
 
 fn main() {
     App::new()
+        .insert_resource(AssetMetaCheck::Never)
         .add_plugins(DefaultPlugins)
         // .add_plugins(WorldInspectorPlugin::default())
         // .add_plugins(ResourceInspectorPlugin::<Economy>::default())
