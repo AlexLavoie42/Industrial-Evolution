@@ -44,7 +44,7 @@ impl Plugin for WorkerPlugin {
                     iterate_path,
                     worker_iterate_jobs,
                     worker_path_to_next_job,
-                    toggle_worker_state,
+                    // toggle_worker_state,
                     worker_pick_up_item,
                     worker_drop_item,
                     job_error_marker,

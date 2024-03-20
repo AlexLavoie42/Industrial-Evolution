@@ -472,7 +472,7 @@ pub fn tutorial_dialogue_render(
                 }}
                 styles={KStyle {
                     z_index: StyleProp::Value(1000),
-                    font_size: StyleProp::Value(40.0),
+                    font_size: StyleProp::Value(38.0),
                     line_height: StyleProp::Value(30.0),
                     ..default()
                 }}

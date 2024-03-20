@@ -68,16 +68,9 @@ impl ItemContainer {
     }
 
     pub fn get_transform(&self) -> Transform {
-        let mut y = 0;
-        let mut x = 0;
-        for i in 1..self.items.len() {
-            if i % self.width as usize == 0 {
-                y += 1;
-                x = 0;
-            } else {
-                x += 1;
-            }
-        }
+        let mut y = self.items.len() / self.width as usize;
+        let mut x = self.items.len() % self.width as usize;
+
         Transform::from_xyz(
             self.start_transform.translation.x + x as f32 * 16.0,
             self.start_transform.translation.y - y as f32 * 16.0,

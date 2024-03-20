@@ -62,7 +62,7 @@ impl Plugin for AssembliesPlugin {
             .add_event::<AssemblyPowerInput>()
             .register_type::<ItemIOContainer>()
             .register_type::<AssemblyPower>()
-            .insert_resource(SelectedAssembly { selected: AssemblyType::default() })
+            .insert_resource(SelectedAssembly::default())
             .init_resource::<SelectedAssembly>()
         ;
     }

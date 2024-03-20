@@ -59,7 +59,7 @@ macro_rules! make_assembly_types {
         }
         impl Default for AssemblyType {
             fn default() -> Self {
-                AssemblyType::WoodChipper
+                AssemblyType::SawMill
             }
         }
         
