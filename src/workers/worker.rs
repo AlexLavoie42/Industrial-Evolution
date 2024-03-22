@@ -185,6 +185,19 @@ pub fn worker_pick_up_item(
             }
             continue;
         };
+        let Some(current_job_i) = job.current_job else {
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                locked_items.items.remove(pos);
+            }
+            continue;
+        };
+        let Some(current_job) = job.path.get_mut(current_job_i) else {
+            if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
+                locked_items.items.remove(pos);
+            }
+            continue;
+        };
+    
         let Ok((
             mut item_transform,
             item_g_transform,
@@ -195,19 +208,12 @@ pub fn worker_pick_up_item(
             if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
                 locked_items.items.remove(pos);
             }
+            
             continue;
         };
         if worker_container.items.iter().any(|i| *i == Some(ev.item)) {
-            if let Some(current_job_i) = job.current_job {
-                let Some(current_job) = job.path.get_mut(current_job_i) else {
-                    if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
-                        locked_items.items.remove(pos);
-                    }
-                    continue;
-                };
-                current_job.job_status = JobStatus::Completed;
-                job_error.clear_error();
-            }
+            current_job.job_status = JobStatus::Completed;
+            job_error.clear_error();
             
             if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
                 locked_items.items.remove(pos);

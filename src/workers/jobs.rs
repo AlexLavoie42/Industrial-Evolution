@@ -273,6 +273,9 @@ pub fn worker_do_job(
                     },
                     JobAction::ContainerPickup { container, pickup_amount } => {
                         if let Ok(item_container) = q_item_containers.get_mut(container) {
+                            if item_container.items.len() == 0 {
+                                current_job.job_status = JobStatus::Completed
+                            }
                             // TODO: Grab any available item or configurable?
                             if let Some(Some(item)) = item_container.items.iter()
                             .filter(|i| {
@@ -293,6 +296,9 @@ pub fn worker_do_job(
                                 });
                             }
                         } else if let Ok(assembly_container) = q_assembly_containers.get_mut(container) {
+                            if assembly_container.output.items.len() == 0 {
+                                current_job.job_status = JobStatus::Completed
+                            }
                             if let Some(Some(item)) = assembly_container.output.items.iter()
                             .filter(|i| {
                                 if let Some(i) = i {
