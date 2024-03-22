@@ -94,7 +94,7 @@ impl TutorialSteps {
                     )
                 },
                 TutorialStep {
-                    dialogue: "Press \"Escape\" to exit building mode.".to_string(),
+                    dialogue: "Press \"Tab\" to exit building mode.".to_string(),
                     action: world.register_system(
                         |
                             player_state: Res<State<PlayerState>>,
@@ -180,7 +180,7 @@ impl TutorialSteps {
                 },
                 TutorialStep {
                     dialogue: "The saw mill has finished cutting all the wood!
-                    \nPress \"Escape\" to leave the saw mill".to_string(),
+                    \nPress \"Tab\" to leave the saw mill".to_string(),
                     action: world.register_system(
                         |
                             player_state: Res<State<PlayerState>>,
@@ -258,7 +258,7 @@ impl TutorialSteps {
                     ),
                 },
                 TutorialStep {
-                    dialogue: "Press \"Escape\" to exit hiring mode.".to_string(),
+                    dialogue: "Press \"Tab\" to exit hiring mode.".to_string(),
                     action: world.register_system(
                         |
                             player_state: Res<State<PlayerState>>,
@@ -361,7 +361,7 @@ impl TutorialSteps {
                 },
                 TutorialStep {
                     dialogue: "Great work! Your worker should now be producing the lumber for you.
-                    \nPress \"Escape\" to exit".to_string(),
+                    \nPress \"Tab\" to exit".to_string(),
                     action: world.register_system(
                         |
                             player_state: Res<State<PlayerState>>,
@@ -371,7 +371,7 @@ impl TutorialSteps {
                             if *player_state.get() == PlayerState::None {
                                 increment_step_system(tut_steps, tut_state)
                             }
-                        }
+                        }*
                     ),
                 },
                 TutorialStep {

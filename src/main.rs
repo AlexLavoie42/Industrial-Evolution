@@ -202,7 +202,7 @@ pub fn input_reset_player_mode(
     mut next_state: ResMut<NextState<PlayerState>>,
     keyboard_input: Res<Input<KeyCode>>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::Escape) {
+    if keyboard_input.just_pressed(KeyCode::Escape) || keyboard_input.just_pressed(KeyCode::Tab) || keyboard_input.just_pressed(KeyCode::E) {
         next_state.set(PlayerState::None);
     }
 }

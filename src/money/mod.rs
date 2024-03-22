@@ -134,8 +134,8 @@ impl Default for Economy {
         Self {
             prices: HashMap::from([
                 (PurchasableItem::Resource(ResourceItem::Wood), EconomyPrice {
-                    current_price: 0.75,
-                    base_price: 0.75,
+                    current_price: 0.95,
+                    base_price: 1.50,
                     base_supply: 50.0,
                     supply: 50.0,
                     base_demand: 1.0,
@@ -164,7 +164,7 @@ impl Default for Economy {
                     supply_weight: 0.85
                 }),
                 (PurchasableItem::Resource(ResourceItem::Lumber), EconomyPrice {
-                    current_price: 10.0,
+                    current_price: 7.25,
                     base_price: 5.75,
                     base_supply: 3.0,
                     supply: 6.0,
