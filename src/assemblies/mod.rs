@@ -38,7 +38,7 @@ impl Plugin for AssembliesPlugin {
             .add_systems(Update,
             (
                     (place_assembly).run_if(in_state(PlayerState::Assemblies)).run_if(in_state(PlacementState::Allowed)),
-                    input_toggle_assembly_mode,
+                    // input_toggle_assembly_mode,
                     refund_assembly,
                 ).run_if(in_state(DayCycleState::Day)),
             )

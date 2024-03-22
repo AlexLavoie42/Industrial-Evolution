@@ -3,9 +3,11 @@ use std::{cmp::{min, max}, time::Duration};
 
 use bevy::{asset::AssetMetaCheck, math::vec3, prelude::*, sprite::collide_aabb::{self, Collision}, time::common_conditions::on_timer, window::PrimaryWindow};
 use bevy_ecs_tilemap::{prelude::*, helpers::{hex_grid::neighbors, square_grid::neighbors::Neighbors}};
+use bevy_wasm_window_resize::WindowResizePlugin;
 use pathfinding::prelude::astar;
 use bevy_inspector_egui::quick::{WorldInspectorPlugin, StateInspectorPlugin};
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use bevy_embedded_assets::{EmbeddedAssetPlugin, PluginMode};
 
 use kayak_ui::{
     prelude::{widgets::*, *},
@@ -79,7 +81,9 @@ pub enum PlacementState {
 fn main() {
     App::new()
         .insert_resource(AssetMetaCheck::Never)
+        .add_plugins(EmbeddedAssetPlugin { mode: PluginMode::ReplaceDefault })
         .add_plugins(DefaultPlugins)
+        .add_plugins(WindowResizePlugin)
         // .add_plugins(WorldInspectorPlugin::default())
         // .add_plugins(ResourceInspectorPlugin::<Economy>::default())
         .add_plugins(TilemapPlugin)
@@ -93,7 +97,7 @@ fn main() {
         .add_plugins(TutorialPlugin)
         .add_plugins(BankruptPlugin)
 
-        .add_systems(Update, day_timer_system.run_if(in_state(DayCycleState::Day)))
+        .add_systems(Update, day_timer_system.run_if(in_state(DayCycleState::Day)).run_if(in_state(TutorialState::Disabled)))
         .add_systems(OnEnter(DayCycleState::Night), (
             |mut day_timer: ResMut<DayTimer>| {
                 day_timer.day_timer.reset();
@@ -127,7 +131,7 @@ fn main() {
         .add_systems(Update, (sprite_direction_system, movement_animation_system))
         .insert_resource(AssemblyPowerSelection::default())
 
-        .add_systems(PostUpdate, (set_tilemap_collisions, debug_collision).run_if(on_timer(Duration::from_secs_f32(0.1))))
+        .add_systems(PostUpdate, (set_tilemap_collisions).run_if(on_timer(Duration::from_secs_f32(0.1))))
 
         .add_systems(Update, (hide_hover_ghost, hover_ghost_tracking))
         .add_event::<HideHoverGhost>()
@@ -220,6 +224,9 @@ pub struct SpriteStorage {
     pub wood_chipper_selected: Handle<Image>,
     pub imports: Handle<Image>,
     pub exports: Handle<Image>,
+    pub wood: Handle<Image>,
+    pub paper: Handle<Image>,
+    pub lumber: Handle<Image>
 }
 
 #[derive(Component)]
@@ -254,6 +261,10 @@ pub fn factory_setup(
     sprites.wood_chipper_hover = asset_server.load("Wood Chipper Icon Hover.png");
     sprites.wood_chipper_selected = asset_server.load("Wood Chipper Icon Selected.png");
 
+    sprites.wood = asset_server.load("Wood.png");
+    sprites.paper = asset_server.load("Paper.png");
+    sprites.lumber = asset_server.load("Lumber.png");
+
     sprites.imports = asset_server.load("Imports.png");
     sprites.exports = asset_server.load("Exports.png");
 
@@ -269,7 +280,7 @@ pub fn factory_setup(
         for x in 0..GRID_SIZE.x {
             for y in 0..GRID_SIZE.y {
                 let tile_pos = TilePos { x, y };
-                let mut index = 104;
+                let mut index = 254;
                 if x % 2 == 0 {
                     index += 1;
                 }
@@ -346,7 +357,7 @@ pub fn factory_setup(
     for _ in 0..5 {
         if let Err(_) = item_imports.container.add_item(
             (
-                Some(Item::Resource(ResourceItem::Wood).spawn_bundle(&mut commands).id()),
+                Some(Item::Resource(ResourceItem::Wood).spawn_bundle(&mut commands, sprites.as_ref()).id()),
                 Some(Item::Resource(ResourceItem::Wood))
             )
         ) {

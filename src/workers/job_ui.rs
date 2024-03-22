@@ -65,6 +65,21 @@ pub fn spawn_job_path_markers(
     }
 }
 
+pub fn path_marker_hover(
+    mut hover_job_point: EventReader<GenericMouseCollisionEvent<JobPathMarker>>,
+    mut q_job_markers: Query<&mut Sprite, With<JobPathMarker>>,
+) {
+    for mut sprite in q_job_markers.iter_mut() {
+        sprite.custom_size = Some(Vec2::new(16.0, 16.0));
+    }
+    for event in hover_job_point.read() {
+        if let Some((_, entity)) = event.collision {
+            let Ok(mut sprite) = q_job_markers.get_mut(entity) else { continue };
+            sprite.custom_size = Some(Vec2::new(20.0, 20.0));
+        }
+    }
+}
+
 pub fn job_path_lines(
     mut gizmos: Gizmos,
     q_jobs: Query<&Job>,
@@ -100,15 +115,16 @@ pub fn remove_job_point_click(
     selected_worker: Res<SelectedWorker>,
     input: Res<Input<MouseButton>>,
 ) {
-    for event in hover_job_point.iter() {
-        // TODO: Hover interaction
+    for event in hover_job_point.read() {
         if input.just_pressed(MouseButton::Right) {
             if let Some((_, entity)) = event.collision {
                 let Ok(marker) = q_job_markers.get(entity) else { continue };
                 let Some(selected) = selected_worker.selected else { continue };
                 let Ok(mut job) = q_jobs.get_mut(selected) else { continue };
-    
-                job.path.retain(|x| x != &marker.job_point);
+                println!("Got event: {:?} {:?}", &marker.job_point, job.path);
+            
+                job.path.retain(|x| x.id != marker.job_point.id);
+                return;
             }
         }
     }

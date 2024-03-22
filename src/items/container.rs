@@ -69,8 +69,10 @@ impl ItemContainer {
 
     pub fn get_transform(&self) -> Transform {
         let mut y = self.items.len() / self.width as usize;
-        let mut x = self.items.len() % self.width as usize;
-
+        let mut x: usize = self.items.len() % self.width as usize;
+        if self.items.len() == 0 {
+            x = 0;
+        }
         Transform::from_xyz(
             self.start_transform.translation.x + x as f32 * 16.0,
             self.start_transform.translation.y - y as f32 * 16.0,
@@ -80,17 +82,9 @@ impl ItemContainer {
     }
 
     pub fn get_transform_at_index(&self, index: usize) -> Transform {
-        let mut y = 0;
-        let mut x = 0;
-
-        for i in 1..index+1 {
-            if i % self.width as usize == 0 {
-                y += 1;
-                x = 0;
-            } else {
-                x += 1;
-            }
-        }
+        let mut y = index / self.width as usize;
+        let mut x: usize = index % self.width as usize;
+    
         Transform::from_xyz(
             self.start_transform.translation.x + x as f32 * 16.0,
             self.start_transform.translation.y - y as f32 * 16.0,
@@ -213,5 +207,30 @@ pub fn toggle_container_selectors(
         } else {
             *selector = Visibility::Hidden;
         }
+    }
+}
+
+pub fn hover_container_selectors(
+    mut q_input_selector: Query<(&mut Visibility, &mut Sprite), (With<ContainerInputSelector>, Without<ContainerOutputSelector>)>,
+    mut q_output_selector: Query<(&mut Visibility, &mut Sprite), (With<ContainerOutputSelector>, Without<ContainerInputSelector>)>,
+    mut input_hover_event: EventReader<GenericMouseCollisionEvent<ContainerInputSelector>>,
+    mut output_hover_event: EventReader<GenericMouseCollisionEvent<ContainerOutputSelector>>,
+) {
+    for (mut selector, mut sprite) in q_input_selector.iter_mut() {
+        sprite.custom_size = Some(Vec2::new(32.0, 64.0));
+    }
+    for (_, mut sprite) in q_output_selector.iter_mut() {
+        sprite.custom_size = Some(Vec2::new(32.0, 64.0));
+    }
+
+    for event in input_hover_event.read() {
+        let Some((_, entity)) = event.collision else { continue };
+        let Ok((_, mut sprite)) = q_input_selector.get_mut(entity) else { continue };
+        sprite.custom_size = Some(Vec2::new(32.0 * 1.1, 64.0 * 1.1));
+    }
+    for event in output_hover_event.read() {
+        let Some((_, entity)) = event.collision else { continue };
+        let Ok((_, mut sprite)) = q_output_selector.get_mut(entity) else { continue };
+        sprite.custom_size = Some(Vec2::new(32.0 * 1.1, 64.0 * 1.1));
     }
 }

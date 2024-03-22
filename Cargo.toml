@@ -28,7 +28,9 @@ dev = [
 bevy = { version = "0.12.1" }
 bevy-inspector-egui = "0.22.1"
 bevy_ecs_tilemap = { version = "0.12.0", features = ["atlas"] }
+bevy_embedded_assets = "0.9.1"
 bevy_eventlistener = "0.6.1"
+bevy_wasm_window_resize = "0.2.0"
 kayak_ui = "0.5.0"
 paste = "1.0.14"
 pathfinding = "4.3.2"

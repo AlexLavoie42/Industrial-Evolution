@@ -31,9 +31,9 @@ pub fn cycle_bankrupt_dialogue(
     mut bankrupt_dialogue: ResMut<BankruptDialogue>,
     input: Res<Input<KeyCode>>,
     mouse_input: Res<Input<MouseButton>>,
-    mut tutorial_state: ResMut<TutorialState>,
+    mut tutorial_state: ResMut<NextState<TutorialState>>
 ) {
-    tutorial_state.enabled = false;
+    tutorial_state.set(TutorialState::Disabled);
     if input.just_pressed(KeyCode::Space) || input.just_pressed(KeyCode::Return) || mouse_input.just_pressed(MouseButton::Left) {
         if bankrupt_dialogue.index < bankrupt_dialogue.text.len() - 1 {
             bankrupt_dialogue.index += 1;

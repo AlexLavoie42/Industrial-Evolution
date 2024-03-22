@@ -21,27 +21,29 @@ impl ItemType for ResourceItem {
 impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for ResourceItem {
     fn spawn_bundle(
         &self,
-        commands: &'a mut Commands<'w, 's>
+        commands: &'a mut Commands<'w, 's>,
+        sprite_storage: &SpriteStorage
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
-            ResourceItem::Wood => commands.spawn(WoodBundle::default()),
+            ResourceItem::Wood => commands.spawn(WoodBundle::default_with_sprites(sprite_storage)),
             ResourceItem::WoodChips => commands.spawn(WoodChipsBundle::default()),
-            ResourceItem::Lumber => commands.spawn(LumberBundle::default())
+            ResourceItem::Lumber => commands.spawn(LumberBundle::default_with_sprites(sprite_storage))
         }
     }
 
     fn spawn_bundle_with_transform(
         &self,
         commands: &'a mut Commands<'w, 's>,
-        transform: Transform
+        transform: Transform,
+        sprite_storage: &SpriteStorage
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
             ResourceItem::Wood => commands.spawn(WoodBundle {
                 sprite: SpriteBundle {
                     transform,
-                    ..WoodBundle::default().sprite
+                    ..WoodBundle::default_with_sprites(sprite_storage).sprite
                 },
-                ..default()
+                ..WoodBundle::default_with_sprites(sprite_storage)
             }),
             ResourceItem::WoodChips => commands.spawn(WoodChipsBundle {
                 sprite: SpriteBundle {
@@ -53,9 +55,9 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for ResourceItem {
             ResourceItem::Lumber => commands.spawn(LumberBundle {
                 sprite: SpriteBundle {
                     transform,
-                    ..LumberBundle::default().sprite
+                    ..LumberBundle::default_with_sprites(sprite_storage).sprite
                 },
-                ..default()
+                ..LumberBundle::default_with_sprites(sprite_storage)
             })
         }
     }

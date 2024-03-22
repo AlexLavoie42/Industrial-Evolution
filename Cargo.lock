@@ -643,6 +643,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_embedded_assets"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcbaa2716dd665f2197071268f5fd720bc23b0207894451f0a0912b3e80e86a1"
+dependencies = [
+ "bevy",
+ "cargo-emit",
+ "futures-io",
+ "futures-lite 2.2.0",
+]
+
+[[package]]
 name = "bevy_encase_derive"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1177,6 +1189,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_wasm_window_resize"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa9baa14f1a08b969b076f54af36c004ca4588960b42b57fdc9e5a408039cbe5"
+dependencies = [
+ "bevy",
+ "web-sys",
+]
+
+[[package]]
 name = "bevy_window"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1364,6 +1386,12 @@ name = "bytes"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
+
+[[package]]
+name = "cargo-emit"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1582e1c9e755dd6ad6b224dcffb135d199399a4568d454bd89fe515ca8425695"
 
 [[package]]
 name = "cc"
@@ -2173,7 +2201,7 @@ dependencies = [
  "vec_map",
  "wasm-bindgen",
  "web-sys",
- "windows 0.44.0",
+ "windows 0.54.0",
 ]
 
 [[package]]
@@ -2453,7 +2481,9 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_ecs_tilemap",
+ "bevy_embedded_assets",
  "bevy_eventlistener",
+ "bevy_wasm_window_resize",
  "kayak_ui",
  "paste",
  "pathfinding",

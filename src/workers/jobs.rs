@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use crate::*;
+use bevy_ecs_tilemap::helpers::transform;
 use bevy_inspector_egui::{inspector_options::ReflectInspectorOptions, InspectorOptions};
 use workers::worker::*;
 
@@ -29,6 +30,7 @@ pub struct JobWaiting(pub bool);
 
 #[derive(Debug, Reflect, PartialEq, Clone)]
 pub struct JobPoint {
+    pub id: u8,
     pub point: TilePos,
     pub point_size: IVec2,
     pub job_status: JobStatus,
@@ -64,9 +66,9 @@ pub fn activate_job_mode_on_click(
     mut next_state: ResMut<NextState<PlayerState>>
     
 ) {
-    if player_state.get() == &PlayerState::None {
-        if input.just_pressed(MouseButton::Left) {
-            for ev in mouse_collision.iter() {
+    for ev in mouse_collision.read() {
+        if player_state.get() == &PlayerState::None {
+            if input.just_pressed(MouseButton::Left) {
                 if let Some((_, entity)) = ev.collision {
                     if let Ok(worker_entity) = q_worker.get(entity) {
                         worker_selection.selected = Some(worker_entity);
@@ -82,8 +84,8 @@ pub fn activate_job_mode_on_click(
 pub fn job_mode_creation(
     mut mouse_collision: EventReader<MouseCollisionEvent>,
     q_assemblies: Query<(Entity, &Transform, &EntityTileSize), With<Assembly>>,
-    q_assembly_input: Query<(&ContainerInputSelector, &Parent)>,
-    q_assembly_output: Query<(&ContainerOutputSelector, &Parent)>,
+    q_assembly_input: Query<(&ContainerInputSelector, &Parent, &GlobalTransform)>,
+    q_assembly_output: Query<(&ContainerOutputSelector, &Parent, &GlobalTransform)>,
     q_items: Query<Entity, With<Item>>,
     mouse_input: Res<Input<MouseButton>>,
     mouse_pos: Res<MouseTile>,
@@ -91,83 +93,90 @@ pub fn job_mode_creation(
     mut q_worker: Query<(&mut Job, &PowerProduction), With<Worker>>,
     q_tilemap: Query<(&TilemapSize, &TilemapGridSize, &Transform, &TilemapType)>
 ) {
-    if mouse_input.just_pressed(MouseButton::Left) {
-        let (tilemap_size, grid_size, map_transform, map_type) = q_tilemap.get_single().unwrap();
-        let click_evs: Vec<&MouseCollisionEvent> = mouse_collision.read().collect();
-        let Some(worker_entity) = selected_worker.selected else { return; };
-        let Ok((mut job, power_production)) = q_worker.get_mut(worker_entity) else { return; };
-        if let Some(ev) = click_evs.first() {
-                if let Some((_, entity)) = ev.collision {
-                    if let Ok((assembly, transform, tile_size)) = q_assemblies.get(entity) {
-                        let assembly_world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
-                        let assembly_pos = get_corner_tile_pos(assembly_world_pos, tile_size.0);
-                        if let Some(assembly_tile_pos) = TilePos::from_world_pos(&assembly_pos, tilemap_size, grid_size, map_type) {
-                            let action: JobAction = JobAction::Work {
-                                power: power_production.power,
-                                assembly,
-                            };
-                            let job_point = JobPoint {
-                                point: assembly_tile_pos,
-                                job_status: JobStatus::Active,
-                                point_size: tile_size.0,
-                                action,
-                                timer: None
-                            };
-                            job.path.push(job_point);
-                        }
-                    }
-                    if let Ok((assembly_input, parent)) = q_assembly_input.get(entity) {
-                        let tile_size = q_assemblies.get(parent.get()).map(|x| x.2.0).unwrap_or(IVec2::ONE);
-                        let job_point = JobPoint {
-                            point: mouse_pos.0,
-                            point_size: tile_size,
-                            job_status: JobStatus::Active,
-                            action: JobAction::Drop {
-                                input_container: Some(parent.get()),
-                                worker: worker_entity
-                            },
-                            timer: None
-                        };
-                        job.path.push(job_point);
-                    }
-                    if let Ok((assembly_output, parent)) = q_assembly_output.get(entity) {
-                        let tile_size = q_assemblies.get(parent.get()).map(|x| x.2.0).unwrap_or(IVec2::ONE);
-                        let job_point = JobPoint {
-                            point: mouse_pos.0,
-                            point_size: tile_size,
-                            job_status: JobStatus::Active,
-                            action: JobAction::ContainerPickup {
-                                container: parent.get(),
-                                pickup_amount: 1
-                            },
-                            timer: None
-                        };
-                        job.path.push(job_point);
-                    }
-                    if let Ok(item) = q_items.get(entity) {
-                        let action: JobAction = JobAction::Pickup {
-                            item
+    let (tilemap_size, grid_size, map_transform, map_type) = q_tilemap.get_single().unwrap();
+    let Some(worker_entity) = selected_worker.selected else { return; };
+    let Ok((mut job, power_production)) = q_worker.get_mut(worker_entity) else { return; };
+    for ev in mouse_collision.read() {
+        if mouse_input.just_pressed(MouseButton::Left) {
+            if let Some((_, entity)) = ev.collision {
+                if let Ok((assembly, transform, tile_size)) = q_assemblies.get(entity) {
+                    let assembly_world_pos = get_world_pos(Vec2 { x: transform.translation.x, y: transform.translation.y }, map_transform);
+                    let assembly_pos = get_corner_tile_pos(assembly_world_pos, tile_size.0);
+                    if let Some(assembly_tile_pos) = TilePos::from_world_pos(&assembly_pos, tilemap_size, grid_size, map_type) {
+                        let action: JobAction = JobAction::Work {
+                            power: power_production.power,
+                            assembly,
                         };
                         let job_point = JobPoint {
-                            point: mouse_pos.0,
-                            point_size: IVec2::ONE,
+                            id: job.path.len() as u8,
+                            point: assembly_tile_pos,
                             job_status: JobStatus::Active,
+                            point_size: tile_size.0,
                             action,
                             timer: None
                         };
                         job.path.push(job_point);
+                        return;
                     }
                 }
-        } else {
-            let job_point = JobPoint {
-                point: mouse_pos.0,
-                point_size: IVec2::ONE,
-                job_status: JobStatus::Active,
-                action: JobAction::Idle,
-                timer: Some(Timer::new(Duration::from_secs_f32(1.0), TimerMode::Once))
-            };
-            job.path.push(job_point);
+                if let Ok((assembly_input, parent, transform)) = q_assembly_input.get(entity) {
+                    let job_point = JobPoint {
+                        id: job.path.len() as u8,
+                        point: TilePos::from_world_pos(&get_world_pos(transform.translation().xy(), map_transform), tilemap_size, grid_size, map_type).unwrap(),
+                        point_size: IVec2::ONE,
+                        job_status: JobStatus::Active,
+                        action: JobAction::Drop {
+                            input_container: Some(parent.get()),
+                            worker: worker_entity
+                        },
+                        timer: None
+                    };
+                    job.path.push(job_point);
+                    return;
+                }
+                if let Ok((assembly_output, parent, transform)) = q_assembly_output.get(entity) {
+                    let job_point = JobPoint {
+                        id: job.path.len() as u8,
+                        point: TilePos::from_world_pos(&get_world_pos(transform.translation().xy(), map_transform), tilemap_size, grid_size, map_type).unwrap(),
+                        point_size: IVec2::ONE,
+                        job_status: JobStatus::Active,
+                        action: JobAction::ContainerPickup {
+                            container: parent.get(),
+                            pickup_amount: 1
+                        },
+                        timer: None
+                    };
+                    job.path.push(job_point);
+                    return;
+                }
+                // if let Ok(item) = q_items.get(entity) {
+                //     let action: JobAction = JobAction::Pickup {
+                //         item
+                //     };
+                //     let job_point = JobPoint {
+                //         point: mouse_pos.0,
+                //         point_size: IVec2::ONE,
+                //         job_status: JobStatus::Active,
+                //         action,
+                //         timer: None
+                //     };
+                //     job.path.push(job_point);
+                //     return;
+                // }
+            }
         }
+    }
+    
+    if mouse_input.just_pressed(MouseButton::Left) {
+        let job_point = JobPoint {
+            id: job.path.len() as u8,
+            point: mouse_pos.0,
+            point_size: IVec2::ONE,
+            job_status: JobStatus::Active,
+            action: JobAction::Idle,
+            timer: Some(Timer::new(Duration::from_secs_f32(1.0), TimerMode::Once))
+        };
+        job.path.push(job_point);
     }
 }
 
@@ -312,7 +321,7 @@ pub fn worker_do_job(
                                     container: input_container
                                 });
                             } else {
-                                // TODO: Error
+                                current_job.job_status = JobStatus::Completed;
                             }
                         }
                     }

@@ -40,7 +40,8 @@ impl ItemType for MaterialItem {
 impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for MaterialItem {
     fn spawn_bundle(
         &self,
-        commands: &'a mut Commands<'w, 's>
+        commands: &'a mut Commands<'w, 's>,
+        sprites: &SpriteStorage,
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
             MaterialItem::WoodPulp => {
@@ -52,7 +53,8 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for MaterialItem {
     fn spawn_bundle_with_transform(
         &self,
         commands: &'a mut Commands<'w, 's>,
-        transform: Transform
+        transform: Transform,
+        sprites: &SpriteStorage,
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
             MaterialItem::WoodPulp => {

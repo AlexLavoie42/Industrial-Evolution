@@ -55,6 +55,7 @@ impl Plugin for ItemPlugin {
             )
             .add_systems(OnEnter(PlayerState::Jobs), toggle_container_selectors)
             .add_systems(OnExit(PlayerState::Jobs), toggle_container_selectors)
+            .add_systems(Update, hover_container_selectors)
             .add_event::<ShowHoverGhost::<ItemExportBundle>>()
             .add_systems(Update, show_hover_ghost::<ItemExportBundle>)
             .add_systems(PreUpdate, mouse_collision_system::<Item>)
@@ -97,17 +98,18 @@ impl ItemType for Item {
 impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Item {
     fn spawn_bundle(
         &self,
-        commands: &'a mut Commands<'w, 's>
+        commands: &'a mut Commands<'w, 's>,
+        sprite_storage: &SpriteStorage
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
             Item::Good(good) => {
-                good.spawn_bundle(commands)
+                good.spawn_bundle(commands, sprite_storage)
             },
             Item::Resource(resource) => {
-                resource.spawn_bundle(commands)
+                resource.spawn_bundle(commands, sprite_storage)
             },
             Item::Material(material) => {
-                material.spawn_bundle(commands)
+                material.spawn_bundle(commands, sprite_storage)
             }
         }
     }
@@ -115,17 +117,18 @@ impl<'a, 'w, 's> ItemSpawn<'a, 'w, 's> for Item {
     fn spawn_bundle_with_transform(
         &self,
         commands: &'a mut Commands<'w, 's>,
-        transform: Transform
+        transform: Transform,
+        sprite_storage: &SpriteStorage
     ) -> EntityCommands<'w, 's, 'a> {
         match self {
             Item::Good(good) => {
-                good.spawn_bundle_with_transform(commands, transform)
+                good.spawn_bundle_with_transform(commands, transform, sprite_storage)
             },
             Item::Resource(resource) => {
-                resource.spawn_bundle_with_transform(commands, transform)
+                resource.spawn_bundle_with_transform(commands, transform, sprite_storage)
             },
             Item::Material(material) => {
-                material.spawn_bundle_with_transform(commands, transform)
+                material.spawn_bundle_with_transform(commands, transform, sprite_storage)
             }
         }
     }
@@ -146,12 +149,14 @@ pub trait ItemType {
 pub trait ItemSpawn<'a, 'w, 's>: Component {
     fn spawn_bundle(
         &self,
-        commands: &'a mut Commands<'w, 's>
+        commands: &'a mut Commands<'w, 's>,
+        sprite_storage: &SpriteStorage
     ) -> EntityCommands<'w, 's, 'a>;
 
     fn spawn_bundle_with_transform(
         &self,
         commands: &'a mut Commands<'w, 's>,
-        transform: Transform
+        transform: Transform,
+        sprite_storage: &SpriteStorage
     ) -> EntityCommands<'w, 's, 'a>;
 }

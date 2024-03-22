@@ -424,12 +424,14 @@ pub fn base_hud_render(
         let base_hud_menu_image = assets.load("Hud Menu-Thin.png");
         let assembly_mode_menu_image = assets.load("Assemblies Icon.png");
         let assembly_mode_hover_menu_image = assets.load("Assemblies Icon-Hover.png");
-        let assembly_mode_selected_menu_image = assets.load("Assemblies Icon-selected.png");
+        let assembly_mode_selected_menu_image = assets.load("Assemblies Icon-Selected.png");
         let worker_mode_menu_image = assets.load("Workers Icon.png");
         let worker_mode_hover_menu_image = assets.load("Workers Icon Hover.png");
         let worker_mode_selected_menu_image = assets.load("Workers Icon Selected.png");
         
         let end_day_menu_image = assets.load("End Day Icon.png");
+        let end_day_hover_menu_image = assets.load("End Day Icon Hover.png");
+        let end_day_selected_menu_image = assets.load("End Day Icon Selected.png");
 
         let assembly_button_click = OnEvent::new(
             move |
@@ -567,8 +569,8 @@ pub fn base_hud_render(
                     }}
                     props={ImageButtonProps {
                         image: end_day_menu_image.clone(),
-                        hover_image: worker_mode_menu_image.clone(),
-                        selected_image: worker_mode_menu_image.clone(),
+                        hover_image: end_day_hover_menu_image.clone(),
+                        selected_image: end_day_selected_menu_image.clone(),
                         ..default()
                     }}
                     on_event={

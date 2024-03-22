@@ -19,7 +19,7 @@ impl Default for PaperBundle {
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::WHITE,
-                    custom_size: Some(Vec2::new(8.0, 8.0)),
+                    custom_size: Some(Vec2::new(16.0, 16.0)),
                     ..default()
                 },
                 transform: Transform::from_xyz(0.0, 0.0, 6.0),

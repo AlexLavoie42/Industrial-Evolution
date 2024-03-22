@@ -205,8 +205,8 @@ pub fn player_pickup_item(
                                 return;
                             };
                             commands.entity(player).remove_children(&[*child]);
+                            *item_transform = container.input.get_transform_at_index(container.input.items.len() - 1);
                             commands.entity(container_entity).push_children(&[*child]);
-                            // *item_transform = container.input.get_transform();
                             return;
                         },
                         Err(_) => {

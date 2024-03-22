@@ -10,18 +10,19 @@ pub struct WoodBundle {
     pub sprite: SpriteBundle,
     pub marker: Wood,
 }
-impl Default for WoodBundle {
-    fn default() -> Self {
+
+impl DefaultWithSprites for WoodBundle {
+    fn default_with_sprites(sprite_sheets: &SpriteStorage) -> Self {
         WoodBundle {
             marker: Wood,
             item: Item::Resource(ResourceItem::Wood),
             resource: ResourceItem::Wood,
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::rgb_u8(83, 53, 10),
-                    custom_size: Some(Vec2::new(8.0, 8.0)),
+                    custom_size: Some(Vec2::new(16.0, 16.0)),
                     ..default()
                 },
+                texture: sprite_sheets.wood.clone(),
                 transform: Transform::from_xyz(0.0, 0.0, 6.0),
                 ..default()
             },
@@ -68,21 +69,22 @@ pub struct LumberBundle {
     pub sprite: SpriteBundle,
     pub marker: Lumber
 }
-impl Default for LumberBundle {
-    fn default() -> Self {
+
+impl DefaultWithSprites for LumberBundle {
+    fn default_with_sprites(sprite_sheets: &SpriteStorage) -> Self {
         LumberBundle {
             marker: Lumber,
             item: Item::Resource(ResourceItem::Lumber),
             resource: ResourceItem::Lumber,
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::rgb_u8(161, 159, 124),
-                    custom_size: Some(Vec2::new(8.0, 8.0)),
+                    custom_size: Some(Vec2::new(16.0, 16.0)),
                     ..default()
                 },
+                texture: sprite_sheets.lumber.clone(),
                 transform: Transform::from_xyz(0.0, 0.0, 6.0),
                 ..default()
-            }
+            },
         }
-    }
+    }   
 }

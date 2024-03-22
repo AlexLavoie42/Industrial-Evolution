@@ -128,7 +128,8 @@ pub fn produce_goods(
     mut q_assembly_power: Query<&mut AssemblyPower>,
     mut q_jobs: Query<&mut Job>,
     q_items: Query<&Item>,
-    time: Res<Time>
+    time: Res<Time>,
+    sprites: Res<SpriteStorage>,
 ) {
     for (
         assembly_entity,
@@ -203,7 +204,7 @@ pub fn produce_goods(
 
         if let Some(assembly_output) = &assembly_output.0 {
             let mut output_entity_commands: bevy::ecs::system::EntityCommands<'_, '_, '_> =
-                assembly_output.spawn_bundle_with_transform(&mut commands, assembly_items.output.get_transform());
+                assembly_output.spawn_bundle_with_transform(&mut commands, assembly_items.output.get_transform(), sprites.as_ref());
 
             let output_entity = output_entity_commands.id();
             if let Ok(_) = assembly_items.output.add_item((Some(output_entity), Some(*assembly_output))) {

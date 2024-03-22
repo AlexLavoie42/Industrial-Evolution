@@ -167,7 +167,7 @@ pub fn worker_pick_up_item(
     mut ev_pick_up: EventReader<WorkerPickUpItemEvent>,
     mut locked_items: ResMut<ItemJobLock>,
 ) {
-    for ev in ev_pick_up.iter() {
+    for ev in ev_pick_up.read() {
         if locked_items.items.iter().filter(|i| **i == ev.item).count() > 1 {
             if let Some(pos) = locked_items.items.iter().position(|x| *x == ev.item) {
                 println!("Locked item {}", pos);
@@ -300,7 +300,7 @@ pub fn worker_drop_item(
     mut q_assembly_item_containers: Query<&mut ItemIOContainer>,
     mut ev_drop: EventReader<WorkerDropItemEvent>
 ) {
-    for ev in ev_drop.iter() {
+    for ev in ev_drop.read() {
         let Ok((mut worker_container, mut job, mut job_error)) = q_worker_containers.get_mut(ev.worker) else {
             continue;
         };

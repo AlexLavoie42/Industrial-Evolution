@@ -4,7 +4,7 @@ use bevy::reflect::Enum;
 
 use crate::*;
 
-pub const DAY_LENGTH_SECONDS : f32 = 60.0 * 3.5;
+pub const DAY_LENGTH_SECONDS: f32 = 60.0 * 3.5;
 
 #[derive(States, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum DayCycleState {
@@ -12,19 +12,19 @@ pub enum DayCycleState {
     Night,
     #[default]
     Opening,
-    Bankrupt
+    Bankrupt,
 }
 
 #[derive(Resource)]
 pub struct DayTimer {
     pub day_count: i32,
-    pub day_timer: Timer
+    pub day_timer: Timer,
 }
 impl Default for DayTimer {
     fn default() -> Self {
         Self {
             day_count: 0,
-            day_timer: Timer::from_seconds(DAY_LENGTH_SECONDS, TimerMode::Repeating)
+            day_timer: Timer::from_seconds(DAY_LENGTH_SECONDS, TimerMode::Repeating),
         }
     }
 }
@@ -35,7 +35,9 @@ pub fn day_timer_system(
     mut next_state: ResMut<NextState<DayCycleState>>,
     day_state: Res<State<DayCycleState>>,
 ) {
-    if day_state.get() == &DayCycleState::Night { return; }
+    if day_state.get() == &DayCycleState::Night {
+        return;
+    }
 
     if day_timer.day_timer.tick(time.delta()).just_finished() {
         next_state.set(DayCycleState::Night);
@@ -74,8 +76,8 @@ impl Default for NightUIBundle {
 }
 
 pub fn widget_update_with_day_state<
-Props: PartialEq + Component + Clone,
-KState: PartialEq + Component + Clone,
+    Props: PartialEq + Component + Clone,
+    KState: PartialEq + Component + Clone,
 >(
     In((entity, previous_entity)): In<(Entity, Entity)>,
     widget_context: Res<KayakWidgetContext>,
@@ -89,13 +91,21 @@ pub fn night_ui_render(
     In(entity): In<Entity>,
     widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
-    mut query: Query<(&mut NightUIProps, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    mut query: Query<(
+        &mut NightUIProps,
+        &mut ComputedStyles,
+        &KStyle,
+        &KChildren,
+        &OnEvent,
+    )>,
     assets: Res<AssetServer>,
     day_state: Res<State<DayCycleState>>,
     import_selections: Res<ImportSelections>,
     q_imports: Query<&ItemContainer, With<ItemImport>>,
 ) -> bool {
-    if let Ok((mut props, mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
+    if let Ok((mut props, mut computed_styles, base_style, base_children, base_on_event)) =
+        query.get_mut(entity)
+    {
         *computed_styles = KStyle {
             ..Default::default()
         }
@@ -107,15 +117,14 @@ pub fn night_ui_render(
             let next_day_menu_image = assets.load("Next Day Icon.png");
 
             let next_day_button_click = OnEvent::new(
-                move |
-                    In(_entity): In<Entity>, 
-                    event: ResMut<KEvent>, 
-                    mut next_day_state: ResMut<NextState<DayCycleState>>,
-                    import_selections: Res<ImportSelections>,
-                    q_imports: Query<&ItemContainer, With<ItemImport>>,
-                | {
+                move |In(_entity): In<Entity>,
+                      event: ResMut<KEvent>,
+                      mut next_day_state: ResMut<NextState<DayCycleState>>,
+                      import_selections: Res<ImportSelections>,
+                      q_imports: Query<&ItemContainer, With<ItemImport>>| {
                     if let EventType::Click(_) = event.event_type {
-                        let import_item_count = q_imports.iter().map(|i| i.items.len()).sum::<usize>();
+                        let import_item_count =
+                            q_imports.iter().map(|i| i.items.len()).sum::<usize>();
                         if import_selections.selected.is_empty() && import_item_count == 0 {
                             return;
                         }
@@ -317,99 +326,98 @@ pub fn imports_selection_render(
     assets: Res<AssetServer>,
     economy: Res<Economy>,
 ) -> bool {
-    if let Ok((mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
+    if let Ok((mut computed_styles, base_style, base_children, base_on_event)) =
+        query.get_mut(entity)
+    {
         *computed_styles = KStyle {
             ..Default::default()
         }
         .with_style(base_style)
         .into();
 
-    let parent_id = Some(entity);
-    
-    let mut sorted_prices = economy.prices.iter().collect::<Vec<_>>();
-    sorted_prices.sort_by(
-        |a, b|{
-            match a.0 {
-                PurchasableItem::Resource(a_item) => {
-                    if let PurchasableItem::Resource(b_item) = b.0 {
-                        a_item.variant_name().cmp(&b_item.variant_name())
-                    } else {
-                        Ordering::Less
-                    }
-                }
-                PurchasableItem::Good(a_item) => {
-                    if let PurchasableItem::Good(b_item) = b.0 {
-                        a_item.variant_name().cmp(&b_item.variant_name())
-                    } else {
-                        Ordering::Greater
-                    }
+        let parent_id = Some(entity);
+
+        let mut sorted_prices = economy.prices.iter().collect::<Vec<_>>();
+        sorted_prices.sort_by(|a, b| match a.0 {
+            PurchasableItem::Resource(a_item) => {
+                if let PurchasableItem::Resource(b_item) = b.0 {
+                    a_item.variant_name().cmp(&b_item.variant_name())
+                } else {
+                    Ordering::Less
                 }
             }
-        }
-    );
+            PurchasableItem::Good(a_item) => {
+                if let PurchasableItem::Good(b_item) = b.0 {
+                    a_item.variant_name().cmp(&b_item.variant_name())
+                } else {
+                    Ordering::Greater
+                }
+            }
+        });
 
-    rsx!(
-        <ElementBundle
-            styles={KStyle {
-                background_color: StyleProp::<Color>::Value(Color::rgb_u8(65, 68, 90)),
-                ..Default::default()
-            }}
-            children={base_children.clone()}
-            on_event={base_on_event.clone()}
-        >
-            <TextWidgetBundle
-                text={TextProps {
-                    content: "Imports".to_string(),
+        rsx!(
+            <ElementBundle
+                styles={KStyle {
+                    background_color: StyleProp::<Color>::Value(Color::rgb_u8(65, 68, 90)),
                     ..Default::default()
                 }}
-            />
-            {
-                for (item, price) in sorted_prices {
-                    constructor!(
-                        <ElementBundle>
-                            <ImportSelectorBundle
-                                props={ImportSelector {
-                                    item: item.clone(),
-                                    price: price.current_price
-                                }}
-                            />
-                        </ElementBundle>
-                    );
+                children={base_children.clone()}
+                on_event={base_on_event.clone()}
+            >
+                <TextWidgetBundle
+                    text={TextProps {
+                        content: "Imports".to_string(),
+                        ..Default::default()
+                    }}
+                />
+                {
+                    for (item, price) in sorted_prices {
+                        constructor!(
+                            <ElementBundle>
+                                <ImportSelectorBundle
+                                    props={ImportSelector {
+                                        item: item.clone(),
+                                        price: price.current_price
+                                    }}
+                                />
+                            </ElementBundle>
+                        );
+                    }
                 }
-            }
-        </ElementBundle>
-    );
+            </ElementBundle>
+        );
     }
     true
 }
 
 #[derive(Resource, Default)]
 pub struct ImportSelections {
-    pub selected: Vec<PurchasableItem>
+    pub selected: Vec<PurchasableItem>,
 }
 
 pub fn widget_update_with_import_selection<
-Props: PartialEq + Component + Clone,
-KState: PartialEq + Component + Clone,
+    Props: PartialEq + Component + Clone,
+    KState: PartialEq + Component + Clone,
 >(
     In((entity, previous_entity)): In<(Entity, Entity)>,
     widget_context: Res<KayakWidgetContext>,
     widget_param: WidgetParam<Props, KState>,
-    imports_selections: Res<ImportSelections>
+    imports_selections: Res<ImportSelections>,
 ) -> bool {
-    widget_param.has_changed(&widget_context, entity, previous_entity) || imports_selections.is_changed()
+    widget_param.has_changed(&widget_context, entity, previous_entity)
+        || imports_selections.is_changed()
 }
 
 #[derive(Component, Clone, PartialEq)]
 pub struct ImportSelector {
     pub item: PurchasableItem,
-    pub price: f32
+    pub price: f32,
 }
 impl Default for ImportSelector {
     fn default() -> Self {
         Self {
             item: PurchasableItem::Resource(ResourceItem::Wood),
-            price: 0.0
+            price: 0.0,
         }
     }
 }
@@ -443,19 +451,31 @@ pub fn import_selector_render(
     In(entity): In<Entity>,
     widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
-    mut query: Query<(&ImportSelector, &mut ComputedStyles, &KStyle, &KChildren, &OnEvent)>,
+    mut query: Query<(
+        &ImportSelector,
+        &mut ComputedStyles,
+        &KStyle,
+        &KChildren,
+        &OnEvent,
+    )>,
     economy: Res<Economy>,
     assets: Res<AssetServer>,
     imports_selections: Res<ImportSelections>,
 ) -> bool {
-    if let Ok((props, mut computed_styles, base_style, base_children, base_on_event)) = query.get_mut(entity) {
+    if let Ok((props, mut computed_styles, base_style, base_children, base_on_event)) =
+        query.get_mut(entity)
+    {
         *computed_styles = KStyle {
             ..Default::default()
         }
         .with_style(base_style)
         .into();
-    
-        let selected_count = imports_selections.selected.iter().filter(|item| *item == &props.item).count();
+
+        let selected_count = imports_selections
+            .selected
+            .iter()
+            .filter(|item| *item == &props.item)
+            .count();
         let parent_id = Some(entity);
         let item_name = match props.item {
             PurchasableItem::Resource(item) => item.variant_name().to_string(),
@@ -470,12 +490,10 @@ pub fn import_selector_render(
         let supply = item.get_supply(&economy).unwrap_or(0.0).floor() > selected_count as f32;
 
         let add_selection = OnEvent::new(
-            move |
-                In(entity): In<Entity>,
-                event: ResMut<KEvent>,
-                mut selected_imports: ResMut<ImportSelections>,
-                economy: Res<Economy>
-            | {
+            move |In(entity): In<Entity>,
+                  event: ResMut<KEvent>,
+                  mut selected_imports: ResMut<ImportSelections>,
+                  economy: Res<Economy>| {
                 if let EventType::Click(_) = event.event_type {
                     if supply {
                         selected_imports.selected.push(item.clone());
@@ -486,7 +504,10 @@ pub fn import_selector_render(
             },
         );
         let remove_selection = OnEvent::new(
-            move |In(entity): In<Entity>, event: ResMut<KEvent>, mut selected_imports: ResMut<ImportSelections>, props: Query<&ImportSelector> | {
+            move |In(entity): In<Entity>,
+                  event: ResMut<KEvent>,
+                  mut selected_imports: ResMut<ImportSelections>,
+                  props: Query<&ImportSelector>| {
                 if let EventType::Click(_) = event.event_type {
                     if let Some(index) = selected_imports.selected.iter().position(|i| i == &item) {
                         selected_imports.selected.remove(index);
@@ -536,7 +557,7 @@ pub fn import_selector_render(
                             ..Default::default()
                         }}
                     />
-                    
+
                     <ImageButtonBundle
                         styles={KStyle {
                             width: Units::Pixels(32.0).into(),
@@ -574,7 +595,7 @@ pub fn import_selector_render(
                         }}
                     />
                 </BackgroundBundle>
-                
+
                 {
                     if !supply {
                         constructor!(
@@ -627,7 +648,12 @@ impl Default for RevenueSummaryBundle {
 pub fn render_revenue_summary(
     In(entity): In<Entity>,
     mut commands: Commands,
-    mut query: Query<(&RevenueSummaryProps, &mut ComputedStyles, &KStyle, &KChildren)>,
+    mut query: Query<(
+        &RevenueSummaryProps,
+        &mut ComputedStyles,
+        &KStyle,
+        &KChildren,
+    )>,
     widget_context: Res<KayakWidgetContext>,
     upkeep: Res<UpkeepTracker>,
     sold_items: Res<SoldItems>,
@@ -644,71 +670,87 @@ pub fn render_revenue_summary(
 
         let parent_id = Some(entity);
 
-        let imports = import_selections.selected.iter()
+        let imports = import_selections
+            .selected
+            .iter()
             .map(|item| (item.get_name(), item.get_price(&economy).unwrap_or(0.0), 1))
-            .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, (name, price, count)| {
-                if acc.iter().find(|x| x.0 == name).is_none() {
-                    acc.push((name, price, 1));
-                } else {
-                    let index = acc.iter().position(|x| x.0 == name).unwrap();
-                    acc[index].2 += 1;
-                    acc[index].1 += price;
-                }
-                acc
-            });
-        let imports_total = imports
-            .iter()
-            .fold(0.0, |acc, (_, price, _)| acc + price);
+            .fold(
+                vec![],
+                |mut acc: Vec<(&str, f32, i32)>, (name, price, count)| {
+                    if acc.iter().find(|x| x.0 == name).is_none() {
+                        acc.push((name, price, 1));
+                    } else {
+                        let index = acc.iter().position(|x| x.0 == name).unwrap();
+                        acc[index].2 += 1;
+                        acc[index].1 += price;
+                    }
+                    acc
+                },
+            );
+        let imports_total = imports.iter().fold(0.0, |acc, (_, price, _)| acc + price);
 
-
-        let folded_sold = sold_items.items
-            .iter()
-            .map(|(item, price)| (item.get_name(), price, 1))
-            .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, (item, price, count)| {
-                if acc.iter().find(|x| x.0 == item).is_none() {
-                    acc.push((item, *price, 1));
-                } else {
-                    let index = acc.iter().position(|x| x.0 == item).unwrap();
-                    acc[index].2 += 1;
-                    acc[index].1 += price;
-                }
-                acc
-            });
-
-        let folded_unsold = unsold_items.items
+        let folded_sold = sold_items
+            .items
             .iter()
             .map(|(item, price)| (item.get_name(), price, 1))
-            .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, (item, price, count)| {
-                if acc.iter().find(|x| x.0 == item).is_none() {
-                    acc.push((item, *price, 1));
-                } else {
-                    let index = acc.iter().position(|x| x.0 == item).unwrap();
-                    acc[index].2 += 1;
-                    acc[index].1 += price;
-                }
-                acc
-            });
+            .fold(
+                vec![],
+                |mut acc: Vec<(&str, f32, i32)>, (item, price, count)| {
+                    if acc.iter().find(|x| x.0 == item).is_none() {
+                        acc.push((item, *price, 1));
+                    } else {
+                        let index = acc.iter().position(|x| x.0 == item).unwrap();
+                        acc[index].2 += 1;
+                        acc[index].1 += price;
+                    }
+                    acc
+                },
+            );
 
-        let folded_upkeep = upkeep.upkeep
+        let folded_unsold = unsold_items
+            .items
             .iter()
-            .fold(vec![], |mut acc: Vec<(&str, f32, i32)>, Upkeep (price, source)| {
+            .map(|(item, price)| (item.get_name(), price, 1))
+            .fold(
+                vec![],
+                |mut acc: Vec<(&str, f32, i32)>, (item, price, count)| {
+                    if acc.iter().find(|x| x.0 == item).is_none() {
+                        acc.push((item, *price, 1));
+                    } else {
+                        let index = acc.iter().position(|x| x.0 == item).unwrap();
+                        acc[index].2 += 1;
+                        acc[index].1 += price;
+                    }
+                    acc
+                },
+            );
+
+        let folded_upkeep = upkeep.upkeep.iter().fold(
+            vec![],
+            |mut acc: Vec<(&str, f32, i32)>, Upkeep(price, source)| {
                 if acc.iter().find(|x| x.0 == source.variant_name()).is_none() {
                     acc.push((source.variant_name(), *price, 1));
                 } else {
-                    let index = acc.iter().position(|x| x.0 == source.variant_name()).unwrap();
+                    let index = acc
+                        .iter()
+                        .position(|x| x.0 == source.variant_name())
+                        .unwrap();
                     acc[index].2 += 1;
                     acc[index].1 += price;
                 }
                 acc
-            });
+            },
+        );
 
-        let total_sold = sold_items.items
+        let total_sold = sold_items
+            .items
             .iter()
             .fold(0.0, |acc, (_, price)| acc + price);
 
-        let total_upkeep = upkeep.upkeep
+        let total_upkeep = upkeep
+            .upkeep
             .iter()
-            .fold(0.0, |acc, Upkeep (price, _)| acc + price);
+            .fold(0.0, |acc, Upkeep(price, _)| acc + price);
 
         rsx!(
             <ElementBundle>
@@ -772,7 +814,7 @@ pub fn render_revenue_summary(
                     }}
                 />
 
-                
+
                 <TextWidgetBundle
                     text={TextProps {
                         content: "Expenses:".to_string(),
@@ -804,8 +846,8 @@ pub fn render_revenue_summary(
                     }}
                 />
 
-                
-                
+
+
                 <TextWidgetBundle
                     text={TextProps {
                         content: "Imports:".to_string(),
@@ -827,7 +869,7 @@ pub fn render_revenue_summary(
                                 }}
                             />
                         );
-                        
+
                     }
                 }
                 <TextWidgetBundle

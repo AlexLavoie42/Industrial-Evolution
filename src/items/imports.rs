@@ -59,14 +59,15 @@ pub fn purchase_item_imports(
     mut selected_imports: ResMut<ImportSelections>,
     mut economy: ResMut<Economy>,
     mut money: ResMut<PlayerMoney>,
+    sprites: Res<SpriteStorage>,
 ) {
     for (import_entity, mut container) in q_imports.iter_mut() {
         if container.items.len() < container.max_items {
             for selection in selected_imports.selected.iter() {
                 let transform = container.get_transform();
                 let mut item_command = match selection {
-                    PurchasableItem::Good(item) => item.spawn_bundle_with_transform(&mut commands, transform),
-                    PurchasableItem::Resource(item) => item.spawn_bundle_with_transform(&mut commands, transform)
+                    PurchasableItem::Good(item) => item.spawn_bundle_with_transform(&mut commands, transform, sprites.as_ref()),
+                    PurchasableItem::Resource(item) => item.spawn_bundle_with_transform(&mut commands, transform, sprites.as_ref())
                 };
                 let item_entity = item_command.id();
 
